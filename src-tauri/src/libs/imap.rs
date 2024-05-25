@@ -106,14 +106,14 @@ impl IMAP {
     Ok(())
   }
 
-  pub async fn watch(&self) -> &Receiver<IMAPEnvelope> {
+  pub async fn watch(&self) -> Receiver<IMAPEnvelope> {
     if self.imap.lock().await.is_none() {
       self.connect().await.unwrap();
     }
     let mut watching = self.watching.lock().await;
     *watching += 1;
 
-    &self.receiver
+    self.receiver.clone()
   }
 
   pub async fn unwatch(&self) {

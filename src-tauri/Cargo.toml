@@ -31,6 +31,10 @@ once_cell = "1.19.0"
 imap = "2.4.1"
 native-tls = "0.2.11"
 imap-proto = "0.10.2"
+rand_pwd = "1.1.3"
+faker = "0.0.4"
+regex = "1.10.4"
+simple_password_generator = "1.0.1"
 
 
 [features]

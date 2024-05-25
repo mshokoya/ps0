@@ -14,7 +14,7 @@ pub struct Account {
     pub trial_time: Option<u64>,
     pub suspended: bool,
     pub login_type: String, // enum
-    pub verified: bool,
+    pub verified: String, // yes, no, confirm
     pub email: String,
     pub password: String,
     pub proxy: Option<String>,
