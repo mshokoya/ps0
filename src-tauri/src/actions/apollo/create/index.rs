@@ -1,10 +1,10 @@
 use std::time::Duration;
-use async_std::future::{timeout};
+use async_std::future::timeout;
 use polodb_core::bson::oid::ObjectId;
 use simple_password_generator::PasswordGenerator;
 use anyhow::{anyhow, Result};
 use async_std::task::sleep;
-use polodb_core::bson::{doc, to_bson, to_document, Uuid};
+use polodb_core::bson::{doc, to_document, Uuid};
 use serde_json::{from_value, Value};
 use tauri::{AppHandle, Manager};
 use faker::Faker;

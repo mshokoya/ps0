@@ -12,6 +12,7 @@ use actions::apollo::{
     check::index::check_task,
     demine::index::demine_task,
     login::index::login_task,
+    create::index::create_task
 };
 use libs::taskqueue::index::TaskQueue;
 use libs::{db::index::DB, scraper::Scraper};
@@ -49,7 +50,8 @@ async fn main() {
             delete_accounts,
             update_account,
             demine_task,
-            login_task
+            login_task,
+            create_task,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

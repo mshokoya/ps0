@@ -8,9 +8,7 @@ use crate::libs::{
 };
 
 use super::apollo::{
-    check::index::apollo_check, 
-    demine::index::apollo_demine,
-    login::index::apollo_login
+    check::index::apollo_check, create::index::apollo_create, demine::index::apollo_demine, login::index::apollo_login
 };
 
 #[derive(Serialize, Debug)]
@@ -58,7 +56,8 @@ pub enum TaskType {
     Dequeue,
     ApolloCheck,
     ApolloDemine,
-    ApolloLogin
+    ApolloLogin,
+    ApolloCreate
 }
 
 impl TaskType {
@@ -71,6 +70,7 @@ impl TaskType {
             TaskType::ApolloCheck => apollo_check(ctx, args).await,
             TaskType::ApolloDemine => apollo_demine(ctx, args).await,
             TaskType::ApolloLogin => apollo_login(ctx, args).await,
+            TaskType::ApolloCreate => apollo_create(ctx, args).await,
             _ => Ok(None),
         }
     }
