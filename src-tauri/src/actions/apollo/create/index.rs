@@ -1,5 +1,8 @@
 use std::time::Duration;
 use async_std::future::timeout;
+use fake::faker::internet::en::Username;
+use fake::faker::lorem::en::Words;
+use fake::faker::name::en::FirstName;
 use polodb_core::bson::oid::ObjectId;
 use simple_password_generator::PasswordGenerator;
 use anyhow::{anyhow, Result};
@@ -7,7 +10,7 @@ use async_std::task::sleep;
 use polodb_core::bson::{doc, to_document, Uuid};
 use serde_json::{from_value, Value};
 use tauri::{AppHandle, Manager};
-use faker::Faker;
+use fake::{Dummy, Fake, Faker};
 use regex::Regex;
 
 use crate::actions::apollo::lib::util::wait_for_selector;
@@ -38,9 +41,9 @@ pub fn create_task(ctx: AppHandle, args: Value) -> R {
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
         task_id: Uuid::new(),
-        task_type: TaskType::ApolloLogin,
+        task_type: TaskType::ApolloCreate,
         task_group: TaskGroup::Apollo,
-        message: "Demine account popups",
+        message: "Creating account",
         metadata,
         timeout: None,
         args: Some(args),
@@ -55,9 +58,8 @@ pub async fn apollo_create(
 ) -> Result<Option<Value>> {
     let args: ApolloCreateArgs = from_value(args.unwrap())?;
 
-    let faker = Faker::new("us");
-    let email = format!("{}@{}", faker.lorem.word(), args.domain); // (FIX) faker.lorem.word() nor sure of length
-    let password = PasswordGenerator::new().length(20).generate();
+    let email = format!("{}_{}@{}", Username().fake::<String>(), Username().fake::<String>(), args.domain); // (FIX) faker.lorem.word() nor sure of length
+    let password = PasswordGenerator::new().length(25).generate();
 
     let imap = ctx.handle.state::<IMAP>();
     let receiver = imap.watch().await;
@@ -75,6 +77,8 @@ pub async fn apollo_create(
     let signup = page.find_element(r#"[class="MuiBox-root mui-style-1tu59u4"]"#).await?;
     signup.click().await?.type_str(&password).await?;
 
+    println!("SIGNUP COMPLETE");
+
     for _ in 0..10 {
         sleep(Duration::from_secs(2)).await;
 
@@ -88,37 +92,76 @@ pub async fn apollo_create(
         }
     }
 
-    ctx.handle.state::<DB>().insert_one(
-        Entity::Account, 
-        to_document(&Account {
-            _id: ObjectId::new().to_hex(),
-            domain: args.domain,
-            trial_time: None,
-            suspended: false,
-            login_type: "default".to_string(), // (FIX) make it dynamic
-            verified: "confirm".to_string(),
-            email: email.clone(),
-            password: password.clone(),
-            proxy: None,
-            credits_used: None,
-            credit_limit: None,
-            renewal_date: None,
-            renewal_start_date: None,
-            renewal_end_date: None,
-            last_used: None,
-            cookies: None,
-            history: vec![]
-        })?
-    )?;
+    println!("page redirect COMPLETE");
 
-    let confirmation_link = timeout(
+    // ctx.handle.state::<DB>().insert_one(
+    //     Entity::Account, 
+    //     to_document(&Account {
+    //         _id: ObjectId::new().to_hex(),
+    //         domain: args.domain,
+    //         trial_time: None,
+    //         suspended: false,
+    //         login_type: "default".to_string(), // (FIX) make it dynamic
+    //         verified: "confirm".to_string(),
+    //         email: email.clone(),
+    //         password: password.clone(),
+    //         proxy: None,
+    //         credits_used: None,
+    //         credit_limit: None,
+    //         renewal_date: None,
+    //         renewal_start_date: None,
+    //         renewal_end_date: None,
+    //         last_used: None,
+    //         cookies: None,
+    //         history: vec![]
+    //     })?
+    // )?;
+
+    // println!("db update complete");
+
+    let confirmation_link = match timeout(
         Duration::from_secs(60), 
         async move {
             let re1 = Regex::new(r"/(?<=Activate Your Account \( )[\S|\n]+/g").unwrap();
             let re2 = Regex::new(r"/(?<=Or paste this link into your browser: )[\S|\n]+(?= \()/g").unwrap();
             loop {
+                println!("WE LOOPIN:::: {}", Username().fake::<String>());
                 let envelope = receiver.recv().await.unwrap();
+                // (FIX) should check to address aswell
                 if envelope.from.as_ref().unwrap()[0].name.as_ref().unwrap().contains("apollo") {
+
+                    println!("
+                    TO ADDRESS 
+                    
+                    {:?}
+                    
+                    ", envelope.to);
+                    println!("
+                    FROM ADDRESS 
+                    
+                    {:?}
+                    
+                    ", envelope.from);
+                    println!("
+                    SENDER 
+                    
+                    {:?}
+                    
+                    ", envelope.sender);
+                    println!("
+                    DATE 
+                    
+                    {:?}
+                    
+                    ", envelope.date);
+                    println!("
+
+                    BODY 
+                    
+                    {:?}
+
+                    ", envelope.body);
+
                     let body = envelope.body.unwrap();
                     if body.contains("Activate Your Account") {
                         let link1 = re1.find(&body).unwrap();
@@ -129,11 +172,22 @@ pub async fn apollo_create(
                 }
             }
         }
-    ).await?;
+    ).await {
+        Ok(val) => {
+            imap.unwatch().await;
+            val
+        },
+        Err(e) => {
+            imap.unwatch().await;
+            return Err(anyhow!("{}", e.to_string()))
+        }
+    };
+
+    println!("out da loop {}", &confirmation_link);
 
     page.goto(confirmation_link).await?;
     // wait_for_selector(&page, r#"input[class="MuiInputBase-input MuiOutlinedInput-input mui-style-1x5jdmq"]"#, 10, 3).await?;
-    let _name =  wait_for_selector(&page, r#"input[class="zp_bWS5y zp_J0MYa"][name="name"]"#, 10, 2).await?.click().await?.type_str(faker.name.full_name()).await?;
+    let _name =  wait_for_selector(&page, r#"input[class="zp_bWS5y zp_J0MYa"][name="name"]"#, 10, 2).await?.click().await?.type_str(FirstName().fake::<String>()).await?;
     let _password = page.find_element(r#"input[class="zp_bWS5y zp_J0MYa"][name="password"]"#).await?.click().await?.type_str(&password).await?;
     let _confirm_password = page.find_element(r#"input[class="zp_bWS5y zp_J0MYa"][name="confirmPassword"]"#).await?.click().await?.type_str(&password).await?;
     let _submit = page.find_element(r#"button[class="zp-button zp_zUY3r zp_aVzf8"]"#).await?.click().await?.type_str(&password).await?;

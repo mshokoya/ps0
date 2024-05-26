@@ -26,6 +26,10 @@ static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 #[async_std::main]
 // https://stackoverflow.com/questions/73551266/tauri-is-there-some-way-to-access-apphandler-or-window-in-regular-struct-or-sta
 async fn main() {
+
+    let test = IMAP::new();
+    test.watch().await;
+
     tauri::Builder::default()
     .setup(|app| {
         // db

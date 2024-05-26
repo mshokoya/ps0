@@ -1,51 +1,113 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api";
 import "./App.css";
+import { listen } from "@tauri-apps/api/event";
+import { useEffect } from "react";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  console.log("App fc");
+  useEffect(() => {
+    const waitQueue = listen("waitQueue", (event) => {
+      console.log("IN DA WaitQueue");
+      console.log(event.payload);
+    });
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
+    const processQueue = listen("processQueue", (event) => {
+      console.log("IN DA ProcessQueue");
+      console.log(event.payload);
+    });
+
+    const timeoutQueue = listen("timeoutQueue", (event) => {
+      console.log("IN DA timeoutQueue");
+      console.log(event.payload);
+    });
+
+    // https://github.com/tauri-apps/tauri/discussions/5194
+    return () => {
+      waitQueue.then((f) => f());
+      processQueue.then((f) => f());
+      timeoutQueue.then((f) => f());
+    };
+  }, []);
+
+  const handleCheck = () => {
+    invoke("check_task", {
+      args: {
+        account_id: "664d0d9809f4ac3e17d1f8b3",
+        timeout: {
+          time: 5000,
+          rounds: 1,
+        },
+      },
+    });
+  };
+
+
+  const handleGet = async () => {
+    console.log(
+      await invoke("get_accounts", {
+        args: [
+          // {_id: "664d0d9a09f4ac3e17d1f8b9"}
+          // {_id: "664b68a651295d1dabf2b7b6"},
+          // {_id: "664b69744bb5d236bf4308df"},
+          // {_id: "664c9e44acc1f4695819683c"}
+        ],
+      })
+    );
+  };
+
+
+  const handleUpdate = async () => {
+    console.log(
+      await invoke("update_account", {
+          filter: {"_id": "664d0d9809f4ac3e17d1f8b3"},
+          update: {
+            "password": "mannyman17",
+            "email": "tessa@genzcompany.live"
+          }
+        },
+      )
+    )
+  };
+
+  const handleDemine = async () => {
+    console.log(
+      await invoke("demine_task", {
+          args: {account_id: "664d0d9809f4ac3e17d1f8b3"}
+        },
+      )
+    )
+  };
+
+
+  const handleDelete = async () => {
+    console.log(
+      await invoke("delete_accounts", {
+        args: [
+          {_id: "664d0d9809f4ac3e17d1f8b0"},
+          {_id: "664d0d9809f4ac3e17d1f8b1"},
+          {_id: "664d0d9809f4ac3e17d1f8b2"},
+        ],
+      })
+    )
+  };
+
+  const handleCreate = async () => {
+    console.log(
+      await invoke("create_task", {
+        account_id: "664d0d9809f4ac3e17d1f8b3",
+        domain: "testatest.com"
+      })
+    )
   }
 
   return (
     <div className="container">
-      <h1>Welcome to Tauri!</h1>
-
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-
-      <p>{greetMsg}</p>
+      <button onClick={() => handleCheck()}>Check</button>
+      <button onClick={() => handleGet()}>Get</button>
+      <button onClick={() => handleUpdate()}>Update</button>
+      <button onClick={() => handleDelete()}>Delete</button>
+      <button onClick={() => handleDemine()}>Demine</button>
+      <button onClick={() => handleCreate()}>Create</button>
     </div>
   );
 }

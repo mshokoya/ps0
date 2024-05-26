@@ -8,7 +8,7 @@ use imap::{self, Session};
 use native_tls::TlsStream;
 use imap_proto::types::Address;
 
-
+#[derive(Debug)]
 pub struct IMAPEnvelope {
   pub date: Option<String>,
   pub subject: Option<String>,
@@ -19,6 +19,7 @@ pub struct IMAPEnvelope {
   pub body: Option<String>,
 }
 
+#[derive(Debug)]
 pub struct IMAPAddress {
   pub name: Option<String>,
   pub adl: Option<String>,
@@ -26,7 +27,7 @@ pub struct IMAPAddress {
   pub host: Option<String>,
 }
 
-
+#[derive(Debug)]
 pub struct IMAP {
   pub imap: Arc<Mutex<Option<Session<TlsStream<TcpStream>>>>>,
   pub poll: Mutex<Option<JoinHandle<()>>>,
@@ -54,13 +55,13 @@ impl IMAP {
 
   
   pub async fn connect(&self) -> Result<()> {
-    let domain = "imap.example.com";
+    let domain = "imap.gmail.com";
     let tls = native_tls::TlsConnector::builder().build().unwrap();
 
     let client = imap::connect((domain, 993), domain, &tls).unwrap();
     
     let mut session = client
-      .login("me@example.com", "password")
+      .login("mikeydee0161@gmail.com", "ibgqnrpzhgtskvog")
       .map_err(|e| e.0)?;
 
     session.select("INBOX").unwrap();
@@ -74,6 +75,7 @@ impl IMAP {
     let poll = spawn(async move {
       let mut imap_clone = imap_clone.lock().await;
       loop {
+        println!("PRINT DA POOL NIGGA");
         sleep(Duration::from_secs(7)).await;
         // https://blog.logrocket.com/email-crates-for-rust-lettre-and-imap/
         let messages = imap_clone.as_mut().unwrap().fetch("1:10", "RFC822").unwrap();
