@@ -14,11 +14,16 @@ use actions::apollo::{
     login::index::login_task,
     create::index::create_task
 };
+use async_std::task::sleep;
 use libs::taskqueue::index::TaskQueue;
 use libs::{db::index::DB, scraper::Scraper};
 use libs::imap::IMAP;
 use once_cell::sync::Lazy;
+use polodb_core::bson::oid::ObjectId;
 use std::env;
+use std::fs::File;
+use std::io::Write;
+use std::time::Duration;
 use tauri::Manager;
 
 static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
@@ -28,13 +33,22 @@ static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 async fn main() {
 
     let test = IMAP::new();
-    test.watch().await;
+    let w = test.watch().await;
+    loop {
+        let tess = w.recv().await.unwrap();
+        let mut output = File::create("file.txt").unwrap();
+        let string = format!("{}", tess.body.unwrap());
+        output.write(string.to_string().as_bytes());
+        // write!(output, "{}", string);
+    };
 
     tauri::Builder::default()
     .setup(|app| {
 
         std::panic::set_hook(Box::new(move |info| {
-            println!("WE IN DA PANIC THINGY !!!!!!!!!")
+            println!("WE IN DA PANIC THINGY !!!!!!!!!");
+            println!("{}", info);
+            println!("WE IN DA PANIC THINGY !!!!!!!!!");
         }));
 
         // db
