@@ -2,9 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
 use async_std::{
-  prelude::*,
-  net::TcpStream,
-  channel::{bounded, Receiver, Sender}, sync::Mutex, task::{sleep, spawn, JoinHandle}
+  channel::{unbounded, Receiver, Sender}, net::TcpStream, sync::Mutex, task::{sleep, spawn, JoinHandle}
 };
 
 use async_imap::{self, Session};
@@ -46,7 +44,7 @@ pub struct IMAP {
 
 impl IMAP {
   pub fn new() -> Self {
-    let (sender, receiver) = bounded::<IMAPEnvelope>(0);
+    let (sender, receiver) = unbounded::<IMAPEnvelope>();
     
     Self {
       imap: Arc::new(Mutex::new(None)),
@@ -57,14 +55,13 @@ impl IMAP {
     }
   }
 
-  
+  // https://github.com/async-email/async-imap/tree/main/examples/src/bin
   pub async fn connect(&self) -> Result<()> {
-    let domain = "imap.gmail.com";
-    let stream = TcpStream::connect("google.com:993").await?;
-    let tls = TlsConnector::new().use_sni(true).connect("google.com", stream).await?;
+    let stream = TcpStream::connect(("imap.google.com", 993)).await?;
+    let tls = TlsConnector::new().use_sni(true).connect("imap.google.com", stream).await?;
     let client = async_imap::Client::new(tls);
 
-    let mut session = client.login("mikeydee0161@gmail.com", "ibgqdrpzggtskfog")
+    let mut session = client.login("mikeydee0161@gmail.com", "ibgqnrpzfdsdxskvog")
     .await
     .map_err(|(err, _client)| err)?;
 

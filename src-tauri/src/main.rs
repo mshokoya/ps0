@@ -32,6 +32,11 @@ async fn main() {
 
     tauri::Builder::default()
     .setup(|app| {
+
+        std::panic::set_hook(Box::new(move |info| {
+            println!("WE IN DA PANIC THINGY !!!!!!!!!")
+        }));
+
         // db
         let db = DB::new();
         db.init();
