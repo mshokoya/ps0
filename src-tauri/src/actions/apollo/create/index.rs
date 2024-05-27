@@ -119,113 +119,113 @@ pub async fn apollo_create(
 
     // println!("db update complete");
 
-    let confirmation_link = match timeout(
-        Duration::from_secs(60), 
-        async move {
-            let re1 = Regex::new(r"/(?<=Activate Your Account \( )[\S|\n]+/g").unwrap();
-            let re2 = Regex::new(r"/(?<=Or paste this link into your browser: )[\S|\n]+(?= \()/g").unwrap();
-            loop {
-                println!("WE LOOPIN:::: {}", Username().fake::<String>());
-                let envelope = receiver.recv().await.unwrap();
-                // (FIX) should check to address aswell
-                if envelope.from.as_ref().unwrap()[0].name.as_ref().unwrap().contains("apollo") {
+    // let confirmation_link = match timeout(
+    //     Duration::from_secs(60), 
+    //     async move {
+    //         let re1 = Regex::new(r"/(?<=Activate Your Account \( )[\S|\n]+/g").unwrap();
+    //         let re2 = Regex::new(r"/(?<=Or paste this link into your browser: )[\S|\n]+(?= \()/g").unwrap();
+    //         loop {
+    //             println!("WE LOOPIN:::: {}", Username().fake::<String>());
+    //             let envelope = receiver.recv().await.unwrap();
+    //             // (FIX) should check to address aswell
+    //             if envelope.from.as_ref().unwrap()[0].name.as_ref().unwrap().contains("apollo") {
 
-                    println!("
-                    TO ADDRESS 
+    //                 println!("
+    //                 TO ADDRESS 
                     
-                    {:?}
+    //                 {:?}
                     
-                    ", envelope.to);
-                    println!("
-                    FROM ADDRESS 
+    //                 ", envelope.to);
+    //                 println!("
+    //                 FROM ADDRESS 
                     
-                    {:?}
+    //                 {:?}
                     
-                    ", envelope.from);
-                    println!("
-                    SENDER 
+    //                 ", envelope.from);
+    //                 println!("
+    //                 SENDER 
                     
-                    {:?}
+    //                 {:?}
                     
-                    ", envelope.sender);
-                    println!("
-                    DATE 
+    //                 ", envelope.sender);
+    //                 println!("
+    //                 DATE 
                     
-                    {:?}
+    //                 {:?}
                     
-                    ", envelope.date);
-                    println!("
+    //                 ", envelope.date);
+    //                 println!("
 
-                    BODY 
+    //                 BODY 
                     
-                    {:?}
+    //                 {:?}
 
-                    ", envelope.body);
+    //                 ", envelope.body);
 
-                    let body = envelope.body.unwrap();
-                    if body.contains("Activate Your Account") {
-                        let link1 = re1.find(&body).unwrap();
-                        let _link2 = re2.find(&body).unwrap();
+    //                 let body = envelope.body.unwrap();
+    //                 if body.contains("Activate Your Account") {
+    //                     let link1 = re1.find(&body).unwrap();
+    //                     let _link2 = re2.find(&body).unwrap();
         
-                        return link1.as_str().to_string();
-                    }
-                }
-            }
-        }
-    ).await {
-        Ok(val) => {
-            imap.unwatch().await;
-            val
-        },
-        Err(e) => {
-            imap.unwatch().await;
-            return Err(anyhow!("{}", e.to_string()))
-        }
-    };
+    //                     return link1.as_str().to_string();
+    //                 }
+    //             }
+    //         }
+    //     }
+    // ).await {
+    //     Ok(val) => {
+    //         imap.unwatch().await;
+    //         val
+    //     },
+    //     Err(e) => {
+    //         imap.unwatch().await;
+    //         return Err(anyhow!("{}", e.to_string()))
+    //     }
+    // };
 
-    println!("out da loop {}", &confirmation_link);
+    // println!("out da loop {}", &confirmation_link);
 
-    page.goto(confirmation_link).await?;
-    // wait_for_selector(&page, r#"input[class="MuiInputBase-input MuiOutlinedInput-input mui-style-1x5jdmq"]"#, 10, 3).await?;
-    let _name =  wait_for_selector(&page, r#"input[class="zp_bWS5y zp_J0MYa"][name="name"]"#, 10, 2).await?.click().await?.type_str(FirstName().fake::<String>()).await?;
-    let _password = page.find_element(r#"input[class="zp_bWS5y zp_J0MYa"][name="password"]"#).await?.click().await?.type_str(&password).await?;
-    let _confirm_password = page.find_element(r#"input[class="zp_bWS5y zp_J0MYa"][name="confirmPassword"]"#).await?.click().await?.type_str(&password).await?;
-    let _submit = page.find_element(r#"button[class="zp-button zp_zUY3r zp_aVzf8"]"#).await?.click().await?.type_str(&password).await?;
+    // page.goto(confirmation_link).await?;
+    // // wait_for_selector(&page, r#"input[class="MuiInputBase-input MuiOutlinedInput-input mui-style-1x5jdmq"]"#, 10, 3).await?;
+    // let _name =  wait_for_selector(&page, r#"input[class="zp_bWS5y zp_J0MYa"][name="name"]"#, 10, 2).await?.click().await?.type_str(FirstName().fake::<String>()).await?;
+    // let _password = page.find_element(r#"input[class="zp_bWS5y zp_J0MYa"][name="password"]"#).await?.click().await?.type_str(&password).await?;
+    // let _confirm_password = page.find_element(r#"input[class="zp_bWS5y zp_J0MYa"][name="confirmPassword"]"#).await?.click().await?.type_str(&password).await?;
+    // let _submit = page.find_element(r#"button[class="zp-button zp_zUY3r zp_aVzf8"]"#).await?.click().await?.type_str(&password).await?;
 
-    let mut counter = 0;
-    while counter <= 5 {
-        let onboarding = page.find_element(r#"[class="zp-button zp_zUY3r zp_OztAP zp_lshSd"]"#).await.ok();
-        let skip = page.find_element(r#"[class="zp-button zp_zUY3r zp_MCSwB"]"#).await.ok();
-        let new_team = page.find_element(r#"button[class="zp-button zp_zUY3r zp_MCSwB zp_OztAP zp_LUHm0"][type="button"]"#).await.ok();
-        let close = page.find_element(r#"[class="zp-icon mdi mdi-close zp_dZ0gM zp_foWXB zp_j49HX zp_rzbAy"]"#).await.ok();
-        let url = page.url().await?.unwrap();
+    // let mut counter = 0;
+    // while counter <= 5 {
+    //     let onboarding = page.find_element(r#"[class="zp-button zp_zUY3r zp_OztAP zp_lshSd"]"#).await.ok();
+    //     let skip = page.find_element(r#"[class="zp-button zp_zUY3r zp_MCSwB"]"#).await.ok();
+    //     let new_team = page.find_element(r#"button[class="zp-button zp_zUY3r zp_MCSwB zp_OztAP zp_LUHm0"][type="button"]"#).await.ok();
+    //     let close = page.find_element(r#"[class="zp-icon mdi mdi-close zp_dZ0gM zp_foWXB zp_j49HX zp_rzbAy"]"#).await.ok();
+    //     let url = page.url().await?.unwrap();
 
-        if new_team.is_some() {
-            new_team.unwrap().click().await?;
-            counter = 0;
-        } else if onboarding.is_some() {
-            onboarding.unwrap().click().await?;
-            counter = 0;
-        } else if skip.is_some() {
-            skip.unwrap().click().await?;
-            counter = 0;
-        } else if close.is_some() {
-            close.unwrap().click().await?;
-            counter = 0;
-        } else if url.contains("signup-success") {
-            page.goto("https://app.apollo.io/").await?;
-            counter = 0;
-        } else if 
-            url.contains("app.apollo.io/#/onboarding-hub/queue") ||
-            url.contains("app.apollo.io/#/control-center") ||
-            url.contains("app.apollo.io/#/sequences") ||
-            url.contains("app.apollo.io/#/conversations") ||
-            url.contains("app.apollo.io/#/opportunities") ||
-            url.contains("app.apollo.io/#/enrichment-status") ||
-            url.contains("app.apollo.io/#/settings")
-        {
-            break
-        }
-    }
+    //     if new_team.is_some() {
+    //         new_team.unwrap().click().await?;
+    //         counter = 0;
+    //     } else if onboarding.is_some() {
+    //         onboarding.unwrap().click().await?;
+    //         counter = 0;
+    //     } else if skip.is_some() {
+    //         skip.unwrap().click().await?;
+    //         counter = 0;
+    //     } else if close.is_some() {
+    //         close.unwrap().click().await?;
+    //         counter = 0;
+    //     } else if url.contains("signup-success") {
+    //         page.goto("https://app.apollo.io/").await?;
+    //         counter = 0;
+    //     } else if 
+    //         url.contains("app.apollo.io/#/onboarding-hub/queue") ||
+    //         url.contains("app.apollo.io/#/control-center") ||
+    //         url.contains("app.apollo.io/#/sequences") ||
+    //         url.contains("app.apollo.io/#/conversations") ||
+    //         url.contains("app.apollo.io/#/opportunities") ||
+    //         url.contains("app.apollo.io/#/enrichment-status") ||
+    //         url.contains("app.apollo.io/#/settings")
+    //     {
+    //         break
+    //     }
+    // }
     Ok(None)
 }

@@ -1,4 +1,158 @@
-use std::{sync::Arc, time::Duration};
+// use std::{sync::Arc, time::Duration};
+
+// use anyhow::Result;
+// use async_std::{
+//   channel::{unbounded, Receiver, Sender}, net::TcpStream, sync::Mutex, task::{sleep, spawn, JoinHandle}
+// };
+
+// use async_imap::{self, Session};
+// use async_native_tls::{TlsConnector, TlsStream};
+// use fake::faker::address::en;
+// use futures::TryStreamExt;
+// use mailparse::parse_mail;
+
+// #[derive(Debug)]
+// pub struct IMAPEnvelope {
+//   pub from: Option<String>,
+//   pub to: Option<String>,
+//   pub link_1: Option<String>,
+//   pub link_2: Option<String>
+// }
+
+// #[derive(Debug)]
+// pub struct IMAP {
+//   pub imap: Arc<Mutex<Option<Session<TlsStream<TcpStream>>>>>,
+//   pub poll: Mutex<Option<JoinHandle<()>>>,
+//   pub sender: Sender<IMAPEnvelope>,
+//   pub receiver: Receiver<IMAPEnvelope>,
+//   pub watching: Mutex<u8>
+// }
+
+// // unsafe impl Send for IMAP {}
+// // unsafe impl Sync for IMAP {}
+
+
+// impl IMAP {
+//   pub fn new() -> Self {
+//     let (sender, receiver) = unbounded::<IMAPEnvelope>();
+    
+//     Self {
+//       imap: Arc::new(Mutex::new(None)),
+//       sender,
+//       receiver,
+//       poll: Mutex::new(None),
+//       watching: Mutex::new(0)
+//     }
+//   }
+
+  
+//   pub async fn connect(&self) -> Result<()> {
+//     let stream = TcpStream::connect(("imap.gmail.com", 993)).await?;
+//     let tls = TlsConnector::new().use_sni(true).connect("google.com", stream).await?;
+//     let client = async_imap::Client::new(tls);
+
+//     let mut session = client.login("mikeydee0161@gmail.com", "ibgqnrpzhgtskvog")
+//     .await
+//     .map_err(|(err, _client)| err)?;
+
+//     session.select("INBOX").await?;
+
+//     let mut guard = self.imap.lock().await; 
+//     *guard = Some(session);
+//     drop(guard);
+  
+//     let imap_sender = self.sender.clone();
+//     let imap_clone = self.imap.clone();
+//     let poll = spawn(async move {
+//       let mut imap_clone = imap_clone.lock().await;
+//       loop {
+//         sleep(Duration::from_secs(7)).await;
+//         // https://blog.logrocket.com/email-crates-for-rust-lettre-and-imap/
+//         let message_stream = imap_clone.as_mut().unwrap().fetch("1:10", "RFC822").await.unwrap();
+//         let messages: Vec<_> = message_stream.try_collect().await.unwrap();
+//         for message in messages.iter() {
+//           let body = parse_mail(message.body().unwrap()).unwrap();
+//           let headers = body.get_headers();
+//           imap_sender.send(IMAPEnvelope {
+//             to: body.
+//             // header: 
+//           }).await.unwrap();
+//         }
+//       }
+//     });
+
+//     let mut guard = self.poll.lock().await;
+//     *guard = Some(poll);
+
+//     Ok(())
+//   }
+
+//   pub async fn logout(&self) -> Result<()> {
+//     let mut imap = self.imap.lock().await;
+//     imap.as_mut().unwrap().logout().await?;
+//     *imap = None;
+//     Ok(())
+//   }
+
+//   pub async fn watch(&self) -> Receiver<IMAPEnvelope> {
+//     if self.imap.lock().await.is_none() {
+//       self.connect().await.unwrap();
+//     }
+//     let mut watching = self.watching.lock().await;
+//     *watching += 1;
+
+//     self.receiver.clone()
+//   }
+
+//   pub async fn unwatch(&self) {
+//     let mut watching = self.watching.lock().await;
+
+//     if *watching == 1 {
+//       if self.imap.lock().await.is_some() {
+//         self.logout().await.unwrap();
+//       }
+//       *watching = 0;
+//     } else if *watching > 1 {
+//       *watching -= 1 
+//     }
+//   }
+
+// }
+
+
+// fn extract_frm_envelope(env: Option<&[u8]>) -> Option<String> {
+//   env.and_then(|d| std::str::from_utf8(d).ok().and_then(|s| Some(s.to_string())))
+// }
+
+// fn extract_addrs_envelope(env: &Option<Vec<Address>>) -> Option<Vec<IMAPAddress>> {
+//   env.as_ref().and_then(|d| {
+//     Some(
+//       d.iter().map(|add| {
+//         // Cow<&[u8]>
+//         IMAPAddress { 
+//           name: extract_frm_envelope(add.name.as_deref()),
+//           adl: extract_frm_envelope(add.adl.as_deref()),
+//           mailbox: extract_frm_envelope(add.mailbox.as_deref()),
+//           host: extract_frm_envelope(add.host.as_deref()),
+//         }
+//       }).collect::<Vec<IMAPAddress>>()
+//     )
+//   })
+// }
+
+
+// ==========================================================
+// ==========================================================
+// ==========================================================
+// ==========================================================
+// ==========================================================
+// ==========================================================
+// ==========================================================
+// ==========================================================
+
+
+
+use std::{str::from_utf8, sync::Arc, time::Duration};
 
 use anyhow::Result;
 use async_std::{
@@ -7,27 +161,17 @@ use async_std::{
 
 use async_imap::{self, Session};
 use async_native_tls::{TlsConnector, TlsStream};
-use fake::faker::address::en;
 use futures::TryStreamExt;
-use imap_proto::Address;
+use mailparse::*;
+use regex::Regex;
 
 #[derive(Debug)]
 pub struct IMAPEnvelope {
-  pub date: Option<String>,
   pub subject: Option<String>,
-  pub from: Option<Vec<IMAPAddress>>,
-  pub sender: Option<Vec<IMAPAddress>>,
-  pub to: Option<Vec<IMAPAddress>>,
-  pub message_id: Option<String>,
-  pub body: Option<String>,
-}
-
-#[derive(Debug)]
-pub struct IMAPAddress {
-  pub name: Option<String>,
-  pub adl: Option<String>,
-  pub mailbox: Option<String>,
-  pub host: Option<String>,
+  pub from: Option<String>,
+  pub to: Option<String>,
+  pub link_1: Option<String>,
+  pub link_2: Option<String>
 }
 
 #[derive(Debug)]
@@ -38,10 +182,6 @@ pub struct IMAP {
   pub receiver: Receiver<IMAPEnvelope>,
   pub watching: Mutex<u8>
 }
-
-// unsafe impl Send for IMAP {}
-// unsafe impl Sync for IMAP {}
-
 
 impl IMAP {
   pub fn new() -> Self {
@@ -62,7 +202,7 @@ impl IMAP {
     let tls = TlsConnector::new().use_sni(true).connect("google.com", stream).await?;
     let client = async_imap::Client::new(tls);
 
-    let mut session = client.login("mike", "tskvog")
+    let mut session = client.login("mim", "ibgqg")
     .await
     .map_err(|(err, _client)| err)?;
 
@@ -78,22 +218,31 @@ impl IMAP {
       let mut imap_clone = imap_clone.lock().await;
       loop {
         sleep(Duration::from_secs(7)).await;
-        // https://blog.logrocket.com/email-crates-for-rust-lettre-and-imap/
         let message_stream = imap_clone.as_mut().unwrap().fetch("1:10", "RFC822").await.unwrap();
         let messages: Vec<_> = message_stream.try_collect().await.unwrap();
         for message in messages.iter() {
-          let envelope = message.envelope();
-          println!("envelope");
-          println!("{:?}", envelope);
-          imap_sender.send(IMAPEnvelope {
-            date: envelope.and_then(|e| extract_frm_envelope(e.date.as_deref())),
-            subject: envelope.and_then(|e| extract_frm_envelope(e.subject.as_deref())),
-            from: envelope.and_then(|e| extract_addrs_envelope(&e.from)),
-            sender: envelope.and_then(|e| extract_addrs_envelope(&e.sender)),
-            to: envelope.and_then(|e| extract_addrs_envelope(&e.to)),
-            message_id: envelope.and_then(|e| extract_frm_envelope(e.message_id.as_deref())),
-            body: extract_frm_envelope(message.body()),
-          }).await.unwrap();
+          if let Some(body) = message.body() {
+            let mail = parse_mail(body).unwrap();
+
+            let subject = mail.headers.get_first_value("Subject");
+
+            if subject.as_ref().unwrap().contains("Activate Your Apollo Account") {
+              let body = mail.subparts[0].get_body().unwrap();
+              let link1_regex = Regex::new(r"(?<link>https://app.tryapollo.io[\S|\n]+)").unwrap();
+              let link2_regex = Regex::new(r"(?<link>https://app.tryapollo.io/#[\S|\n]+)").unwrap();
+
+              let link_1 = link1_regex.captures(&body).and_then(|v| Some(v["link"].to_string()));
+              let link_2 = link2_regex.captures(&body).and_then(|v| Some(v["link"].to_string()));
+
+              imap_sender.send(IMAPEnvelope {
+                subject,
+                from: mail.headers.get_first_value("From"),
+                to: mail.headers.get_first_value("To"),
+                link_1,
+                link_2
+              }).await.unwrap();
+            }
+          }
         }
       }
     });
@@ -136,23 +285,22 @@ impl IMAP {
 
 }
 
+// fn extract_frm_envelope(env: Option<&[u8]>) -> Option<String> {
+//   env.and_then(|d| std::str::from_utf8(d).ok().and_then(|s| Some(s.to_string())))
+// }
 
-fn extract_frm_envelope(env: Option<&[u8]>) -> Option<String> {
-  env.and_then(|d| std::str::from_utf8(d).ok().and_then(|s| Some(s.to_string())))
-}
-
-fn extract_addrs_envelope(env: &Option<Vec<Address>>) -> Option<Vec<IMAPAddress>> {
-  env.as_ref().and_then(|d| {
-    Some(
-      d.iter().map(|add| {
-        // Cow<&[u8]>
-        IMAPAddress { 
-          name: extract_frm_envelope(add.name.as_deref()),
-          adl: extract_frm_envelope(add.adl.as_deref()),
-          mailbox: extract_frm_envelope(add.mailbox.as_deref()),
-          host: extract_frm_envelope(add.host.as_deref()),
-        }
-      }).collect::<Vec<IMAPAddress>>()
-    )
-  })
-}
+// fn extract_addrs_envelope(env: &Option<Vec<Address>>) -> Option<Vec<IMAPAddress>> {
+//   env.as_ref().and_then(|d| {
+//     Some(
+//       d.iter().map(|add| {
+//         // Cow<&[u8]>
+//         IMAPAddress { 
+//           name: extract_frm_envelope(add.name.as_deref()),
+//           adl: extract_frm_envelope(add.adl.as_deref()),
+//           mailbox: extract_frm_envelope(add.mailbox.as_deref()),
+//           host: extract_frm_envelope(add.host.as_deref()),
+//         }
+//       }).collect::<Vec<IMAPAddress>>()
+//     )
+//   })
+// }

@@ -32,25 +32,8 @@ static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 // https://stackoverflow.com/questions/73551266/tauri-is-there-some-way-to-access-apphandler-or-window-in-regular-struct-or-sta
 async fn main() {
 
-    let test = IMAP::new();
-    let w = test.watch().await;
-    loop {
-        let tess = w.recv().await.unwrap();
-        let mut output = File::create("file.txt").unwrap();
-        let string = format!("{}", tess.body.unwrap());
-        output.write(string.to_string().as_bytes());
-        // write!(output, "{}", string);
-    };
-
     tauri::Builder::default()
     .setup(|app| {
-
-        std::panic::set_hook(Box::new(move |info| {
-            println!("WE IN DA PANIC THINGY !!!!!!!!!");
-            println!("{}", info);
-            println!("WE IN DA PANIC THINGY !!!!!!!!!");
-        }));
-
         // db
         let db = DB::new();
         db.init();
@@ -61,6 +44,16 @@ async fn main() {
 
         // scraper
         unsafe { SCRAPER.init() };
+
+        let app_handle = app.app_handle().clone();
+        std::panic::set_hook(Box::new(move |info| {
+            println!("{}", info);
+            // let state = state;
+            async_std::task::block_on(async {
+                unsafe { SCRAPER.browser.as_mut().unwrap().close().await.unwrap(); };
+                app_handle.state::<IMAP>().logout().await.unwrap();
+            })
+        }));
 
         // ctx
         let app_handle = app.app_handle().clone();
