@@ -96,7 +96,7 @@ function App() {
       await invoke("create_task", {
         args: {
           domain_id: "664d0d9809f4ac3e17d1f8b3",
-          domain: "wearegenz.tech"
+          domain: "trythegenz.live"
         }
       })
     )
