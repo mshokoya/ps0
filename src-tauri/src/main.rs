@@ -14,16 +14,11 @@ use actions::apollo::{
     login::index::login_task,
     create::index::create_task
 };
-use async_std::task::sleep;
 use libs::taskqueue::index::TaskQueue;
 use libs::{db::index::DB, scraper::Scraper};
 use libs::imap::IMAP;
 use once_cell::sync::Lazy;
-use polodb_core::bson::oid::ObjectId;
 use std::env;
-use std::fs::File;
-use std::io::Write;
-use std::time::Duration;
 use tauri::Manager;
 
 static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
@@ -31,18 +26,6 @@ static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 #[async_std::main]
 // https://stackoverflow.com/questions/73551266/tauri-is-there-some-way-to-access-apphandler-or-window-in-regular-struct-or-sta
 async fn main() {
-
-    let test = IMAP::new();
-    let w = test.watch().await;
-    loop {
-        let tess = w.recv().await.unwrap();
-        println!("{:?}", tess)
-        // let mut output = File::create("file2.txt").unwrap();
-        // let string = format!("{}", tess.body.unwrap());
-        // output.write(string.to_string());
-        // write!(output, "{}", string);
-    };
-
     tauri::Builder::default()
     .setup(|app| {
         // db

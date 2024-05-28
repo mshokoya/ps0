@@ -1644,6 +1644,7 @@ dependencies = [
  "polodb_core",
  "rand_pwd",
  "regex",
+ "scopeguard",
  "serde",
  "serde_json",
  "simple_password_generator",

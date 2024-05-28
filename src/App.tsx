@@ -94,8 +94,10 @@ function App() {
   const handleCreate = async () => {
     console.log(
       await invoke("create_task", {
-        account_id: "664d0d9809f4ac3e17d1f8b3",
-        domain: "testatest.com"
+        args: {
+          domain_id: "664d0d9809f4ac3e17d1f8b3",
+          domain: "wearegenz.tech"
+        }
       })
     )
   }

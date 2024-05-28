@@ -32,6 +32,7 @@ fake = "2.9.2"
 async-imap = "0.9.7"
 async-native-tls = "0.5.0"
 mailparse = "0.15.0"
+scopeguard = "1.2.0"
 
 
 [features]

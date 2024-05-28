@@ -7,6 +7,7 @@ use async_std::{
 
 use async_imap::{self, Session};
 use async_native_tls::{TlsConnector, TlsStream};
+use fake::{faker::{self, internet::en::Username}, Fake};
 use futures::TryStreamExt;
 use mailparse::*;
 use regex::Regex;
@@ -48,7 +49,7 @@ impl IMAP {
     let tls = TlsConnector::new().use_sni(true).connect("google.com", stream).await?;
     let client = async_imap::Client::new(tls);
 
-    let mut session = client.login("miom", "ibgqfdskegtskvog")
+    let mut session = client.login("mikm", "ibgqnog")
     .await
     .map_err(|(err, _client)| err)?;
 
@@ -64,7 +65,7 @@ impl IMAP {
       let mut imap_clone = imap_clone.lock().await;
       loop {
         sleep(Duration::from_secs(7)).await;
-        let message_stream = imap_clone.as_mut().unwrap().fetch("1:10", "RFC822").await.unwrap();
+        let message_stream = imap_clone.as_mut().unwrap().fetch("1:*", "RFC822").await.unwrap();
         let messages: Vec<_> = message_stream.try_collect().await.unwrap();
         for message in messages.iter() {
           if let Some(body) = message.body() {
@@ -107,12 +108,13 @@ impl IMAP {
   }
 
   pub async fn watch(&self) -> Receiver<IMAPEnvelope> {
-    if self.imap.lock().await.is_none() {
+    let imap_guard = self.imap.lock().await;
+    if imap_guard.as_ref().is_none() {
+      drop(imap_guard);
       self.connect().await.unwrap();
     }
     let mut watching = self.watching.lock().await;
     *watching += 1;
-
     self.receiver.clone()
   }
 
@@ -120,12 +122,15 @@ impl IMAP {
     let mut watching = self.watching.lock().await;
 
     if *watching == 1 {
-      if self.imap.lock().await.is_some() {
+      let mut poll_guard = self.poll.lock().await;
+      if let Some(poll) = poll_guard.take() {
+        poll.cancel().await;
         self.logout().await.unwrap();
-      }
+        
+      };
       *watching = 0;
     } else if *watching > 1 {
-      *watching -= 1 
+      *watching -= 1; 
     }
   }
 
