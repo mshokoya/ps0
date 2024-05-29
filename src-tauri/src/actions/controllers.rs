@@ -1,5 +1,4 @@
-use polodb_core::bson::Document;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 // use uuid::Uuid;
 
@@ -8,7 +7,7 @@ use crate::libs::{
 };
 
 use super::apollo::{
-    check::index::apollo_check, create::index::apollo_create, demine::index::apollo_demine, login::index::apollo_login
+    check::index::apollo_check, confirm::index::apollo_confirm, create::index::apollo_create, demine::index::apollo_demine, login::index::apollo_login, scrape::index::apollo_scrape
 };
 
 #[derive(Serialize, Debug)]
@@ -57,7 +56,9 @@ pub enum TaskType {
     ApolloCheck,
     ApolloDemine,
     ApolloLogin,
-    ApolloCreate
+    ApolloCreate,
+    ApolloConfirm,
+    ApolloScrape,
 }
 
 impl TaskType {
@@ -71,6 +72,8 @@ impl TaskType {
             TaskType::ApolloDemine => apollo_demine(ctx, args).await,
             TaskType::ApolloLogin => apollo_login(ctx, args).await,
             TaskType::ApolloCreate => apollo_create(ctx, args).await,
+            TaskType::ApolloConfirm => apollo_confirm(ctx, args).await,
+            TaskType::ApolloScrape => apollo_scrape(ctx, args).await,
             _ => Ok(None),
         }
     }

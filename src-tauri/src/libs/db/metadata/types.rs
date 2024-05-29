@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use polodb_core::bson::{oid::ObjectId, to_document, Document};
+use polodb_core::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 // use ts_rs::TS;
@@ -16,11 +16,11 @@ use serde_json::Value;
 
 // #[derive(TS)]
 // #[ts(export)]
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
     _id: ObjectId,
     url: String,
-    params: HashMap<String, Value>,
+    params: HashMap<String, String>,
     name: String,
     scrapes: Vec<Scrapes>,
     accounts: Vec<Accounts>,
@@ -31,7 +31,7 @@ pub struct Metadata {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Accounts {
     account_id: ObjectId,
-    range: [u32; 2],
+    chunk: [u32; 2],
 }
 
 // #[derive(TS)]

@@ -6,6 +6,7 @@ mod actions;
 mod libs;
 
 use actions::apollo::{
+    confirm::index::confirm_task,
     update::index::update_account,
     delete::index::delete_accounts,
     get::index::get_accounts,
@@ -62,6 +63,7 @@ async fn main() {
             demine_task,
             login_task,
             create_task,
+            confirm_task
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

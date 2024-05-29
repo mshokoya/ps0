@@ -5,12 +5,11 @@ use fake::faker::name::en::{FirstName, LastName};
 use polodb_core::bson::oid::ObjectId;
 use simple_password_generator::PasswordGenerator;
 use anyhow::{anyhow, Result};
-use async_std::task::{block_on, sleep};
+use async_std::task::sleep;
 use polodb_core::bson::{doc, to_document, Uuid};
 use serde_json::{from_value, Value};
 use tauri::{AppHandle, Manager};
 use fake::Fake;
-use scopeguard::{defer, guard};
 
 use crate::actions::apollo::lib::util::wait_for_selector;
 use crate::actions::controllers::TaskType;

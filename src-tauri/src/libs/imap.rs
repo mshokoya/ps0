@@ -49,7 +49,7 @@ impl IMAP {
     let tls = TlsConnector::new().use_sni(true).connect("google.com", stream).await?;
     let client = async_imap::Client::new(tls);
 
-    let mut session = client.login("mikeydl.com", "ibgqnrpzog")
+    let mut session = client.login("mikedl.com", "ibgzog")
     .await
     .map_err(|(err, _client)| err)?;
 
