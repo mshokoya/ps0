@@ -28,28 +28,6 @@ use crate::{
     SCRAPER,
 };
 
-const MAX_LEADS_ON_PAGE: u8 = 25;
-
-#[derive(Deserialize)]
-struct ScrapeTaskArgs {
-  pub name: String,
-  pub meta_id: String,
-  pub url: String,
-  pub accounts: Vec<Accounts>,
-  pub timeout: TQTimeout,
-  pub max_leads_limit: u64,
-  pub task_id: String,
-  pub params: HashMap<String, String>,
-}
-
-#[derive(Deserialize)]
-struct ScrapeActionArgs {
-  pub url: String,
-  pub chunk: [u64; 2],
-  pub account_id: String,
-  pub metadata: Metadata,
-  pub max_leads_limit: u64,
-}
 
 #[tauri::command]
 pub fn scrape_task(ctx: AppHandle, args: Value) -> R {
@@ -101,7 +79,7 @@ pub async fn apollo_scrape(
 
     log_into_apollo(&ctx, &account).await?;
 
-    // let mut url = set_range_in_apollo_url(args.url, args.chunk).await;
+    let mut url = set_range_in_apollo_url(args.url, args.chunk).await;
     // url = set_page_in_apollo_url(args.url, 1).await;
 
     let apollo_max_page = if account.domain.contains("gmail") || 
@@ -196,16 +174,3 @@ fn init_meta(db: &State<DB>, args: &ScrapeTaskArgs) -> Metadata {
 }
 
 
-struct PreviousLead {
-  name: String,
-}
-
-impl PreviousLead {
-  fn get(&self) -> String {
-    self.name
-  }
-
-  fn set(&self, name: String) {
-    self.name = name;
-  }
-}

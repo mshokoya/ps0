@@ -1649,7 +1649,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "ts-rs",
- "urlparse",
+ "url-build-parse",
  "uuid",
 ]
 
@@ -5288,10 +5288,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "urlparse"
-version = "0.7.3"
+name = "url-build-parse"
+version = "12.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "110352d4e9076c67839003c7788d8604e24dcded13e0b375af3efaa8cf468517"
+checksum = "d03efb64c6aa8817150c57dfe74df09c059b89ad1b68810b91d986da88b6fb16"
+dependencies = [
+ "url-search-params",
+]
+
+[[package]]
+name = "url-search-params"
+version = "12.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a4b5120022ae7548d0005c9e99f9a695a33bcd732deffb578f7e85516dbb7a6"
 
 [[package]]
 name = "utf-8"

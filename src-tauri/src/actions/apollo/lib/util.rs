@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use async_std::task;
 use chromiumoxide::{Element, Page};
 use serde::{Deserialize, Serialize};
+use url_build_parse::{build_url, parse_url};
 
 use crate::libs::db::accounts::types::Cookies;
 
@@ -111,4 +112,23 @@ pub fn time_ms() -> u128 {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_millis()
+}
+
+pub fn set_range_in_url(url: String, chunk: [u64; 2]) -> String {
+    let p_url = parse_url(url.as_str()).unwrap();
+    p_url.query.unwrap()["organizationNumEmployeesRanges[]"] = format!("{}%2C{}", chunk[0], chunk[1]);
+    build_url(p_url).unwrap().to_string()
+}
+
+pub fn set_page_in_url(url: String, page: String) -> String {
+    let p_url = parse_url(url.as_str()).unwrap();
+    p_url.query.unwrap()["page"] = page;
+    build_url(p_url).unwrap().to_string()
+}
+
+pub fn get_page_in_url(url: String, chunk: [u64; 2]) -> Option<String> {
+    match parse_url(url.as_str()).unwrap().query.unwrap().get("page") {
+        Some(page) => Some(page.clone()),
+        None => None
+    }
 }
