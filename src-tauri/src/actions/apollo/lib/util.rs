@@ -105,3 +105,10 @@ pub async fn wait_for_selector(
         "[Error - wait_for_selector]: Failed to find selector"
     ))
 }
+
+pub fn time_ms() -> u128 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
+}

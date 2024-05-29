@@ -1,10 +1,16 @@
+use std::cmp;
 use std::collections::HashMap;
+use std::time::Duration;
+use async_std::task::sleep;
+use fake::faker::internet::en::Username;
+use fake::Fake;
 use serde::Deserialize;
 use anyhow::{anyhow, Result};
 use polodb_core::bson::{doc, to_bson, Uuid};
 use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager, State};
-use crate::actions::apollo::lib::index::log_into_apollo;
+use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
+use crate::actions::apollo::lib::util::time_ms;
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::Account;
 use crate::libs::db::metadata::types::{Accounts, Metadata, Scrapes};
@@ -31,7 +37,7 @@ struct ScrapeTaskArgs {
   pub url: String,
   pub accounts: Vec<Accounts>,
   pub timeout: TQTimeout,
-  pub max_leads: u64,
+  pub max_leads_limit: u64,
   pub task_id: String,
   pub params: HashMap<String, String>,
 }
@@ -41,8 +47,8 @@ struct ScrapeActionArgs {
   pub url: String,
   pub chunk: [u64; 2],
   pub account_id: String,
-  pub metadata: String,
-  pub max_leads: u64,
+  pub metadata: Metadata,
+  pub max_leads_limit: u64,
 }
 
 #[tauri::command]
@@ -62,7 +68,7 @@ pub fn scrape_task(ctx: AppHandle, args: Value) -> R {
         "range": acc.get("range").as_ref().unwrap(),
         "account_id": acc.get("account_id").as_ref().unwrap(),
         "metadata": &metadata,
-        "max_leads": &fmt_args.max_leads
+        "max_leads_limit": &fmt_args.max_leads_limit
       });
 
       ctx.state::<TaskQueue>().w_enqueue(Task {
@@ -95,19 +101,69 @@ pub async fn apollo_scrape(
 
     log_into_apollo(&ctx, &account).await?;
 
-    let mut url = set_range_in_apollo_url(args.url, args.chunk);
-    url = set_page_in_apollo_url(args.url, 1);
+    // let mut url = set_range_in_apollo_url(args.url, args.chunk).await;
+    // url = set_page_in_apollo_url(args.url, 1).await;
 
     let apollo_max_page = if account.domain.contains("gmail") || 
     account.domain.contains("hotmail") ||
-    account.domain.contains("outlook") 
-    { 3 } else { 5 };
+    account.domain.contains("outlook") { 3 } else { 5 };
 
-    let prev_name = PreviousLead {
+    let prev_lead = PreviousLead {
       name: "".to_string(),
     };
 
-    
+    let old_credits = apollo_login_credits_info(&ctx).await?;
+
+    while (args.max_leads_limit > 0) {
+      let credits_left = old_credits.credits_limit - old_credits.credits_used;
+      if credits_left <= 0 { return Ok(None) }
+
+      let mut num_leads_to_scrape = cmp::min(args.max_leads_limit, credits_left.into());
+      num_leads_to_scrape = cmp::min(num_leads_to_scrape, MAX_LEADS_ON_PAGE.into());
+      if num_leads_to_scrape <= 0 { return Ok(None) }
+
+      let scrape_id = Uuid::new().to_string();
+      let list_name = Username().fake();
+  
+      // update_db_for_new_scrape(&ctx.task_id, &metadata, &account, &list_name, &scrape_id);
+  
+      // page.goto(url).await goToApolloSearchUrl
+
+      let data = add_leads_to_list_and_scrape(&ctx, &num_leads_to_scrape, &list_name, prev_lead).await;
+
+      if data.is_none() || data.unwrap().len() == 0 {
+        return Ok(None)
+      }
+
+      sleep(Duration::from_secs(3)).await;
+
+      let new_credits = apollo_login_credits_info(&ctx).await?;
+      let cookies = get_browser_cookies(&ctx).await;
+      let total_scraped = data.unwrap().len();
+      account.total_scraped_recently += total_scraped;
+      account.history.push(vec![total_scraped, time_ms(), &list_name, &scrape_id]);
+
+      let save = save_scrape_to_db(
+        &ctx,
+        &account,
+        &args.metadata,
+        &new_credits,
+        &cookies,
+        &list_name,
+        &args.chunk,
+        &data.unwrap(),
+      );
+
+      let mut next_page: u8 = get_page_in_url(url) + 1;
+      next_page = if next_page > apollo_max_page { 1 } else { next_page };
+      url = set_page_in_url(&url, next_page);
+      args.metadata = save.metadata;
+      account = save.account;
+      args.max_leads_limit = args.max_leads_limit - total_scraped;
+      old_credits = new_credits;
+    }
+
+
 
     Err(anyhow!("Failed to signup: please try again"))
 }
@@ -138,6 +194,7 @@ fn init_meta(db: &State<DB>, args: &ScrapeTaskArgs) -> Metadata {
     }
   }
 }
+
 
 struct PreviousLead {
   name: String,

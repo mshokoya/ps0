@@ -26,6 +26,7 @@ pub struct Account {
     pub last_used: Option<u64>,
     pub cookies: Option<Cookies>,
     pub history: Vec<History>,
+    pub total_scraped_recently: Option<u16>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
