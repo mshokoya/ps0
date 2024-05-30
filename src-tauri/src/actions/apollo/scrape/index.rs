@@ -244,7 +244,8 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   let mut name = "".to_string();
   let mut should_continue = false;
   let mut counter: u8 = 0;
-  while !should_continue && counter < 15 {
+  while !should_continue && counter <= 15 {
+    if counter == 15 { return Err(anyhow!("failed to find to get first table row element")) }
     name = get_first_table_row_name(&page).await?.unwrap();
     if name != prev_lead.get() { should_continue = true; }
     sleep(Duration::from_secs(2)).await;
@@ -270,8 +271,9 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
 
   
   let mut counter = 0;
-  while counter < 5 {
-    let list_input = page.find_elements(&add_to_list_input_selector).await?;
+  while counter <= 5 {
+    if counter == 5 { return Err(anyhow!("failed to find save list input element")) }
+    let list_input = page.find_elements(add_to_list_input_selector).await?;
     if list_input.len() > 1 {
       list_input[1].focus().await?.type_str(&list_name).await?;
       break;
@@ -279,7 +281,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
     sleep(Duration::from_secs(3)).await;
   } 
 
-  let _save_list_btn = page.find_element(&save_list_button_selector).await?.focus().await?.click().await?;
+  let _save_list_btn = page.find_element(save_list_button_selector).await?.focus().await?.click().await?;
 
   // wait_for_selector(&page, &sl_popup_selector, 10, 2).await;
   sleep(Duration::from_secs(5)).await;
@@ -296,6 +298,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
     counter += 1;
     sleep(Duration::from_secs(3)).await;
   }
+
 
 
   todo!()
