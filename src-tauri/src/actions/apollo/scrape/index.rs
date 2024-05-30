@@ -11,7 +11,7 @@ use polodb_core::bson::{doc, to_bson, Uuid};
 use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
-use crate::actions::apollo::lib::util::{set_page_in_url, set_range_in_url, time_ms, wait_for_selector, wait_for_selectors};
+use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, wait_for_selectors};
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::{Account, History};
 use crate::libs::db::metadata;
@@ -96,7 +96,7 @@ pub async fn apollo_scrape(
 
     let old_credits = apollo_login_credits_info(&ctx).await?;
 
-    while (args.max_leads_limit > 0) {
+    while args.max_leads_limit > 0 {
       let credits_left = old_credits.credits_limit - old_credits.credits_used;
       if credits_left <= 0 { return Ok(None) }
 
@@ -125,12 +125,12 @@ pub async fn apollo_scrape(
       sleep(Duration::from_secs(3)).await;
 
       let new_credits = apollo_login_credits_info(&ctx).await?;
-      let cookies = get_browser_cookies(&ctx).await;
-      let total_page_scrape = data.len();
-      *account.total_scraped_recently. += total_page_scrape;
+      let cookies = get_browser_cookies(&page).await?;
+      let total_page_scrape = data.len() as u16;
+      account.total_scraped_recently = account.total_scraped_recently + total_page_scrape;
       account.history.push( History { 
         total_page_scrape: total_page_scrape.clone(), 
-        scrape_time: scrape_time.clone(), 
+        scrape_time: time_ms(), 
         list_name: list_name.clone(),
         scrape_id: scrape_id.clone(),
       });
@@ -148,18 +148,16 @@ pub async fn apollo_scrape(
         &data.unwrap(),
       );
 
-      let mut next_page: u8 = get_page_in_url(url) + 1;
+      let mut next_page: u8 = get_page_in_url(&url, args.chunk).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
       url = set_page_in_url(&url, next_page);
       args.metadata = save.metadata;
       account = save.account;
-      args.max_leads_limit = args.max_leads_limit - total_scraped;
+      args.max_leads_limit = args.max_leads_limit - total_page_scrape as u64;
       old_credits = new_credits;
     }
 
-
-
-    Err(anyhow!("Failed to signup: please try again"))
+    Ok(None)
 }
 
 fn init_meta(db: &State<DB>, args: &ScrapeTaskArgs) -> Metadata {
@@ -213,7 +211,7 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
   )?;
 
   account.history.push(History {
-    total_page_scrape: None, 
+    total_page_scrape: 0, 
     scrape_time: None, 
     list_name: Some(list_name.to_string()),
     scrape_id: Some(scrape_id.to_string())
@@ -263,7 +261,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   prev_lead.set(name);
 
   let rows = page.find_elements(table_rows_selector).await?;
-  let max_leads = min(*num_leads_to_scrape, rows.len() as u16);
+  let max_leads = min(*num_leads_to_scrape, rows.len() as u64);
 
   for row_idx in 0..max_leads {
     if let Some(el) = rows.get(row_idx as usize) {

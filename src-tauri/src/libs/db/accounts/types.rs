@@ -20,12 +20,12 @@ pub struct Account {
     pub last_used: Option<u64>,
     pub cookies: Option<Cookies>,
     pub history: Vec<History>,
-    pub total_scraped_recently: Option<u16>
+    pub total_scraped_recently: u16
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct History {
-    pub total_page_scrape: u8,
+    pub total_page_scrape: u16,
     pub scrape_time: u128,
     pub list_name: String,
     pub scrape_id: String,
@@ -36,11 +36,12 @@ pub struct Cookies(String);
 
 impl Into<Vec<CookieParam>> for Cookies {
     fn into(self: Self) -> Vec<CookieParam> {
-        let fields: Vec<CookieParse> = serde_json::from_str(&self.0).unwrap();
-        fields
-            .iter()
-            .map(|c| CookieParam::new(c.key.to_owned(), c.value.to_owned()))
-            .collect::<Vec<CookieParam>>()
+        serde_json::from_str::<Vec<CookieParam>>(&self.0).unwrap()
+        // let fields: Vec<CookieParse> = serde_json::from_str(&self.0).unwrap();
+        // fields
+        //     .iter()
+        //     .map(|c| CookieParam::new(c.key.to_owned(), c.value.to_owned()))
+        //     .collect::<Vec<CookieParam>>()
     }
 }
 

@@ -1,9 +1,10 @@
 use std::time::Duration;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use async_std::task;
 use chromiumoxide::{Element, Page};
 use serde::{Deserialize, Serialize};
+use serde_json::to_string;
 use url_build_parse::{build_url, parse_url};
 
 use crate::libs::db::accounts::types::Cookies;
@@ -64,6 +65,10 @@ pub async fn inject_cookies(page: &Page, cookies: &Option<Cookies>) -> Result<()
     Ok(())
 }
 
+pub async fn get_browser_cookies(page: &Page) -> Result<String> {
+    to_string(&page.get_cookies().await?).context("failed to serialize cookies")
+}
+
 pub async fn wait_for_selectors(
     page: &Page,
     selector: &str,
@@ -120,15 +125,15 @@ pub fn set_range_in_url(url: String, chunk: [u64; 2]) -> String {
     build_url(p_url).unwrap().to_string()
 }
 
-pub fn set_page_in_url(url: String, page: u8) -> String {
+pub fn set_page_in_url(url: &str, page: u8) -> String {
     let p_url = parse_url(url.as_str()).unwrap();
     p_url.query.unwrap()["page"] = page.to_string();
     build_url(p_url).unwrap().to_string()
 }
 
-pub fn get_page_in_url(url: String, chunk: [u64; 2]) -> Option<String> {
+pub fn get_page_in_url(url: &str, chunk: [u64; 2]) -> Option<u8> {
     match parse_url(url.as_str()).unwrap().query.unwrap().get("page") {
-        Some(page) => Some(page.clone()),
+        Some(page) => Some(page.parse::<u8>().unwrap()),
         None => None
     }
 }
