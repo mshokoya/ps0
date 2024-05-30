@@ -282,16 +282,19 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   let _save_list_btn = page.find_element(&save_list_button_selector).await?.focus().await?.click().await?;
 
   // wait_for_selector(&page, &sl_popup_selector, 10, 2).await;
-  sleep(Duration::from_secs(2)).await;
+  sleep(Duration::from_secs(5)).await;
 
   page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").await?;
   let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
 
   let mut counter = 0;
   let mut list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
-  while list_name_in_table != list_name && counter < 10 {
+  while list_name_in_table != list_name && counter <= 10 {
+    if counter == 10 { return Err(anyhow!("failed to find save list item")) }
     page.reload().await?;
     list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
+    counter += 1;
+    sleep(Duration::from_secs(3)).await;
   }
 
 
