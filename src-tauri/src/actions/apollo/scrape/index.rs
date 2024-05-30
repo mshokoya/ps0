@@ -299,10 +299,265 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
     sleep(Duration::from_secs(3)).await;
   }
 
+  let _table_row = page.find_element(saved_list_table_row_selector).await?.focus().await?.click().await?;
 
+  wait_for_selector(&page, &table_rows_selector, 10, 2).await?;
 
+  let data = scrape_leads(ctx).await?;
   todo!()
 }
+
+async fn scrape_leads(ctx: &TaskActionCTX) -> Vec<String> {
+  ctx.page.unwrap().evaluate_function(
+    r#"
+    async () => {
+    window.na = "N/A";
+    window.el = {
+      columns: {
+        name: {
+          name: (columnEl) => isEl(columnEl.querySelector(".zp_xVJ20 > a")).innerHTML || na,
+          linkedin: (columnEl) => isEl(columnEl.getElementsByClassName("zp-link zp_OotKe")[0]).href || na
+        },
+        title: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
+        company: {
+          name: (columnEl) => isEl(columnEl.getElementsByClassName("zp_WM8e5 zp_kTaD7")[0]).innerHTML || na,
+          socialsList: (columnEl) => columnEl.getElementsByClassName("zp-link zp_OotKe") || []
+        },
+        location: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
+        employees: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
+        email: {
+          emailButton: (columnEl) => columnEl.getElementsByClassName("zp-button zp_zUY3r zp_jSaSY zp_MCSwB zp_IYteB")[0],
+          emailText: (columnEl) => isEl(columnEl.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0]).innerHTML || na,
+          noEmailText: (columnEl) => isEl(columnEl.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0]).innerHTML || na
+        },
+        industry: (columnEl) => isEl(columnEl.getElementsByClassName("zp_PHqgZ zp_TNdhR")[0]).innerHTML || na,
+        keywords: (columnEl) => columnEl.getElementsByClassName("zp_yc3J_ zp_FY2eJ")
+      },
+      nav: {
+        nextPageButton: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[2],
+        prevPageButton: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[1],
+        toggleFilterVisibility: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[0]
+      },
+      ad: {
+        isAdRow: (trEl) => isEl(trEl).className === "zp_DNo9Q zp_Ub5ME"
+      },
+      errors: {
+        freePlan: {
+          error: () => document.getElementsByClassName("zp_lMRYw zp_YYCg6 zp_iGbgU")[0],
+          closeButton: () => document.getElementsByClassName(
+            "zp-icon mdi mdi-close zp_dZ0gM zp_foWXB zp_j49HX zp_c5Xci"
+          )[0].click()
+        },
+        limitedVersionError: () => document.getElementsByClassName(
+          "apolloio-css-vars-reset zp zp-modal zp_iDDtd zp_APRN8 api-error-modal"
+        )[0]
+      }
+    };
+    window.isEl = (el2) => el2 ? el2 : {};
+    window.scrapeSingleRow = async (tbody) => {
+      const res = {};
+      const columnNames = document.querySelectorAll("th");
+      let tr = tbody.childNodes[0];
+      if (el.ad.isAdRow(tr)) {
+        tr = tbody.childNodes[1];
+      }
+      for (let i = 0; i < columnNames.length; i++) {
+        switch (columnNames[i].innerText) {
+          case "Name":
+            const nameCol = scrapeNameColumn(tr.childNodes[i]);
+            res["Name"] = nameCol.name;
+            res["Firstname"] = nameCol.name.trim().split(" ")[0];
+            res["Lastname"] = nameCol.name.trim().split(" ")[1];
+            res["Linkedin"] = nameCol.linkedin;
+            break;
+          case "Title":
+            res["Title"] = scrapeTitleColumn(tr.childNodes[i]);
+            break;
+          case "Company":
+            const companyCol = scrapeCompanyColumn(tr.childNodes[i]);
+            res["Company Name"] = companyCol.companyName;
+            res["Company Website"] = companyCol.companyWebsite;
+            res["Company Linkedin"] = companyCol.companyLinkedin;
+            res["Company Twitter"] = companyCol.companyTwitter;
+            res["Company Facebook"] = companyCol.companyFacebook;
+            break;
+          case "Quick Actions":
+            res["Email"] = await scrapeActionColumn(tr.childNodes[i]);
+            break;
+          case "Contact Location":
+            res["Company Location"] = scrapeLocationColumn(tr.childNodes[i]);
+            break;
+          case "Employees":
+            res["Employees"] = scrapeEmployeesColumn(tr.childNodes[i]);
+            break;
+          case "Phone":
+            res["Phone"] = scrapePhoneColumn(tr.childNodes[i]);
+            break;
+          case "Industry":
+            res["Industry"] = scrapeIndustryColumn(tr.childNodes[i]);
+            break;
+          case "Keywords":
+            res["Keywords"] = scrapeKeywordsColumn(tr.childNodes[i]);
+        }
+      }
+      return res;
+    };
+    window.scrapeSinglePage = async () => {
+      const allRows = getRows();
+      const data = [];
+      for (const row of allRows) {
+        const singleRow = await scrapeSingleRow(row);
+        if (singleRow)
+          data.push(singleRow);
+      }
+      return data;
+    };
+    window.scrapeNameColumn = (nameColumn) => ({
+      name: el.columns.name.name(nameColumn),
+      linkedin: el.columns.name.linkedin(nameColumn)
+    });
+    window.scrapeTitleColumn = (titleColumn) => el.columns.title(titleColumn);
+    window.scrapeCompanyColumn = (companyColumn) => {
+      return {
+        companyName: el.columns.company.name(companyColumn) || na,
+        companyWebsite: na,
+        companyLinkedin: na,
+        companyTwitter: na,
+        companyFacebook: na,
+        ...Array.from(el.columns.company.socialsList(companyColumn)).reduce(
+          (a, c) => ({
+            ...a,
+            // @ts-ignore
+            ...populateSocialsLinks(c.href)
+          }),
+          {}
+        )
+      };
+    };
+    window.scrapeLocationColumn = (locationColumn) => el.columns.location(locationColumn);
+    window.scrapeEmployeesColumn = (employeesColumn) => el.columns.employees(employeesColumn);
+    window.scrapePhoneColumn = (phoneColumn) => phoneColumn.innerText === "Request Mobile Number" ? na : phoneColumn.innerText;
+    window.scrapePhoneColumn = (phoneColumn) => phoneColumn.innerText === "Request Mobile Number" ? na : phoneColumn.innerText;
+    window.scrapeEmailColumn = async (emailColumn) => {
+      let loopCounter = 0;
+      const loopEnd = 10;
+      let email = "";
+      const emailButton = emailColumn.getElementsByClassName(
+        "zp-button zp_zUY3r zp_jSaSY zp_MCSwB zp_IYteB"
+      )[0];
+      let emailText = emailColumn.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0];
+      let noEmailText = emailColumn.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0];
+      if (emailButton) {
+        emailButton.click();
+        while (!noEmailText && !emailText && loopCounter < loopEnd) {
+          await sleep(15e3);
+          loopCounter++;
+          emailText = emailColumn.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0];
+          noEmailText = emailColumn.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0];
+        }
+        if (emailText) {
+          email = emailText.innerHTML;
+        }
+      } else if (emailText) {
+        email = emailText.innerHTML;
+      }
+      return email ? email : na;
+    };
+    window.scrapeActionColumn = async (emailColumn) => {
+      let loopCounter = 0;
+      const loopEnd = 3;
+      let email = "";
+      const emailButton = emailColumn.querySelector(
+        '[class="zp-button zp_zUY3r zp_n9QPr zp_MCSwB"]'
+      );
+      let emailPopupButton = emailColumn.querySelector(
+        '[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_IYteB"]'
+      );
+      let noEmailButton = emailColumn.querySelector(
+        '[class="zp-button zp_zUY3r zp_BAp0M zp_jSaSY zp_MCSwB zp_IYteB zp_wUX4E zp_wUX4E"]'
+      );
+      if (emailButton) {
+        emailButton.click();
+        while (!emailPopupButton && !noEmailButton && loopCounter < loopEnd) {
+          await sleep(5e3);
+          loopCounter++;
+          emailPopupButton = emailColumn.querySelector(
+            '[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_IYteB"]'
+          );
+          noEmailButton = emailColumn.querySelector(
+            '[class="zp-button zp_zUY3r zp_BAp0M zp_jSaSY zp_MCSwB zp_IYteB zp_wUX4E zp_wUX4E"]'
+          );
+          if (emailPopupButton) {
+            emailPopupButton.click();
+            email = await emailPopupButtonClick(emailPopupButton);
+          } else if (noEmailButton) {
+            email = na;
+          }
+        }
+      } else if (emailPopupButton) {
+        email = await emailPopupButtonClick(emailPopupButton);
+      } else if (noEmailButton) {
+        email = na;
+      }
+      return email ? email : na;
+    };
+    window.emailPopupButtonClick = async (emailPopupButton) => {
+      let email = "-";
+      let loopCounter = 0;
+      const loopEnd = 5;
+      let emailText = document.getElementsByClassName("zp_t08Bv")[0];
+      emailPopupButton.click();
+      if (!emailText) {
+        while (!emailText && loopCounter < loopEnd) {
+          await sleep(1e3);
+          loopCounter++;
+          emailText = document.getElementsByClassName("zp_t08Bv")[0];
+          if (emailText) {
+            email = emailText.innerHTML;
+          }
+        }
+      } else if (emailText) {
+        email = emailText.innerHTML;
+      }
+      emailPopupButton.click();
+      return email;
+    };
+    window.scrapeIndustryColumn = (industryColumn) => el.columns.industry(industryColumn);
+    window.scrapeKeywordsColumn = (keywordsColumn) => {
+      return Array.from(el.columns.keywords(keywordsColumn)).reduce(
+        (a, cv) => a += cv.innerHTML,
+        ""
+      );
+    };
+    window.populateSocialsLinks = (companyLink) => {
+      const data = {};
+      const lowerCompanyLink = companyLink.toLowerCase();
+      if (!lowerCompanyLink.includes("linkedin.") && !lowerCompanyLink.includes("twitter.") && !lowerCompanyLink.includes("facebook.")) {
+        data["companyWebsite"] = companyLink;
+      } else if (lowerCompanyLink.includes("linkedin.")) {
+        data["companyLinkedin"] = companyLink;
+      } else if (lowerCompanyLink.includes("twitter.")) {
+        data["companyTwitter"] = companyLink;
+      } else if (lowerCompanyLink.includes("facebook.")) {
+        data["companyFacebook"] = companyLink;
+      }
+      return data;
+    };
+    window.sleep = (ms) => {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    };
+    window.getRows = () => {
+      return document.getElementsByClassName("zp_RFed0");
+    };
+    return await scrapeSinglePage();
+  }
+    "#,
+  )
+  .await?
+  .into_value()?;
+  todo!()
+}
+
 
 async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   let mut row = page.find_element(r#"[class="zp_BC5Bd"]"#).await?;
