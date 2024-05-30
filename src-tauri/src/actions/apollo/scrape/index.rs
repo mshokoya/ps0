@@ -6,7 +6,7 @@ use chromiumoxide::{Element, Page};
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use serde::Deserialize;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use polodb_core::bson::{doc, to_bson, Uuid};
 use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager, State};
@@ -16,6 +16,7 @@ use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::{Account, History};
 use crate::libs::db::metadata;
 use crate::libs::db::metadata::types::{Metadata, Scrapes};
+use crate::libs::db::records::types::{RecordData, RecordDataArg};
 use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
@@ -307,8 +308,8 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   todo!()
 }
 
-async fn scrape_leads(ctx: &TaskActionCTX) -> Vec<String> {
-  ctx.page.unwrap().evaluate_function(
+async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {
+  ctx.page.as_ref().unwrap().evaluate_function(
     r#"
     async () => {
     window.na = "N/A";
@@ -365,39 +366,39 @@ async fn scrape_leads(ctx: &TaskActionCTX) -> Vec<String> {
         switch (columnNames[i].innerText) {
           case "Name":
             const nameCol = scrapeNameColumn(tr.childNodes[i]);
-            res["Name"] = nameCol.name;
-            res["Firstname"] = nameCol.name.trim().split(" ")[0];
-            res["Lastname"] = nameCol.name.trim().split(" ")[1];
-            res["Linkedin"] = nameCol.linkedin;
+            res["name"] = nameCol.name;
+            res["firstname"] = nameCol.name.trim().split(" ")[0];
+            res["lastname"] = nameCol.name.trim().split(" ")[1];
+            res["linkedin"] = nameCol.linkedin;
             break;
           case "Title":
-            res["Title"] = scrapeTitleColumn(tr.childNodes[i]);
+            res["title"] = scrapeTitleColumn(tr.childNodes[i]);
             break;
           case "Company":
             const companyCol = scrapeCompanyColumn(tr.childNodes[i]);
-            res["Company Name"] = companyCol.companyName;
-            res["Company Website"] = companyCol.companyWebsite;
-            res["Company Linkedin"] = companyCol.companyLinkedin;
-            res["Company Twitter"] = companyCol.companyTwitter;
-            res["Company Facebook"] = companyCol.companyFacebook;
+            res["company_name"] = companyCol.companyName;
+            res["company_website"] = companyCol.companyWebsite;
+            res["company_linkedin"] = companyCol.companyLinkedin;
+            res["company_twitter"] = companyCol.companyTwitter;
+            res["company_facebook"] = companyCol.companyFacebook;
             break;
           case "Quick Actions":
-            res["Email"] = await scrapeActionColumn(tr.childNodes[i]);
+            res["email_1"] = await scrapeActionColumn(tr.childNodes[i]);
             break;
           case "Contact Location":
-            res["Company Location"] = scrapeLocationColumn(tr.childNodes[i]);
+            res["company_location"] = scrapeLocationColumn(tr.childNodes[i]);
             break;
           case "Employees":
-            res["Employees"] = scrapeEmployeesColumn(tr.childNodes[i]);
+            res["employees"] = scrapeEmployeesColumn(tr.childNodes[i]);
             break;
           case "Phone":
-            res["Phone"] = scrapePhoneColumn(tr.childNodes[i]);
+            res["phone"] = scrapePhoneColumn(tr.childNodes[i]);
             break;
           case "Industry":
-            res["Industry"] = scrapeIndustryColumn(tr.childNodes[i]);
+            res["industry"] = scrapeIndustryColumn(tr.childNodes[i]);
             break;
           case "Keywords":
-            res["Keywords"] = scrapeKeywordsColumn(tr.childNodes[i]);
+            res["keywords"] = scrapeKeywordsColumn(tr.childNodes[i]);
         }
       }
       return res;
@@ -554,8 +555,7 @@ async fn scrape_leads(ctx: &TaskActionCTX) -> Vec<String> {
     "#,
   )
   .await?
-  .into_value()?;
-  todo!()
+  .into_value::<Vec<RecordDataArg>>().context("Failed To collect and parce leads")
 }
 
 
