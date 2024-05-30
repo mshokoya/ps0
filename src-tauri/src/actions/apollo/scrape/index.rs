@@ -2,7 +2,7 @@ use std::cmp::{self, max, min};
 use std::thread::spawn;
 use std::time::Duration;
 use async_std::task::{block_on, sleep, spawn};
-use chromiumoxide::Page;
+use chromiumoxide::{Element, Page};
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use serde::Deserialize;
@@ -11,7 +11,7 @@ use polodb_core::bson::{doc, to_bson, Uuid};
 use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
-use crate::actions::apollo::lib::util::{set_page_in_url, set_range_in_url, time_ms, wait_for_selector};
+use crate::actions::apollo::lib::util::{set_page_in_url, set_range_in_url, time_ms, wait_for_selector, wait_for_selectors};
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::{Account, History};
 use crate::libs::db::metadata;
@@ -266,7 +266,33 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   if list_button.len() == 0 { return Err(anyhow!("failed to find list button")) }
   list_button[1].focus().await?.click().await?;
 
+  let list_button_2 = wait_for_selector(&page, r#"[class="zp-menu-item zp_fZtsJ zp_pEvFx"]"#, 10, 2).await?.focus().await?.click().await?;
 
+  
+  let mut counter = 0;
+  while counter < 5 {
+    let list_input = page.find_elements(&add_to_list_input_selector).await?;
+    if list_input.len() > 1 {
+      list_input[1].focus().await?.type_str(&list_name).await?;
+      break;
+    }
+    sleep(Duration::from_secs(3)).await;
+  } 
+
+  let _save_list_btn = page.find_element(&save_list_button_selector).await?.focus().await?.click().await?;
+
+  // wait_for_selector(&page, &sl_popup_selector, 10, 2).await;
+  sleep(Duration::from_secs(2)).await;
+
+  page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").await?;
+  let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
+
+  let mut counter = 0;
+  let mut list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
+  while list_name_in_table != list_name && counter < 10 {
+    page.reload().await?;
+    list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
+  }
 
 
   todo!()
