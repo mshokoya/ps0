@@ -119,20 +119,20 @@ pub fn time_ms() -> u128 {
         .as_millis()
 }
 
-pub fn set_range_in_url(url: String, chunk: [u64; 2]) -> String {
-    let p_url = parse_url(url.as_str()).unwrap();
+pub fn set_range_in_url(url: &str, chunk: [u64; 2]) -> String {
+    let p_url = parse_url(url).unwrap();
     p_url.query.unwrap()["organizationNumEmployeesRanges[]"] = format!("{}%2C{}", chunk[0], chunk[1]);
     build_url(p_url).unwrap().to_string()
 }
 
 pub fn set_page_in_url(url: &str, page: u8) -> String {
-    let p_url = parse_url(url.as_str()).unwrap();
+    let p_url = parse_url(url).unwrap();
     p_url.query.unwrap()["page"] = page.to_string();
     build_url(p_url).unwrap().to_string()
 }
 
 pub fn get_page_in_url(url: &str, chunk: [u64; 2]) -> Option<u8> {
-    match parse_url(url.as_str()).unwrap().query.unwrap().get("page") {
+    match parse_url(url).unwrap().query.unwrap().get("page") {
         Some(page) => Some(page.parse::<u8>().unwrap()),
         None => None
     }

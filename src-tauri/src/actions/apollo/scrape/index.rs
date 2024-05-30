@@ -1,24 +1,20 @@
-use std::cmp::{self, max, min};
-use std::thread::spawn;
+use std::cmp::{self, min};
 use std::time::Duration;
-use async_std::task::{block_on, sleep, spawn};
-use chromiumoxide::{Element, Page};
+use async_std::task::sleep;
+use chromiumoxide::Page;
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use polodb_core::bson::oid::ObjectId;
-use serde::Deserialize;
 use anyhow::{anyhow, Context, Result};
 use polodb_core::bson::{doc, to_bson, Document, Uuid};
 use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager, State};
-use uuid::Uuid;
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
-use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, wait_for_selectors, CreditsInfo};
+use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::{Account, History};
-use crate::libs::db::metadata;
 use crate::libs::db::metadata::types::{Metadata, Scrapes};
-use crate::libs::db::records::types::{Record, RecordData, RecordDataArg};
+use crate::libs::db::records::types::RecordDataArg;
 use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
@@ -73,7 +69,7 @@ pub async fn apollo_scrape(
     mut ctx: TaskActionCTX,
     args: Option<Value>,
 ) -> Result<Option<Value>> {
-    let args: ScrapeActionArgs = from_value(args.unwrap())?;
+    let mut args: ScrapeActionArgs = from_value(args.unwrap())?;
     ctx.page =  Some(unsafe { SCRAPER.incog().await? });
     let page = ctx.page.as_ref().unwrap();
     let db = ctx.handle.state::<DB>();
@@ -85,7 +81,7 @@ pub async fn apollo_scrape(
 
     log_into_apollo(&ctx, &account).await?;
 
-    let mut url = set_range_in_url(args.url, args.chunk);
+    let mut url = set_range_in_url(&args.url, args.chunk);
     url = set_page_in_url(&args.url, 1);
 
     let apollo_max_page = if account.domain.contains("gmail") || 
@@ -96,7 +92,7 @@ pub async fn apollo_scrape(
       name: "".to_string(),
     };
 
-    let old_credits = apollo_login_credits_info(&ctx).await?;
+    let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
       let credits_left = old_credits.credits_limit - old_credits.credits_used;
@@ -130,11 +126,11 @@ pub async fn apollo_scrape(
       let cookies = get_browser_cookies(&page).await?;
       let total_page_scrape = data.len() as u16;
 
-      let md = args.metadata.scrapes.last().as_mut().unwrap();
+      let md = args.metadata.scrapes.last_mut().unwrap();
       md.length = total_page_scrape as u8;
 
       account.total_scraped_recently = account.total_scraped_recently + total_page_scrape;
-      let acc_his = account.history.last().as_mut().unwrap();
+      let acc_his = account.history.last_mut().unwrap();
       acc_his.total_page_scrape = total_page_scrape.clone();
 
 
@@ -144,16 +140,17 @@ pub async fn apollo_scrape(
         &args.metadata,
         &new_credits,
         &cookies,
-        &data,
-        "0:0:0:0:8080".to_string()
-        scrape_id
-      ).await;
+        data,
+        "0:0:0:0:8080",
+        &scrape_id
+      ).await?;
 
       let mut next_page: u8 = get_page_in_url(&url, args.chunk).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
       url = set_page_in_url(&url, next_page);
-      args.metadata = save.metadata;
-      account = save.account;
+      account = save.0;
+      args.metadata = save.1;
+      
       args.max_leads_limit = args.max_leads_limit - total_page_scrape as u64;
       old_credits = new_credits;
     }
@@ -237,10 +234,10 @@ async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
 
 async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: &u64, list_name: &str, prev_lead: &PreviousLead) -> Result<Vec<RecordDataArg>> {
   let table_rows_selector = r#"[class="zp_RFed0"]"#;
-  let checkbox_selector = r#"[class="zp_fwjCX"]"#;
+  // let checkbox_selector = r#"[class="zp_fwjCX"]"#;
   let add_to_list_input_selector = r#"[class="Select-input "]"#;
   let save_list_button_selector = r#"[class="zp-button zp_zUY3r"][type="submit"]"#;
-  let sl_popup_selector = r#"[class="zp_lMRYw zp_yHIi8"]"#;
+  // let sl_popup_selector = r#"[class="zp_lMRYw zp_yHIi8"]"#;
   let saved_list_table_row_selector = r#"[class="zp_cWbgJ"]"#;
   let pagination_info_selector = r#"[class="zp_VVYZh"]"#;
 
@@ -274,7 +271,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   if list_button.len() == 0 { return Err(anyhow!("failed to find list button")) }
   list_button[1].focus().await?.click().await?;
 
-  let list_button_2 = wait_for_selector(&page, r#"[class="zp-menu-item zp_fZtsJ zp_pEvFx"]"#, 10, 2).await?.focus().await?.click().await?;
+  let _list_button_2 = wait_for_selector(&page, r#"[class="zp-menu-item zp_fZtsJ zp_pEvFx"]"#, 10, 2).await?.focus().await?.click().await?;
 
   
   let mut counter = 0;
@@ -286,6 +283,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
       break;
     }
     sleep(Duration::from_secs(3)).await;
+    counter += 1;
   } 
 
   let _save_list_btn = page.find_element(save_list_button_selector).await?.focus().await?.click().await?;
@@ -302,15 +300,14 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
     if counter == 10 { return Err(anyhow!("failed to find save list item")) }
     page.reload().await?;
     list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
-    counter += 1;
     sleep(Duration::from_secs(3)).await;
+    counter += 1;
   }
 
   let _table_row = page.find_element(saved_list_table_row_selector).await?.focus().await?.click().await?;
 
   wait_for_selector(&page, &table_rows_selector, 10, 2).await?;
 
-  
   scrape_leads(ctx).await
 }
 
@@ -571,7 +568,7 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   Ok(row.inner_text().await?)
 }
 
-async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: String, data: Vec<RecordDataArg>, proxy: String, scrape_id: String) -> Result<(Account, Metadata)> {
+async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, proxy: &str, scrape_id: &str) -> Result<(Account, Metadata)> {
   let db_state = ctx.handle.state::<DB>();
   let db = db_state.db.lock().unwrap();
 
