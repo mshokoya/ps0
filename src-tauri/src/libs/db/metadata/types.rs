@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use polodb_core::bson::oid::ObjectId;
+use polodb_core::bson::{oid::ObjectId, Uuid};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 // use ts_rs::TS;
@@ -18,38 +18,38 @@ use serde_json::Value;
 // #[ts(export)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
-    _id: ObjectId,
-    url: String,
-    params: HashMap<String, String>,
-    name: String,
-    scrapes: Vec<Scrapes>,
-    accounts: Vec<Accounts>,
+    pub _id: String,
+    pub url: String,
+    pub params: HashMap<String, String>,
+    pub name: String,
+    pub scrapes: Vec<Scrapes>,
+    pub accounts: Vec<Accounts>,
 }
 
 // #[derive(TS)]
 // #[ts(export)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Accounts {
-    account_id: ObjectId,
-    chunk: [u32; 2],
+    pub account_id: String,
+    pub chunk: [u32; 2],
 }
 
 // #[derive(TS)]
 // #[ts(export)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Scrapes {
-    scrape_id: ObjectId,
-    list_name: String,
-    length: u8,
-    data: u64,
+    pub scrape_id: String,
+    pub list_name: String,
+    pub length: u8,
+    pub date: u128,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MetadataArg {
-    _id: Option<ObjectId>,
-    url: Option<String>,
-    params: Option<HashMap<String, Value>>,
-    name: Option<String>,
-    scrapes: Option<Vec<Scrapes>>,
-    accounts: Option<Vec<Accounts>>,
+    pub _id: Option<String>,
+    pub url: Option<String>,
+    pub params: Option<HashMap<String, Value>>,
+    pub name: Option<String>,
+    pub scrapes: Option<Vec<Scrapes>>,
+    pub accounts: Option<Vec<Accounts>>,
 }

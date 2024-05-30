@@ -4,24 +4,24 @@ use serde::Deserialize;
 use crate::libs::{db::metadata::types::{Accounts, Metadata}, taskqueue::types::TQTimeout};
 
 
-const MAX_LEADS_ON_PAGE: u8 = 25;
+pub const MAX_LEADS_ON_PAGE: u8 = 25;
 
-struct PreviousLead {
-  name: String,
+pub struct PreviousLead {
+  pub name: String,
 }
 
 impl PreviousLead {
-  fn get(&self) -> String {
-    self.name
+  pub fn get(&self) -> &str {
+    &self.name
   }
 
-  fn set(&self, name: String) {
+  pub fn set(&self, name: String) {
     self.name = name;
   }
 }
 
 #[derive(Deserialize)]
-struct ScrapeTaskArgs {
+pub struct ScrapeTaskArgs {
   pub name: String,
   pub meta_id: String,
   pub url: String,
@@ -33,7 +33,7 @@ struct ScrapeTaskArgs {
 }
 
 #[derive(Deserialize)]
-struct ScrapeActionArgs {
+pub struct ScrapeActionArgs {
   pub url: String,
   pub chunk: [u64; 2],
   pub account_id: String,

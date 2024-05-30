@@ -120,9 +120,9 @@ pub fn set_range_in_url(url: String, chunk: [u64; 2]) -> String {
     build_url(p_url).unwrap().to_string()
 }
 
-pub fn set_page_in_url(url: String, page: String) -> String {
+pub fn set_page_in_url(url: String, page: u8) -> String {
     let p_url = parse_url(url.as_str()).unwrap();
-    p_url.query.unwrap()["page"] = page;
+    p_url.query.unwrap()["page"] = page.to_string();
     build_url(p_url).unwrap().to_string()
 }
 

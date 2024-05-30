@@ -1,14 +1,8 @@
 use chromiumoxide::cdp::browser_protocol::network::CookieParam;
-use polodb_core::bson::{
-    oid::ObjectId, serde_helpers::serialize_object_id_as_hex_string, to_document, Document
-};
 use serde::{Deserialize, Serialize};
-// use uuid::Uuid;
-use crate::libs::db::entity::EntityTrait;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Account {
-
     pub _id: String,
     pub domain: String, // enum Domain
     pub trial_time: Option<u64>,
@@ -34,7 +28,7 @@ pub struct History {
     pub total_page_scrape: Option<u8>,
     pub scrape_time: Option<u64>,
     pub list_name: Option<String>,
-    pub scrape_id: Option<ObjectId>,
+    pub scrape_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
