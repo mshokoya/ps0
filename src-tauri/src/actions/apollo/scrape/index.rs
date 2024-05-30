@@ -76,7 +76,7 @@ pub async fn apollo_scrape(
     let page = ctx.page.as_ref().unwrap();
     let db = ctx.handle.state::<DB>();
     
-    let account = db.find_one::<Account>(
+    let mut account = db.find_one::<Account>(
       Entity::Account,
       Some(doc! {"_id": &args.account_id})
     ).unwrap();
@@ -116,9 +116,9 @@ pub async fn apollo_scrape(
         &num_leads_to_scrape, 
         &list_name,
         &prev_lead
-      ).await;
+      ).await?;
 
-      if data.is_none() || data.unwrap().len() == 0 {
+      if data.len() == 0 {
         return Ok(None)
       }
 
@@ -126,9 +126,16 @@ pub async fn apollo_scrape(
 
       let new_credits = apollo_login_credits_info(&ctx).await?;
       let cookies = get_browser_cookies(&ctx).await;
-      let total_scraped = data.unwrap().len();
-      account.total_scraped_recently += total_scraped;
-      account.history.push(vec![total_scraped, time_ms(), &list_name, &scrape_id]);
+      let total_page_scrape = data.len();
+      *account.total_scraped_recently. += total_page_scrape;
+      account.history.push( History { 
+        total_page_scrape: total_page_scrape.clone(), 
+        scrape_time: scrape_time.clone(), 
+        list_name: list_name.clone(),
+        scrape_id: scrape_id.clone(),
+      });
+        // vec![total_scraped, time_ms(), &list_name, &scrape_id]
+      
 
       let save = save_scrape_to_db(
         &ctx,
@@ -229,7 +236,7 @@ async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
   Ok(())
 }
 
-async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: &u16, list_name: &str, prev_lead: &PreviousLead) -> Result<()> {
+async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: &u64, list_name: &str, prev_lead: &PreviousLead) -> Result<Vec<RecordDataArg>> {
   let table_rows_selector = r#"[class="zp_RFed0"]"#;
   let checkbox_selector = r#"[class="zp_fwjCX"]"#;
   let add_to_list_input_selector = r#"[class="Select-input "]"#;
@@ -304,8 +311,8 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
 
   wait_for_selector(&page, &table_rows_selector, 10, 2).await?;
 
-  let data = scrape_leads(ctx).await?;
-  todo!()
+  
+  scrape_leads(ctx).await
 }
 
 async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {

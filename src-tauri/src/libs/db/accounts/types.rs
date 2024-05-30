@@ -25,10 +25,10 @@ pub struct Account {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct History {
-    pub total_page_scrape: Option<u8>,
-    pub scrape_time: Option<u64>,
-    pub list_name: Option<String>,
-    pub scrape_id: Option<String>,
+    pub total_page_scrape: u8,
+    pub scrape_time: u128,
+    pub list_name: String,
+    pub scrape_id: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
