@@ -10,13 +10,14 @@ use anyhow::{anyhow, Context, Result};
 use polodb_core::bson::{doc, to_bson, Uuid};
 use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager, State};
+use uuid::Uuid;
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
-use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, wait_for_selectors};
+use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, wait_for_selectors, CreditsInfo};
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::{Account, History};
 use crate::libs::db::metadata;
 use crate::libs::db::metadata::types::{Metadata, Scrapes};
-use crate::libs::db::records::types::{RecordData, RecordDataArg};
+use crate::libs::db::records::types::{Record, RecordData, RecordDataArg};
 use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
@@ -84,7 +85,7 @@ pub async fn apollo_scrape(
     log_into_apollo(&ctx, &account).await?;
 
     let mut url = set_range_in_url(args.url, args.chunk);
-    url = set_page_in_url(args.url, 1);
+    url = set_page_in_url(&args.url, 1);
 
     let apollo_max_page = if account.domain.contains("gmail") || 
     account.domain.contains("hotmail") ||
@@ -127,15 +128,13 @@ pub async fn apollo_scrape(
       let new_credits = apollo_login_credits_info(&ctx).await?;
       let cookies = get_browser_cookies(&page).await?;
       let total_page_scrape = data.len() as u16;
+
+      let md = args.metadata.scrapes.last().as_mut().unwrap();
+      md.length = total_page_scrape as u8;
+
       account.total_scraped_recently = account.total_scraped_recently + total_page_scrape;
-      account.history.push( History { 
-        total_page_scrape: total_page_scrape.clone(), 
-        scrape_time: time_ms(), 
-        list_name: list_name.clone(),
-        scrape_id: scrape_id.clone(),
-      });
-        // vec![total_scraped, time_ms(), &list_name, &scrape_id]
-      
+      let acc_his = account.history.last().as_mut().unwrap();
+      acc_his.total_page_scrape = total_page_scrape.clone();
 
       let save = save_scrape_to_db(
         &ctx,
@@ -145,8 +144,9 @@ pub async fn apollo_scrape(
         &cookies,
         &list_name,
         &args.chunk,
-        &data.unwrap(),
-      );
+        &data,
+        "0:0:0:0:8080".to_string()
+      ).await;
 
       let mut next_page: u8 = get_page_in_url(&url, args.chunk).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
@@ -212,9 +212,9 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
 
   account.history.push(History {
     total_page_scrape: 0, 
-    scrape_time: None, 
-    list_name: Some(list_name.to_string()),
-    scrape_id: Some(scrape_id.to_string())
+    scrape_time: time_ms(), 
+    list_name: list_name.to_string(),
+    scrape_id: scrape_id.to_string()
   });
 
   account_collection.update_one_with_session(
@@ -568,4 +568,50 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   let mut row = page.find_element(r#"[class="zp_BC5Bd"]"#).await?;
   row = row.find_element(r#"[class="zp_BC5Bd"]"#).await?;
   Ok(row.inner_text().await?)
+}
+
+async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: String, list_name: &str, range: [u64; 2], data: Vec<RecordDataArg>, proxy: String) -> Result<()> {
+  let db_state = ctx.handle.state::<DB>();
+  let db = db_state.db.lock().unwrap();
+
+  let mut session = db.start_session()?;
+  session.start_transaction(None)?;
+
+  let account_collection = db.collection::<Account>(&Entity::Account.name());
+  account_collection.update_one_with_session(
+    doc! {"_id": &account._id}, 
+    doc! {
+      "$set": {
+        "cookies": cookies,
+        "last_used": time_ms().to_string(),
+        "history": to_bson(&account.history).unwrap(),
+        "proxy": proxy,
+        "credits_used": credits.credits_used.to_string(),
+        "credits_limit": credits.credits_limit.to_string(),
+        "renewal_date": credits.renewal_date.to_string(),
+        "renewal_start_date": credits.renewal_start_date.to_string(),
+        "renewal_end_date": credits.renewal_end_date.to_string(),
+        "trial_days_left": credits.trial_days_left.as_ref().or(None)
+      }
+    },
+    &mut session
+  );
+
+  let scrape_id = Uuid::new().to_string(); 
+
+  let metadata_collection = db.collection::<Metadata>(&Entity::Metadata.name());
+
+  metadata_collection.update_one_with_session(
+    doc! {"_id": &account._id},
+    doc! {
+      "$set": {
+        "scrapes": to_bson(&metadata.scrapes).unwrap(),
+        "accounts": to_bson(&metadata.accounts).unwrap()
+      }
+    },
+    &mut session
+  );
+  
+  let record_collection = db.collection::<Record>(&Entity::Record.name());
+  todo!()
 }
