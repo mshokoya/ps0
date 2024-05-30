@@ -5,9 +5,10 @@ use async_std::task::{block_on, sleep, spawn};
 use chromiumoxide::{Element, Page};
 use fake::faker::internet::en::Username;
 use fake::Fake;
+use polodb_core::bson::oid::ObjectId;
 use serde::Deserialize;
 use anyhow::{anyhow, Context, Result};
-use polodb_core::bson::{doc, to_bson, Uuid};
+use polodb_core::bson::{doc, to_bson, Document, Uuid};
 use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
@@ -136,16 +137,16 @@ pub async fn apollo_scrape(
       let acc_his = account.history.last().as_mut().unwrap();
       acc_his.total_page_scrape = total_page_scrape.clone();
 
+
       let save = save_scrape_to_db(
         &ctx,
         &account,
         &args.metadata,
         &new_credits,
         &cookies,
-        &list_name,
-        &args.chunk,
         &data,
         "0:0:0:0:8080".to_string()
+        scrape_id
       ).await;
 
       let mut next_page: u8 = get_page_in_url(&url, args.chunk).unwrap() + 1;
@@ -570,7 +571,7 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   Ok(row.inner_text().await?)
 }
 
-async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: String, list_name: &str, range: [u64; 2], data: Vec<RecordDataArg>, proxy: String) -> Result<()> {
+async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: String, data: Vec<RecordDataArg>, proxy: String, scrape_id: String) -> Result<(Account, Metadata)> {
   let db_state = ctx.handle.state::<DB>();
   let db = db_state.db.lock().unwrap();
 
@@ -597,10 +598,7 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
     &mut session
   );
 
-  let scrape_id = Uuid::new().to_string(); 
-
   let metadata_collection = db.collection::<Metadata>(&Entity::Metadata.name());
-
   metadata_collection.update_one_with_session(
     doc! {"_id": &account._id},
     doc! {
@@ -611,7 +609,21 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
     },
     &mut session
   );
+
+  let records = data.iter().map(|r| doc! {
+    "_id": ObjectId::new().to_hex(),
+    "scrape_id": &scrape_id,
+    "url": &metadata.url,
+    "data": to_bson(r).unwrap()
+  }).collect::<Vec<Document>>();
   
-  let record_collection = db.collection::<Record>(&Entity::Record.name());
-  todo!()
+  let record_collection = db.collection::<Document>(&Entity::Record.name());
+  record_collection.insert_many_with_session(records, &mut session).unwrap();
+
+  session.commit_transaction().unwrap();
+
+  let account = db_state.find_one::<Account>(Entity::Account, Some(doc! {"_id": &account._id})).unwrap();
+  let metadata = db_state.find_one::<Metadata>(Entity::Metadata, Some(doc! {"_id": &metadata._id})).unwrap();
+
+  Ok((account, metadata))
 }

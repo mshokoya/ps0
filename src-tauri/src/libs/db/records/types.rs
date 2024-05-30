@@ -1,8 +1,6 @@
 use polodb_core::bson::{oid::ObjectId, to_document, Document};
 use serde::{Deserialize, Serialize};
 
-use crate::libs::db::entity::EntityTrait;
-
 // https://serde.rs/field-attrs.html
 
 #[derive(Debug, Serialize, Deserialize)]
