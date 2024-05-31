@@ -7,7 +7,7 @@ mod libs;
 
 use actions::apollo::{
     confirm::index::confirm_task,
-    update::index::update_account,
+    update::index::{update_account, update_domain, update_metadata, update_record},
     delete::index::{delete_accounts, delete_domains, delete_metadatas, delete_records},
     get::index::{get_accounts, get_domains, get_metadatas, get_records},
     check::index::check_task,
@@ -66,6 +66,9 @@ async fn main() {
             delete_metadatas,
             delete_records,
             update_account,
+            update_metadata,
+            update_domain,
+            update_record,
             demine_task,
             login_task,
             create_task,

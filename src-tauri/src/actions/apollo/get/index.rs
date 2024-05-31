@@ -1,4 +1,4 @@
-use polodb_core::bson::{doc, to_bson, Document};
+use polodb_core::bson::doc;
 use serde_json::{to_value, Value};
 use tauri::{AppHandle, Manager};
 
