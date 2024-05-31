@@ -88,7 +88,7 @@ pub async fn apollo_scrape(
     account.domain.contains("hotmail") ||
     account.domain.contains("outlook") { 3 } else { 5 };
 
-    let prev_lead = PreviousLead {
+    let mut prev_lead = PreviousLead {
       name: "".to_string(),
     };
 
@@ -105,15 +105,15 @@ pub async fn apollo_scrape(
       let scrape_id = Uuid::new().to_string();
       let list_name = Username().fake::<String>();
   
-      update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id);
+      let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
   
-      go_to_search_url(page, &url).await;
+      let _ = go_to_search_url(page, &url).await?;
 
       let data = add_leads_to_list_and_scrape(
         &ctx, 
         &num_leads_to_scrape, 
         &list_name,
-        &prev_lead
+        &mut prev_lead
       ).await?;
 
       if data.len() == 0 {
@@ -145,7 +145,7 @@ pub async fn apollo_scrape(
         &scrape_id
       ).await?;
 
-      let mut next_page: u8 = get_page_in_url(&url, args.chunk).unwrap() + 1;
+      let mut next_page: u8 = get_page_in_url(&url).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
       url = set_page_in_url(&url, next_page);
       account = save.0;
@@ -232,7 +232,7 @@ async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
   Ok(())
 }
 
-async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: &u64, list_name: &str, prev_lead: &PreviousLead) -> Result<Vec<RecordDataArg>> {
+async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: &u64, list_name: &str, prev_lead: &mut PreviousLead) -> Result<Vec<RecordDataArg>> {
   let table_rows_selector = r#"[class="zp_RFed0"]"#;
   // let checkbox_selector = r#"[class="zp_fwjCX"]"#;
   let add_to_list_input_selector = r#"[class="Select-input "]"#;

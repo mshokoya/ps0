@@ -15,7 +15,7 @@ impl PreviousLead {
     &self.name
   }
 
-  pub fn set(&self, name: String) {
+  pub fn set(&mut self, name: String) {
     self.name = name;
   }
 }

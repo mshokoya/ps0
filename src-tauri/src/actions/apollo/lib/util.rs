@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{ops::Deref, time::Duration};
 
 use anyhow::{anyhow, Context, Result};
 use async_std::task;
@@ -120,18 +120,20 @@ pub fn time_ms() -> u128 {
 }
 
 pub fn set_range_in_url(url: &str, chunk: [u64; 2]) -> String {
-    let p_url = parse_url(url).unwrap();
-    p_url.query.unwrap()["organizationNumEmployeesRanges[]"] = format!("{}%2C{}", chunk[0], chunk[1]);
-    build_url(p_url).unwrap().to_string()
+    let mut p_url = parse_url(url);
+    let p2_url = p_url.as_mut().unwrap();
+    p2_url.query.as_mut().unwrap().insert("organizationNumEmployeesRanges[]".to_string(), format!("{}%2C{}", chunk[0], chunk[1]));
+    build_url(p_url.unwrap()).unwrap().to_string()
 }
 
 pub fn set_page_in_url(url: &str, page: u8) -> String {
-    let p_url = parse_url(url).unwrap();
-    p_url.query.unwrap()["page"] = page.to_string();
-    build_url(p_url).unwrap().to_string()
+    let mut p_url = parse_url(url);
+    let p2_url = p_url.as_mut().unwrap();
+    p2_url.query.as_mut().unwrap().insert("page".to_string(), page.to_string());
+    build_url(p_url.unwrap()).unwrap().to_string()
 }
 
-pub fn get_page_in_url(url: &str, chunk: [u64; 2]) -> Option<u8> {
+pub fn get_page_in_url(url: &str) -> Option<u8> {
     match parse_url(url).unwrap().query.unwrap().get("page") {
         Some(page) => Some(page.parse::<u8>().unwrap()),
         None => None

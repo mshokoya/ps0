@@ -110,7 +110,7 @@ pub async fn apollo_create(
             last_used: None,
             cookies: None,
             history: vec![],
-            total_scraped_recently: None
+            total_scraped_recently: 0
         })?
     )?;
 
