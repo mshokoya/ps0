@@ -9,7 +9,7 @@ use actions::apollo::{
     confirm::index::confirm_task,
     update::index::update_account,
     delete::index::delete_accounts,
-    get::index::get_accounts,
+    get::index::{get_accounts, get_domains, get_metadatas, get_records},
     check::index::check_task,
     demine::index::demine_task,
     login::index::login_task,
@@ -56,14 +56,17 @@ async fn main() {
         Ok(())
     })
         .invoke_handler(tauri::generate_handler![
-            check_task, 
-            get_accounts, 
+            check_task,
+            get_accounts,
+            get_domains,
+            get_metadatas,
+            get_records,
             delete_accounts,
             update_account,
             demine_task,
             login_task,
             create_task,
-            confirm_task
+            confirm_task,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

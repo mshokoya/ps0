@@ -1,10 +1,11 @@
-use std::{ops::Deref, time::Duration};
+use std::{time::Duration};
 
 use anyhow::{anyhow, Context, Result};
 use async_std::task;
 use chromiumoxide::{Element, Page};
+use polodb_core::bson::{doc, to_bson, Document};
 use serde::{Deserialize, Serialize};
-use serde_json::to_string;
+use serde_json::{to_string, Value};
 use url_build_parse::{build_url, parse_url};
 
 use crate::libs::db::accounts::types::Cookies;
@@ -137,5 +138,13 @@ pub fn get_page_in_url(url: &str) -> Option<u8> {
     match parse_url(url).unwrap().query.unwrap().get("page") {
         Some(page) => Some(page.parse::<u8>().unwrap()),
         None => None
+    }
+}
+
+pub fn filter(args: Vec<Value>) -> Option<Document> {
+    if args.is_empty() {
+        None
+    } else {
+        Some(doc! { "$or": to_bson(&args).unwrap() })
     }
 }

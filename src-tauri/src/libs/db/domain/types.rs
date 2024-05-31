@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 // #[derive(TS)]
 // #[ts(export)]
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Domain {
     pub _id: String,
     pub domain: String,
