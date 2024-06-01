@@ -12,6 +12,7 @@ use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
 use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
 use crate::actions::controllers::TaskType;
+use crate::libs::cache::ApolloCache;
 use crate::libs::db::accounts::types::{Account, History};
 use crate::libs::db::metadata::types::{Metadata, Scrapes};
 use crate::libs::db::records::types::RecordDataArg;
@@ -32,7 +33,7 @@ use super::types::{PreviousLead, ScrapeActionArgs, ScrapeTaskArgs, MAX_LEADS_ON_
 
 
 #[tauri::command]
-pub fn scrape_task(ctx: AppHandle, args: Value) -> R {
+pub async fn scrape_task(ctx: AppHandle, args: Value) -> R {
     // (FIX) should create meta_id in backend 
     let meta_id = match args.get("meta_id") {
         Some(val) => Some(val.clone()),
@@ -42,14 +43,19 @@ pub fn scrape_task(ctx: AppHandle, args: Value) -> R {
     let fmt_args: ScrapeTaskArgs = from_value(args.clone()).unwrap();
     let metadata = init_meta(&ctx.state::<DB>(), &fmt_args);
 
-    args.get("accounts").iter().copied().for_each(|acc| {
+    let cache = ctx.state::<ApolloCache>();
+
+    for acc in args.get("accounts").iter().copied() {
+      let account_id = acc.get("account_id").unwrap().to_string();
       let argss = json!({
         "url": &fmt_args.url,
         "range": acc.get("range").as_ref().unwrap(),
-        "account_id": acc.get("account_id").as_ref().unwrap(),
+        "account_id": &account_id,
         "metadata": &metadata,
         "max_leads_limit": &fmt_args.max_leads_limit
       });
+
+      cache.add_accounts(meta_id.as_ref().unwrap().as_str().unwrap(), &mut vec![account_id.clone()]).await;
 
       ctx.state::<TaskQueue>().w_enqueue(Task {
         task_id: Uuid::new(),
@@ -60,10 +66,33 @@ pub fn scrape_task(ctx: AppHandle, args: Value) -> R {
         timeout: args.get("timeout").and_then(|v| from_value(v.clone()).ok()),
         args: Some(argss),
       });
-    });
+    };
 
     R::ok_none()
 }
+
+// args.get("accounts").iter().copied().for_each(|acc| {
+//   let account_id = acc.get("account_id").unwrap().to_string();
+//   let argss = json!({
+//     "url": &fmt_args.url,
+//     "range": acc.get("range").as_ref().unwrap(),
+//     "account_id": &account_id,
+//     "metadata": &metadata,
+//     "max_leads_limit": &fmt_args.max_leads_limit
+//   });
+
+//   cache.add_accounts(meta_id.clone().unwrap().as_str().unwrap(), &mut vec![account_id.clone()]).await;
+
+//   ctx.state::<TaskQueue>().w_enqueue(Task {
+//     task_id: Uuid::new(),
+//     task_type: TaskType::ApolloScrape,
+//     task_group: TaskGroup::Apollo,
+//     message: "Scraping",
+//     metadata: meta_id.clone(),
+//     timeout: args.get("timeout").and_then(|v| from_value(v.clone()).ok()),
+//     args: Some(argss),
+//   });
+// });
 
 pub async fn apollo_scrape(
     mut ctx: TaskActionCTX,
@@ -576,7 +605,7 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
   session.start_transaction(None)?;
 
   let account_collection = db.collection::<Account>(&Entity::Account.name());
-  account_collection.update_one_with_session(
+  let _ = account_collection.update_one_with_session(
     doc! {"_id": &account._id}, 
     doc! {
       "$set": {
@@ -596,7 +625,7 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
   );
 
   let metadata_collection = db.collection::<Metadata>(&Entity::Metadata.name());
-  metadata_collection.update_one_with_session(
+  let _ = metadata_collection.update_one_with_session(
     doc! {"_id": &account._id},
     doc! {
       "$set": {

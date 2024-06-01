@@ -9,3 +9,4 @@ pub mod update;
 pub mod login;
 pub mod scrape;
 pub mod domain;
+pub mod cache;
