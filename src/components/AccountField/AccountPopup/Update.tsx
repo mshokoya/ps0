@@ -1,10 +1,12 @@
 import { ObservableObject } from '@legendapp/state'
 import { batch } from '@legendapp/state'
-import { AccountReqType, IAccount, accountTaskHelper } from '@renderer/core/state/account'
 import { AccountPopupState } from '.'
 import { Button, Dialog, Flex, Text, TextField } from '@radix-ui/themes'
-import { blinkCSS } from '@renderer/core/util'
+
 import { observer } from '@legendapp/state/react'
+import { AccountReqType, accountTaskHelper } from '../../../core/state/account'
+import { IAccount } from '../../..'
+import { blinkCSS } from '../../../core/util'
 
 type UFProps = {
   handleRequest: (input: AccountReqType) => Promise<void>

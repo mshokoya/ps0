@@ -1,5 +1,6 @@
-import { IAccount } from '@renderer/core/state/account'
-import { fmtDate } from '@renderer/core/util'
+import { IAccount } from "../../.."
+import { fmtDate } from "../../../core/util"
+
 
 export const DropdownTable = ({ account }: { account: IAccount }) => {
   return (
