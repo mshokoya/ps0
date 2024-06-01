@@ -8,3 +8,4 @@ pub mod get;
 pub mod update;
 pub mod login;
 pub mod scrape;
+pub mod domain;

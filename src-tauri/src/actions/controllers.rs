@@ -11,6 +11,13 @@ use super::apollo::{
 };
 
 #[derive(Serialize, Debug)]
+pub struct Response2<T> {
+    pub ok: bool,
+    pub message: Option<String>,
+    pub data: T,
+}
+
+#[derive(Serialize, Debug)]
 pub struct Response {
     pub ok: bool,
     pub message: Option<String>,

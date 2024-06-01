@@ -4,14 +4,11 @@ use polodb_core::bson::doc;
 use super::types::{CreateDomain, VerifyDomain};
 
 // (FIX) correct response data
-pub struct Forwarder(String);
+pub struct Forwarder(pub String);
 
 impl Forwarder {
-  fn new(auth: &str) -> Self {
-    Self(auth.to_string())
-  }
 
-  async fn add_domain(&self, domain: &str) -> Result<CreateDomain> {
+  pub async fn add_domain(&self, domain: &str) -> Result<CreateDomain> {
     reqwest::Client::new()
     .post("https://api.forwardemail.net/v1/domains")
     .bearer_auth(self.0.clone())
@@ -26,7 +23,7 @@ impl Forwarder {
     .context("Failed to create domain")
   }
 
-  async fn verify_domain(&self, domain: &str) -> Result<VerifyDomain> {
+  pub async fn verify_domain(&self, domain: &str) -> Result<VerifyDomain> {
     match reqwest::Client::new().get("https://api.forwardemail.net/v1/domains/hash.fyi/verify-records")
       .bearer_auth(self.0.clone())
       .send()
@@ -47,8 +44,7 @@ impl Forwarder {
       }
   }
 
-
-  async fn delete_domain(&self, domain: &str) -> Result<()> {
+  pub async fn delete_domain(&self, domain: &str) -> Result<()> {
     match reqwest::Client::new().delete(format!("https://api.forwardemail.net/v1/domains/{}", domain))
       .bearer_auth(self.0.clone())
       .send()
@@ -58,7 +54,7 @@ impl Forwarder {
       }
   }
 
-  async fn get_domain(&self, domain: &str) -> Result<()> {
+  pub async fn get_domain(&self, domain: &str) -> Result<()> {
     match reqwest::Client::new().get(format!("https://api.forwardemail.net/v1/domains/{}", domain))
       .bearer_auth(self.0.clone())
       .send()

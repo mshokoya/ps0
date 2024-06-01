@@ -10,13 +10,14 @@ use actions::apollo::{
     update::index::{update_account, update_domain, update_metadata, update_record},
     delete::index::{delete_accounts, delete_domains, delete_metadatas, delete_records},
     get::index::{get_accounts, get_domains, get_metadatas, get_records},
+    domain::index::{add_domain, verify_domain, delete_domain},
     check::index::check_task,
     demine::index::demine_task,
     login::index::login_task,
     create::index::create_task,
     scrape::index::scrape_task,
 };
-use libs::taskqueue::index::TaskQueue;
+use libs::{forwarder::index::Forwarder, taskqueue::index::TaskQueue};
 use libs::{db::index::DB, scraper::Scraper};
 use libs::imap::IMAP;
 use once_cell::sync::Lazy;
@@ -30,6 +31,9 @@ static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 async fn main() {
     tauri::Builder::default()
     .setup(|app| {
+        // forwarder
+        app.manage(Forwarder("".to_string()));
+
         // db
         let db = DB::new();
         db.init();
@@ -75,6 +79,9 @@ async fn main() {
             create_task,
             confirm_task,
             scrape_task,
+            add_domain, 
+            verify_domain, 
+            delete_domain,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
