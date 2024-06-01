@@ -25,10 +25,11 @@ pub async fn verify_domain(ctx: AppHandle, args: Domain) -> Response2<Option<Ver
     Err(_) => Response2 {ok: false, message: None, data: None}
   }
 }
+
 #[tauri::command]
 pub async fn delete_domain(ctx: AppHandle, args: Domain) -> Response2<Option<()>> {
   match ctx.state::<Forwarder>().delete_domain(&args.domain).await {
-    Ok(res) => Response2 {ok: true, message: None, data: None},
+    Ok(_) => Response2 {ok: true, message: None, data: None},
     Err(_) => Response2 {ok: false, message: None, data: None}
   }
 }
