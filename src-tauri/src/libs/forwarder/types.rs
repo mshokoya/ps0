@@ -1,13 +1,13 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct CreateDomain {
   pub has_mx_record: bool,
   pub has_txt_record: bool,
   // pub id: String
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct VerifyDomain {
   pub has_mx_record: bool,
   pub has_txt_record: bool,
