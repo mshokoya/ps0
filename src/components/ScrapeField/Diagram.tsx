@@ -2,12 +2,10 @@ import { observer, useObservable, useObserve } from '@legendapp/state/react'
 import { useCallback } from 'react'
 import ReactFlow, { addEdge, Background, useNodesState, useEdgesState, Controls } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { Box, Button, CheckboxGroup, DropdownMenu, Flex, Text } from '@radix-ui/themes'
-import { ObservableObject, batch } from '@legendapp/state'
-import { STaskQueue, StopType, TaskQueue, TQTask } from '../..'
+import { Box, Flex} from '@radix-ui/themes'
+import { TaskQueue, TQTask } from '../..'
 import { taskQueue } from '../../core/state/taskQueue'
-import { scrapeTaskQueue } from '../../core/state/scrapeQueue'
-import { forkState$ } from '../../core/state/fork'
+import dagre from 'dagre'
 
 const dagreGraph = new dagre.graphlib.Graph()
 dagreGraph.setDefaultEdgeLabel(() => ({}))
@@ -57,18 +55,19 @@ const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
   initialEdges
 )
 
-const addNodes = (tq: TaskQueue | STaskQueue) => {
+const addNodes = (tq: TaskQueue) => {
   const nodes: any[] = []
   const edges: any[] = []
   for (const tqType in tq) {
+    // @ts-ignore
     tq[tqType].forEach((task: TQTask) => {
-      const type = task.taskType === 'enqueue' ? 'q' : task.taskType === 'processing' ? 'p' : 't'
+      const type = task.task_type === 'enqueue' ? 'q' : task.task_type === 'processing' ? 'p' : 't'
 
       nodes.push({
-        id: task.taskID,
+        id: task.task_id,
         position: { x: 10, y: 10 },
         extent: 'parent',
-        data: { label: task.taskGroup },
+        data: { label: task.action_data.task_group },
         className: 'light',
         parentId: type
       })
@@ -94,61 +93,12 @@ export const Diagram = observer(() => {
 
   useObserve(() => {
     const [newTNodes, newTEdges] = addNodes(taskQueue.get())
-    const [newSNodes, newSEdges] = addNodes(scrapeTaskQueue.get())
-    const nnodes = [...newTNodes, ...newSNodes]
-    const eedges = [...newTEdges, ...newSEdges]
-
-    setNodes([...nodes, ...nnodes])
-    setEdges([...edges, ...eedges])
+    setNodes(newTNodes)
+    setEdges(newTEdges)
   })
-
-  const handleStartFork = () => {
-    if (forkState$.createInProcess.get()) return
-    window['fork'][CHANNELS.fork_create]()
-    forkState$.createInProcess.set((c) => c + 1)
-    // keep track
-  }
-
-  const handleStopFork = (stopType: StopType) => {
-    if (forkState$.stopInProcess.get().length) return
-    const forkIDs = checked[stopType].get()
-    window['fork'][CHANNELS.fork_stop]({
-      forkIDs,
-      stopType
-    })
-    batch(() => {
-      for (const id of forkIDs) {
-        forkState$.stopInProcess.push([id, stopType])
-      }
-    })
-    checked[stopType].set([])
-  }
 
   return (
     <Flex>
-      <Flex direction="column">
-        <Button
-          className={`${forkState$.createInProcess.get() ? 'fieldBlink' : ''}`}
-          // disabled={!!forkState$.createInProcess.get()}
-          onClick={() => {
-            console.log(forkState$.get())
-          }}
-        >
-          <Text>log fork state </Text>
-        </Button>
-
-        <Button
-          className={`${forkState$.createInProcess.get() ? 'fieldBlink' : ''}`}
-          disabled={!!forkState$.createInProcess.get()}
-          onClick={() => {
-            handleStartFork()
-          }}
-        >
-          <Text>Start fork</Text>
-        </Button>
-
-        <StopForkDropDown handleStopFork={handleStopFork} checked={checked} />
-      </Flex>
       <Box className="w-[25rem] h-[15rem]">
         <ReactFlow
           nodes={nodes}
@@ -166,79 +116,3 @@ export const Diagram = observer(() => {
     </Flex>
   )
 })
-
-type StopForkDropDownProps = {
-  handleStopFork: (stopType: StopType) => void
-  checked: ObservableObject<{
-    force: string[]
-    waitAll: string[]
-    waitPs: string[]
-  }>
-}
-
-const StopForkDropDown = ({ handleStopFork, checked }: StopForkDropDownProps) => {
-  return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger disabled={!!forkState$.stopInProcess.get().length}>
-        <Button variant="soft">
-          Stop fork
-          <DropdownMenu.TriggerIcon />
-        </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content>
-        <DropdownMenu.Sub>
-          <DropdownMenu.SubTrigger>Force Stop</DropdownMenu.SubTrigger>
-          <DropdownMenu.SubContent>
-            <CheckboxGroup.Root
-              value={checked.force.get()}
-              onValueChange={(e) => checked.force.set(e)}
-            >
-              {forkState$.get().forks.map((f, idx) => (
-                <CheckboxGroup.Item value={f} key={idx}>
-                  {f}
-                </CheckboxGroup.Item>
-              ))}
-            </CheckboxGroup.Root>
-            <Button onClick={() => handleStopFork('force')}>Execute</Button>
-          </DropdownMenu.SubContent>
-        </DropdownMenu.Sub>
-
-        <DropdownMenu.Sub>
-          <DropdownMenu.SubTrigger>
-            Wait for tasks currently running to finish
-          </DropdownMenu.SubTrigger>
-          <DropdownMenu.SubContent>
-            <CheckboxGroup.Root
-              value={checked.waitPs.get()}
-              onValueChange={(e) => checked.waitPs.set(e)}
-            >
-              {forkState$.get().forks.map((f, idx) => (
-                <CheckboxGroup.Item value={f} key={idx}>
-                  {f}
-                </CheckboxGroup.Item>
-              ))}
-            </CheckboxGroup.Root>
-            <Button onClick={() => handleStopFork('waitPs')}>Execute</Button>
-          </DropdownMenu.SubContent>
-        </DropdownMenu.Sub>
-
-        <DropdownMenu.Sub>
-          <DropdownMenu.SubTrigger>Wait for all tasks to finish</DropdownMenu.SubTrigger>
-          <DropdownMenu.SubContent>
-            <CheckboxGroup.Root
-              value={checked.waitAll.get()}
-              onValueChange={(e) => checked.waitAll.set(e)}
-            >
-              {forkState$.get().forks.map((f, idx) => (
-                <CheckboxGroup.Item value={f} key={idx}>
-                  {f}
-                </CheckboxGroup.Item>
-              ))}
-            </CheckboxGroup.Root>
-            <Button onClick={() => handleStopFork('waitAll')}>Execute</Button>
-          </DropdownMenu.SubContent>
-        </DropdownMenu.Sub>
-      </DropdownMenu.Content>
-    </DropdownMenu.Root>
-  )
-}

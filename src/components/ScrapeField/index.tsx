@@ -4,7 +4,7 @@ import { FormEvent, MouseEvent } from 'react'
 import { GiCancel } from 'react-icons/gi'
 import { batch } from '@legendapp/state'
 import { Chunk } from './Chunk'
-import { Diagram } from './Diagram'
+// import { Diagram } from './Diagram'
 import { chuckRange, getEmailStatusFromApolloURL, getLeadColFromApolloURL, getRangeFromApolloURL, removeEmailStatusInApolloURL, removeLeadColInApolloURL, setEmailStatusInApolloURL, setLeadColInApolloURL, setRangeInApolloURL, toMs } from '../../core/util'
 import { selectAccForScrapingFILO } from '../../core/state/account'
 import { appState$ } from '../../core/state'
@@ -391,7 +391,7 @@ export const ScrapeField = observer(() => {
         </Flex>
       </form>
       <Flex>
-        <Diagram />
+        {/* <Diagram /> */}
       </Flex>
     </Flex>
   )

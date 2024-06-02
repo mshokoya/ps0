@@ -20,8 +20,10 @@
     "windows": [
       {
         "title": "forward-scraper",
-        "width": 800,
-        "height": 600
+        "width": 1222,
+        "height": 710,
+        "minWidth": 1222,
+        "minHeight": 710
       }
     ],
     "security": {
