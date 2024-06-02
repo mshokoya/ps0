@@ -1,4 +1,55 @@
-import { IAccount, IMetaData, IRecords } from ".."
+import { IAccount, IDomain, IMetaData, IRecords } from ".."
+
+export const domainMockData: IDomain[] = [
+  {
+    id: 'dasdsaas',
+    domain: 'dasdsaas',
+    verified: true,
+    mx_records: true,
+    txt_records: true,
+    message: "dsafsas"
+  },
+  {
+    id: 'dasdsaas',
+    domain: 'dasdsaas',
+    verified: true,
+    mx_records: true,
+    txt_records: true,
+    message: "dsafsas"
+  },
+  {
+    id: 'dasdsaas',
+    domain: 'dasdsaas',
+    verified: true,
+    mx_records: true,
+    txt_records: true,
+    message: "dsafsas"
+  },
+  {
+    id: 'dasdsaas',
+    domain: 'dasdsaas',
+    verified: true,
+    mx_records: true,
+    txt_records: true,
+    message: "dsafsas"
+  },
+  {
+    id: 'dasdsaas',
+    domain: 'dasdsaas',
+    verified: true,
+    mx_records: true,
+    txt_records: true,
+    message: "dsafsas"
+  },
+  {
+    id: 'dasdsaas',
+    domain: 'dasdsaas',
+    verified: true,
+    mx_records: true,
+    txt_records: true,
+    message: "dsafsas"
+  },
+] 
 
 export const accountMockData: IAccount[] = [
   {

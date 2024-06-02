@@ -2,9 +2,10 @@ import { observable } from '@legendapp/state'
 // import { IProxy } from '../../components/ProxyField'
 
 // import { IAccount } from './account'
-import { fetchData } from '../util'
-import { metaMockData } from '../mockdata'
-import { IAccount, IDomain, IMetaData, IRecords } from '../..'
+import { accountMockData, domainMockData, metaMockData, recordMockData } from '../mockdata'
+import { IAccount, IDomain, IMetaData, IRecords, R } from '../..'
+import { CHANNELS } from '../channels'
+import { invoke } from '@tauri-apps/api/tauri'
 
 export type Status<ReqType> = [reqType: ReqType, status: 'ok' | 'fail']
 export type ResStatus<T> = { [entityID: string]: Status<T>[] }
@@ -31,30 +32,30 @@ export const appState$ = observable<AppState>({
 })
 
 Promise.all([
-  fetchData<IAccount[]>('account', CHANNELS.a_accountGetAll)
-    .then((data) => data.data)
-    .catch(() => []),
-  fetchData<IDomain[]>('domain', CHANNELS.a_domainGetAll)
-    .then((data) => data.data)
-    .catch(() => []),
-  // fetchData<IProxy[]>('proxy', CHANNELS.a_proxyGetAll)
+  // invoke<R<IAccount[]>>(CHANNELS.get_accounts)
   //   .then((data) => data.data)
   //   .catch(() => []),
-  fetchData<IMetaData[]>('meta', CHANNELS.a_metadataGetAll)
-    .then((data) => data.data)
-    .catch(() => []),
-  fetchData<IRecords[]>('record', CHANNELS.a_recordsGetAll)
-    .then((data) => data.data)
-    .catch(() => [])
+  // invoke<R<IDomain[]>>(CHANNELS.get_domains)
+  //   .then((data) => data.data)
+  //   .catch(() => []),
+  // // invoke<IProxy[]>('proxy', CHANNELS.a_proxyGetAll)
+  // //   .then((data) => data.data)
+  // //   .catch(() => []),
+  // invoke<R<IMetaData[]>>(CHANNELS.get_metadatas)
+  //   .then((data) => data.data)
+  //   .catch(() => []),
+  // invoke<R<IRecords[]>>(CHANNELS.get_records)
+  //   .then((data) => data.data)
+  //   .catch(() => [])
 ]).then((r) => {
   //  ORDER MATTERS
   appState$.set({
-    accounts: r[0],
-    domains: metaMockData,
+    accounts: accountMockData,
+    domains: domainMockData,
     // domains: r[1],
     // proxies: r[2],
-    metas: r[2],
-    records: r[3]
+    metas: metaMockData,
+    records: recordMockData
   })
 })
 
