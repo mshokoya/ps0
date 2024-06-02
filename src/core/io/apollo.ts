@@ -1,45 +1,41 @@
-import { ScrapeQueueEvent, TaskQueueEvent } from '../..';
-import { AccountReqType, IAccount, accountTaskHelper, stateResStatusHelper } from '../state/account'
+import { IAccount, TaskQueue, TQTask } from '../..';
+import { AccountReqType, accountTaskHelper, stateResStatusHelper } from '../state/account'
 import { appState$ } from '../state/index'
 
 export function handleApolloScrapeEndEvent(
-  res:
-    | TaskQueueEvent<{ accountID: string; taskType: string }>
-    | ScrapeQueueEvent<{ accountID: string; taskType: string }>
+  res: TQTask<{ account_id: string; taskType: string }>
 ) {
   if (res.ok === undefined) return
-  const [accountID, idx, task] = accountTaskHelper.getTaskByTaskID(res.taskID)
-  if (!accountID || idx === -1 || !task) return
+  const [account_id, idx, task] = accountTaskHelper.getTaskByTaskID(res.task_id)
+  if (!account_id || idx === -1 || !task) return
 
-  accountTaskHelper.deleteTaskByTaskID(accountID, task.taskID!)
+  accountTaskHelper.deleteTaskByTaskID(account_id, task.task_id!)
 
   const c = res.ok ? 'ok' : 'fail'
-  stateResStatusHelper.add(accountID, [task.type, c])
+  stateResStatusHelper.add(account_id, [task.type, c])
 
-  processApolloEventData(task.type, res)
+  processApolloEventData(res)
 
   setTimeout(() => {
-    stateResStatusHelper.delete(accountID, task.type)
+    stateResStatusHelper.delete(account_id, task.type)
   }, 1700)
 }
 
-function processApolloEventData(taskType: string, msg: TaskQueueEvent | ScrapeQueueEvent) {
-  switch (taskType) {
+function processApolloEventData(task: TQTask<{ account_id: string; taskType: string }>) {
+  switch (task.task_type) {
     // case 'login'
     // case 'delete':
     // case 'mines':
     // case 'update':
     case 'create': {
-      if (msg.ok) appState$.accounts.push(msg.metadata!.metadata as IAccount)
+      if (task.ok) appState$.accounts.push(task.action_data.metadata as IAccount)
       break
     }
     case 'confirm':
-    case 'manualUpgrade':
-    case 'upgrade':
     case 'check': {
-      if (msg.ok) {
-        const acc = appState$.accounts.find((a) => a.id.get() === msg.metadata!.metadata!.accountID)
-        if (acc) acc.set({ ...acc.get(), ...(msg.metadata!.metadata as IAccount) })
+      if (task.ok) {
+        const acc = appState$.accounts.find((a) => a.id.get() === task.metadata.account_id)
+        if (acc) acc.set({ ...acc.get(), ...(task.action_data.metadata as IAccount) })
       }
       break
     }
@@ -47,76 +43,20 @@ function processApolloEventData(taskType: string, msg: TaskQueueEvent | ScrapeQu
 }
 
 export function handleApolloTaskQueueEvents(
-  res:
-    | TaskQueueEvent<{ accountID: string; taskType: string }>
-    | ScrapeQueueEvent<{ accountID: string; taskType: string }>
-  // TaskQueueEvent<{ accountID: string; taskType: string }>
+  res: TQTask<{ account_id: string; queue: keyof TaskQueue }>
 ) {
-  switch (res.taskType) {
+  switch (res.task_type) {
     case 'enqueue': {
-      const accountID = res.metadata!.metadata!.accountID
-      accountTaskHelper.add(accountID, {
-        status: 'queue',
-        type: res.taskType as AccountReqType,
-        taskID: res.taskID
+      const account_id = res.metadata!.account_id
+      accountTaskHelper.add(account_id, {
+        status: res.metadata.queue,
+        type: res.action_data.task_type as AccountReqType,
+        task_id: res.task_id
       })
       break
     }
     case 'dequeue':
-      accountTaskHelper.updateTask(res.metadata!.metadata!.accountID, res.taskID, {
-        status: 'passing'
-      })
-      break
-  }
-}
-
-export function handleApolloProcessQueueEvents(
-  res: TaskQueueEvent<{ accountID: string; taskType: string }>
-) {
-  switch (res.taskType) {
-    case 'enqueue':
-      accountTaskHelper.updateTask(res.metadata!.metadata!.accountID, res.taskID, {
-        status: 'processing'
-      })
-      break
-    case 'dequeue':
-      accountTaskHelper.deleteTaskByTaskID(res.metadata!.metadata!.accountID, res.taskID)
-      break
-  }
-}
-
-export const handleApolloScrapeTaskQueueEvents = (res: ScrapeQueueEvent<{ accountID: string }>) => {
-  switch (res.taskType) {
-    case 'enqueue': {
-      const accountID = res.metadata!.metadata!.accountID
-      accountTaskHelper.add(accountID, {
-        status: 'queue',
-        type: res.metadata!.taskType as AccountReqType,
-        taskID: res.metadata!.taskID
-      })
-      break
-    }
-    case 'dequeue':
-      accountTaskHelper.deleteTaskByTaskID(res.metadata!.metadata!.accountID, res.taskID)
-      break
-  }
-}
-
-export const handleApolloScrapeProcessQueueEvents = (
-  res: ScrapeQueueEvent<{ accountID: string }>
-) => {
-  switch (res.taskType) {
-    case 'enqueue': {
-      const accountID = res.metadata!.metadata!.accountID
-      accountTaskHelper.add(accountID, {
-        status: 'queue',
-        type: res.metadata!.taskType as AccountReqType,
-        taskID: res.taskID
-      })
-      break
-    }
-    case 'dequeue':
-      accountTaskHelper.deleteTaskByTaskID(res.metadata!.metadata!.accountID, res.taskID)
+      accountTaskHelper.deleteTaskByTaskID(res.metadata.account_id, res.task_id)
       break
   }
 }
