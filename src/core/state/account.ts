@@ -6,7 +6,7 @@ import { invoke } from '@tauri-apps/api/tauri'
 import { CHANNELS } from '../channels'
 
 export const accountState = observable<State>({
-  input: { email: '', password: '', recoveryEmail: '' },
+  input: { email: '', password: ''},
   selectedAcc: null,
   reqInProcess: {}, // reqInProcess: [],
   reqType: null,
@@ -17,28 +17,6 @@ export const accountState = observable<State>({
 
 export const accountTaskHelper = TaskHelpers(accountState.reqInProcess)
 export const stateResStatusHelper = ResStatusHelpers(accountState.resStatus)
-
-// export const accountsForScrapeInfo = () => {
-// if (
-//   account.totalScrapedInLast30Mins === undefined ||
-//   account.totalScrapedInLast30Mins >= maxLeadScrapeLimit
-// )
-//   return
-// const amountAccountCanScrape = maxLeadScrapeLimit - account.totalScrapedInLast30Mins
-// if (amountAccountCanScrape <= minLeadScrapeLimit) {
-//   // (FIX calculate time left to scrape limit reset)
-//   const answer = await prompt.askQuestion(
-//     `
-//     The max amount of leads you can scrape right now is
-//     ${amountAccountCanScrape}/${minLeadScrapeLimit}. if you wait 30 minutes / 1hour scrape limit will reset.
-//     do you want to continue anyway ?
-//     `,
-//     ['yes', 'no'],
-//     0
-//   )
-//   if (answer === 'no') return
-// }
-// }
 
 // // 30mins
 // // (FIX) make sue acc is verified and not suspended, suspension is i time limit so check if count down is over
@@ -53,7 +31,7 @@ export const selectAccForScrapingFILO = async (
 
   let allAccounts = appState$.accounts
     .get()
-    .filter((a) => a.verified === 'yes' && !allAccInUse.includes(a._id))
+    .filter((a) => a.verified === 'yes' && !allAccInUse.includes(a.id))
     .map((a) => ({ ...a, totalScrapedInLast30Mins: 0 })) as (IAccount & {
     totalScrapedInLast30Mins: number
   })[]
