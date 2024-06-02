@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { ObservableObject } from '@legendapp/state'
 import { batch } from '@legendapp/state'
-import { STaskQueue, TaskQueue } from '..'
+import { TaskQueue, TQTask } from '..'
 
 export const cn = (...args: ClassValue[]) => {
   return twMerge(clsx(...args))
@@ -11,10 +11,10 @@ export const cn = (...args: ClassValue[]) => {
 export type Status<ReqType> = [reqType: ReqType, status: 'ok' | 'fail']
 export type ResStatus<T> = { [entityID: string]: Status<T>[] }
 
-export type TaskStatus = 'queue' | 'processing' | 'timeout' | 'passing'
-export type Task<T> = { taskID?: string; type: T; status: TaskStatus } // type === reqType
+export type TaskStatus = keyof TaskQueue //'queue' | 'processing' | 'timeout'
+export type EntityStateTask<T> = { task_id?: string; type: T; status: TaskStatus } // type === reqType
 
-export type TaskInProcess<T> = { [id: string]: Task<T>[] }
+export type TaskInProcess<T> = { [id: string]: EntityStateTask<T>[] }
 
 export type FetchData<T = unknown> = { ok: boolean; message: string | null; data: T }
 
@@ -54,10 +54,10 @@ export const blinkCSS = (reqInProces: boolean = false, color: string = 'text-cya
 
 export const getCompletedTaskID = <T>(
   reqInProcessList: TaskInProcess<T>,
-  taskID: string
+  task_id: string
 ): [string, number] => {
   for (const [k, v] of Object.entries(reqInProcessList)) {
-    const completedTaskIdx = v.findIndex((_) => _.taskID === taskID)
+    const completedTaskIdx = v.findIndex((_) => _.task_id === task_id)
     if (completedTaskIdx > -1) return [k, completedTaskIdx]
   }
   return ['', -1]
@@ -65,14 +65,14 @@ export const getCompletedTaskID = <T>(
 
 export function TaskHelpers<T>(taskInProcess: ObservableObject<TaskInProcess<T>>) {
   return {
-    getTaskByTaskID: (taskID: string): [entityID: string, idx: number, task?: Task<T>] => {
+    getTaskByTaskID: (task_id: string): [entityID: string, idx: number, task?: EntityStateTask<T>] => {
       for (const [k, v] of Object.entries(taskInProcess.get())) {
-        const taskIdx = v.findIndex((_) => _.taskID === taskID)
+        const taskIdx = v.findIndex((_) => _.task_id === task_id)
         if (taskIdx > -1) return [k, taskIdx, v[taskIdx]]
       }
       return ['', -1, undefined]
     },
-    getTaskByReqType: (reqType: string): [entityID: string, idx: number, task?: Task<T>] => {
+    getTaskByReqType: (reqType: string): [entityID: string, idx: number, task?: EntityStateTask<T>] => {
       for (const [k, v] of Object.entries(taskInProcess.get())) {
         const taskIdx = v.findIndex((_) => _.type === reqType)
         if (taskIdx > -1) return [k, taskIdx, v[taskIdx]]
@@ -85,12 +85,12 @@ export function TaskHelpers<T>(taskInProcess: ObservableObject<TaskInProcess<T>>
     doesEntityHaveTIP: (entityID: string) =>
       !!(
         taskInProcess[entityID].get() &&
-        taskInProcess[entityID].get().find((t1) => t1.taskID !== undefined)
+        taskInProcess[entityID].get().find((t1) => t1.task_id !== undefined)
       ), // background task (task in process)
     doesEntityHaveRIP: (entityID: string) =>
       !!(
         taskInProcess[entityID].get() &&
-        taskInProcess[entityID].get().find((t1) => t1.taskID === undefined)
+        taskInProcess[entityID].get().find((t1) => t1.task_id === undefined)
       ), // regular request (request in process)
     isReqTypeInProcess: (entityID: string, reqType: T) =>
       taskInProcess[entityID].get().find((t1) => t1.type === reqType),
@@ -102,9 +102,9 @@ export function TaskHelpers<T>(taskInProcess: ObservableObject<TaskInProcess<T>>
         taskInProcess[entityID].delete()
       }
     },
-    deleteTaskByTaskID: (entityID: string, taskID: string) => {
+    deleteTaskByTaskID: (entityID: string, task_id: string) => {
       taskInProcess[entityID].peek().length > 1
-        ? taskInProcess[entityID].set((tg) => tg.filter((t1) => t1.taskID !== taskID))
+        ? taskInProcess[entityID].set((tg) => tg.filter((t1) => t1.task_id !== task_id))
         : taskInProcess[entityID].delete()
     },
     deleteTaskByReqType: (entityID: string, reqType: T) => {
@@ -112,21 +112,21 @@ export function TaskHelpers<T>(taskInProcess: ObservableObject<TaskInProcess<T>>
         ? taskInProcess[entityID].set((tg) => tg.filter((t1) => t1.type !== reqType))
         : taskInProcess[entityID].delete()
     },
-    add: (entityID: string, task: Task<T>) => {
+    add: (entityID: string, task: EntityStateTask<T>) => {
       const tip = taskInProcess[entityID].get()
       tip && tip.length ? taskInProcess[entityID].push(task) : taskInProcess[entityID].set([task])
     },
-    findTaskByTaskID: (entityID: string, taskID: string) =>
-      taskInProcess[entityID].get()?.find((t1) => t1.taskID === taskID),
+    findTaskByTaskID: (entityID: string, task_id: string) =>
+      taskInProcess[entityID].get()?.find((t1) => t1.task_id === task_id),
     findTaskByReqType: (entityID: string, reqType: string) => {
       if (!entityID || !reqType) return undefined
       return taskInProcess[entityID].get()?.find((t1) => {
         return t1.type === reqType
       })
     },
-    updateTask: (entityID: string, taskID: string, vals: Partial<Task<T>>) => {
-      const idx = taskInProcess[entityID].get().findIndex((t) => t.taskID === taskID)
-      const tip = taskInProcess[entityID].get().find((t) => t.taskID === taskID)
+    updateTask: (entityID: string, task_id: string, vals: Partial<EntityStateTask<T>>) => {
+      const idx = taskInProcess[entityID].get().findIndex((t) => t.task_id === task_id)
+      const tip = taskInProcess[entityID].get().find((t) => t.task_id === task_id)
       if (idx !== -1 && tip) taskInProcess[entityID][idx].set({ ...tip, ...vals })
     }
   }
@@ -251,65 +251,34 @@ export const removeLeadColInApolloURL = (url: string) => {
 
 // ==================
 
-export const TaskQueueHelper = <T>(tq: ObservableObject<TaskQueue | STaskQueue>) => ({
+export const TaskQueueHelper = <T>(tq: ObservableObject<TaskQueue>) => ({
   addToQueue: (queueName: keyof typeof tq, t: T) => {
     // @ts-ignore
     tq[queueName].push({ ...t, processes: [] })
   },
-  move: (taskID: string, from: keyof typeof tq, to: keyof typeof tq) => {
+  move: (task_id: string, from: keyof typeof tq, to: keyof typeof tq) => {
     batch(() => {
       // @ts-ignore
-      const task = tq[from].find((t) => t.taskID.peek() === taskID)
+      const task = tq[from].find((t) => t.task_id.peek() === task_id)
       if (!task) return
       // @ts-ignore
       tq[to].push(task.peek())
       task.delete()
     })
   },
-  delete: (taskID: string) => {
-    for (const queues in tq) {
-      const t = tq[queues].find((t1) => t1.taskID.peek() === taskID)
-      if (t) {
-        tq[queues].set(tq[queues].get().filter((t) => t.taskID !== taskID))
-        break
-      }
-    }
+  delete: (queueName: string, task_id: string) => {
+    // @ts-ignore
+    tq[queueName].set((q) => q.filter((q0) => q0.task_id !== task_id))
   },
-  findTask: (taskID: string): ObservableObject<TQTask> | void => {
+  findTask: (task_id: string): ObservableObject<TQTask> | void => {
     for (const queues in tq) {
-      const t = tq[queues].find((t1) => t1.taskID.peek() === taskID)
+      // @ts-ignore
+      const t = tq[queues].find((t1) => t1.task_id.peek() === task_id)
       if (t) {
         return t.get()
       }
     }
   },
-  findTaskViaProcessID: (taskID: string): ObservableObject<TQTask> | void => {
-    for (const queues in tq) {
-      for (const task of tq[queues]) {
-        if (task.processes.peek().includes(taskID)) {
-          return task
-        }
-      }
-    }
-  },
-  addProcessToTask: (taskID: string, PtaskID: string) => {
-    for (const queues in tq) {
-      const task = tq[queues].find((t1) => t1.taskID.peek() === PtaskID)
-      if (task) {
-        task.processes.push(taskID)
-        return
-      }
-    }
-  },
-  deleteProcessFromTask: (taskID: string, PtaskID: string) => {
-    for (const queues in tq) {
-      const task = tq[queues].find((t1) => t1.taskID.peek() === PtaskID)
-      if (task) {
-        task.processes.set((t) => t.filter((t0) => t0 !== taskID))
-        return
-      }
-    }
-  }
 })
 
 // ==================

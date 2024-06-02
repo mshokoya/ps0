@@ -12,16 +12,16 @@ type R<T = Record<string, any>> = {
   ok: boolean
 }
 
-type TQTask = {
+type TQTask<TM = Record<string, any> & {queue: keyof TaskQueue},  AM = Record<string, any>, ReqType = string> = {
   task_id: string
   message: string
   ok?: string
   task_type: ReqType
-  metadata: TM
+  metadata: TM 
   action_data: {
     task_group: string, 
     task_type: string, 
-    metadata?: {[key: string]: any},
+    metadata?: AM,
   }
 }
 
