@@ -9,6 +9,7 @@ import { invoke } from '@tauri-apps/api/tauri'
 import { CHANNELS } from '../../core/channels'
 
 export const DomainField = observer(() => {
+  console.log('DomainField')
   const domains = useSelector(appState$.domains) as IDomain[]
   const input = useObservable<string>()
 

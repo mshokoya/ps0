@@ -3,6 +3,7 @@ import { Box, Button, Flex, Select, Tabs, Text, TextField } from '@radix-ui/them
 import { IAccount, IDomain } from '../../..'
 import { ResStatusHelpers, TaskHelpers } from '../../../core/util'
 import { AccountReqType, accountTaskHelper } from '../../../core/state/account'
+import { observer } from '@legendapp/state/react'
 
 
 type Props = {
@@ -15,7 +16,7 @@ type Props = {
   addType: ObservablePrimitiveChildFns<string>
 }
 
-export const AccountForms = (p: Props) => {
+export const AccountForms = observer((p: Props) => {
   const isCreateReq = !!accountTaskHelper.findTaskByReqType('account', 'create')
   return (
     <Flex direction="column" gap="3" width="260px">
@@ -51,7 +52,7 @@ export const AccountForms = (p: Props) => {
       </Box>
     </Flex>
   )
-}
+})
 
 type EmailProps = {
   input: ObservableObject<Partial<IAccount>>
@@ -61,7 +62,7 @@ type EmailProps = {
   isCreateReq: boolean
 }
 
-export const EmailForm = (p: EmailProps) => {
+export const EmailForm = observer((p: EmailProps) => {
   return (
     <Flex direction="column" gap="1">
       <Flex align="center" gap="3">
@@ -101,7 +102,7 @@ export const EmailForm = (p: EmailProps) => {
       </Flex>
     </Flex>
   )
-}
+})
 
 type DomainProps = {
   domains: IDomain[]
@@ -112,24 +113,22 @@ type DomainProps = {
   isCreateReq: boolean
 }
 
-export const DomainForm = (p: DomainProps) => {
+export const DomainForm = observer((p: DomainProps) => {
   return (
     <Flex direction="column" gap="1">
-      <Select.Root disabled={p.isCreateReq}>
+      <Select.Root disabled={p.isCreateReq} onValueChange={p.selectedDomain.set}>
         <Select.Trigger placeholder="Select a domain" />
         <Select.Content>
           <Select.Group>
             <Select.Label>Verified</Select.Label>
             {p.domains
               .filter((d) => d.verified)
-              .map((d, idx) => {
-                if (idx === 0) p.selectedDomain.set(d.domain)
-                return (
+              .map((d, idx) => (
                   <Select.Item key={idx} value={d.domain}>
                     {d.domain}
                   </Select.Item>
                 )
-              })}
+              )}
           </Select.Group>
 
           <Select.Separator />
@@ -150,4 +149,4 @@ export const DomainForm = (p: DomainProps) => {
       </Select.Root>
     </Flex>
   )
-}
+})

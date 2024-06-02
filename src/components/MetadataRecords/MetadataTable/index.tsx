@@ -21,6 +21,7 @@ type MetaSubCompArgs = {
 export const MetadataTable = observer(
   ({ metas, metaChecked, updateMeta, continueScraping, deleteMeta }: MetaSubCompArgs) => {
     // const selectedMeta = useObservable<number>(-1)
+      console.log("Metadata table")
 
     const handleExtendRow = (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {
       e.stopPropagation()

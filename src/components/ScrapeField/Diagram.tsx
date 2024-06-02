@@ -6,6 +6,7 @@ import { Box, Flex} from '@radix-ui/themes'
 import { TaskQueue, TQTask } from '../..'
 import { taskQueue } from '../../core/state/taskQueue'
 import dagre from 'dagre'
+import { initialEdges, initialNodes } from '../../core/state'
 
 const dagreGraph = new dagre.graphlib.Graph()
 dagreGraph.setDefaultEdgeLabel(() => ({}))
@@ -73,18 +74,12 @@ const addNodes = (tq: TaskQueue) => {
       })
     })
   }
-
   return [nodes, edges]
 }
 
 export const Diagram = observer(() => {
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges)
-  const checked = useObservable({
-    force: [],
-    waitAll: [],
-    waitPs: []
-  })
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
@@ -93,8 +88,8 @@ export const Diagram = observer(() => {
 
   useObserve(() => {
     const [newTNodes, newTEdges] = addNodes(taskQueue.get())
-    setNodes(newTNodes)
-    setEdges(newTEdges)
+    setNodes([...nodes, ...newTNodes])
+    setEdges([...edges, ...newTEdges])
   })
 
   return (

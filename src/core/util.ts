@@ -303,10 +303,7 @@ export const downloadData = (
   }
 
   const el = document.querySelector('[class="ugly-download hidden"]')
-  console.log(el)
   if (!el) return
-
-  console.log('we are eeyyaa')
 
   const file = new File([data], fileName, { type })
   const exportUrl = URL.createObjectURL(file)

@@ -1,8 +1,9 @@
+import { observer } from "@legendapp/state/react"
 import { IAccount } from "../../.."
 import { fmtDate } from "../../../core/util"
 
 
-export const DropdownTable = ({ account }: { account: IAccount }) => {
+export const DropdownTable = observer(({ account }: { account: IAccount }) => {
   return (
     <tr className="hidden text-left">
       <table
@@ -87,4 +88,4 @@ export const DropdownTable = ({ account }: { account: IAccount }) => {
       </table>
     </tr>
   )
-}
+})
