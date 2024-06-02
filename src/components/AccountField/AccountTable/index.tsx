@@ -2,7 +2,6 @@ import { fmtDate } from '../../../core/util'
 import { SlOptionsVertical } from 'react-icons/sl'
 import { IoOptionsOutline } from 'react-icons/io5'
 import {
-  IAccount,
   State,
   accountTaskHelper,
   stateResStatusHelper
@@ -13,6 +12,7 @@ import { ObservableObject } from '@legendapp/state'
 import { observer } from '@legendapp/state/react'
 import { DropdownTable } from './Dropdown'
 import { AccountPopup } from '../AccountPopup'
+import { IAccount } from '../../..'
 
 type Props = {
   accounts: IAccount[]
@@ -65,8 +65,6 @@ export const AccountTable = observer((p: Props) => {
                 <th className="p-2 w-[3rem]"> Verified </th>
                 <th className="p-2 w-[4rem]"> Suspended </th>
                 <th className="p-2 w-[4rem]"> Last Used </th>
-                <th className="p-2 w-[2rem]"> Type </th>
-                <th className="p-2 w-[2rem]"> Trial </th>
                 <th className="w-[0.9rem] sticky bg-[#202226] right-0">
                   <IoOptionsOutline className="inline" />
                 </th>
@@ -79,7 +77,7 @@ export const AccountTable = observer((p: Props) => {
                     <tr
                       className={`
                     text-[0.8rem] text-center hover:border-cyan-600 hover:border
-                    ${account.emailCreditsUsed !== account.emailCreditsLimit ? 'el-ok' : 'el-no'}
+                    ${account.credits_used !== account.credits_limit ? 'el-ok' : 'el-no'}
                     ${accountTaskHelper.getEntityTasks(account.id).length ? 'fieldBlink' : ''}
                     ${stateResStatusHelper.getByID(account.id, 0)[1] === 'ok' ? 'resOK' : ''}
                     ${stateResStatusHelper.getByID(account.id, 0)[1] === 'fail' ? 'resFail' : ''}
@@ -91,7 +89,7 @@ export const AccountTable = observer((p: Props) => {
                         {account.email}
                       </td>
                       <td className="overflow-scroll truncate" data-type="extend">
-                        {fmtCredits(account.emailCreditsLimit, account.emailCreditsUsed)}
+                        {fmtCredits(account.credits_limit, account.credits_used)}
                       </td>
                       <td className="overflow-scroll truncate" data-type="extend">
                         {account.verified}
@@ -100,13 +98,7 @@ export const AccountTable = observer((p: Props) => {
                         {account.suspended ? 'yes' : 'no'}
                       </td>
                       <td className="overflow-scroll truncate" data-type="extend">
-                        {fmtDate(account.lastUsed)}
-                      </td>
-                      <td className="overflow-scroll truncate" data-type="extend">
-                        {account.accountType}
-                      </td>
-                      <td className="overflow-scroll truncate" data-type="extend">
-                        {fmtDate(account.trialTime)}
+                        {fmtDate(account.last_used)}
                       </td>
                       <td className="overflow-scroll sticky bg-[#111111] right-0" data-type="opt">
                         <Dialog.Trigger>
@@ -134,14 +126,11 @@ export const AccountTable = observer((p: Props) => {
         {p.state.selectedAcc && (
           <AccountPopup
             req={p.state.reqType.peek()}
-            manualLogin={p.manualLogin}
             updateAccount={p.updateAccount}
             checkAccount={p.checkAccount}
             login={p.login}
             deleteAccount={p.deleteAccount}
             clearMines={p.clearMines}
-            upgradeAccount={p.upgradeAccount}
-            manualUpgradeAccount={p.manualUpgradeAccount}
             account={p.accounts[p.state.selectedAcc.get()]}
             confirmAccount={p.confirmAccount}
           />

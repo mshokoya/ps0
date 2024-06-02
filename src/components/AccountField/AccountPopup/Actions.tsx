@@ -14,13 +14,9 @@ type MProps = {
 }
 
 export const AccountActionsComp = observer((p: MProps) => {
-  console.log('IN DA POPUP')
   const isLoginReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'login')
   const isCheckReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'check')
   const isUpdateReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'update')
-  const isManUpgradeReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'manualUpgrade')
-  const isManLoginReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'manualLogin')
-  const isUpgradeReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'upgrade')
   const isMinesReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'mines')
   const isDeleteReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'delete')
   const isConfirmReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'confirm')
@@ -39,18 +35,6 @@ export const AccountActionsComp = observer((p: MProps) => {
           variant="outline"
         >
           <Spinner loading={isLoginReq} />
-          Login to account
-        </Button>
-
-        <Button
-          disabled={isManLoginReq}
-          className={blinkCSS(isManLoginReq)}
-          onClick={() => {
-            p.handleRequest('manualLogin')
-          }}
-          variant="outline"
-        >
-          <Spinner loading={isManLoginReq} />
           Login to account manually
         </Button>
 
@@ -75,30 +59,6 @@ export const AccountActionsComp = observer((p: MProps) => {
           variant="outline"
         >
           Update account
-        </Button>
-
-        <Button
-          disabled={isUpgradeReq}
-          className={blinkCSS(isUpgradeReq)}
-          onClick={() => {
-            p.handleRequest('upgrade')
-          }}
-          variant="outline"
-        >
-          <Spinner loading={isUpgradeReq} />
-          Upgrade account
-        </Button>
-
-        <Button
-          disabled={isManUpgradeReq}
-          className={blinkCSS(isManUpgradeReq)}
-          onClick={() => {
-            p.handleRequest('manualLogin')
-          }}
-          variant="outline"
-        >
-          <Spinner loading={isManUpgradeReq} />
-          Manually upgrade account
         </Button>
 
         <Button

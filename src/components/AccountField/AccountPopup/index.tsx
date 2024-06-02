@@ -1,15 +1,13 @@
 import { observer, useObservable } from '@legendapp/state/react'
-import { AccountReqType, IAccount } from '../../../core/state/account'
+import { AccountReqType } from '../../../core/state/account'
 import { UpdateFields } from './Update'
 import { AccountActionsComp } from './Actions'
+import { IAccount } from '../../..'
 
 export type AccountPopupProps = {
   login: () => Promise<void>
   checkAccount: () => Promise<void>
   updateAccount: (acc: Partial<IAccount>) => Promise<void>
-  manualLogin: () => Promise<void>
-  upgradeAccount: () => Promise<void>
-  manualUpgradeAccount: () => Promise<void>
   deleteAccount: () => Promise<void>
   clearMines: () => Promise<void>
   confirmAccount: () => Promise<void>
@@ -40,15 +38,6 @@ export const AccountPopup = observer((p: AccountPopupProps) => {
         break
       case 'update':
         await p.updateAccount(obs.input.get())
-        break
-      case 'manualLogin':
-        await p.manualLogin()
-        break
-      case 'manualUpgrade':
-        await p.manualUpgradeAccount()
-        break
-      case 'upgrade':
-        await p.upgradeAccount()
         break
       case 'mines':
         await p.clearMines()

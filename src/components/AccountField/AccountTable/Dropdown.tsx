@@ -6,7 +6,7 @@ export const DropdownTable = ({ account }: { account: IAccount }) => {
   return (
     <tr className="hidden text-left">
       <table
-        className={`hidden border-cyan-600 border-y text-[0.9rem] ${account.emailCreditsUsed !== account.emailCreditsLimit ? 'el-ok' : 'el-no'}`}
+        className={`hidden border-cyan-600 border-y text-[0.9rem] ${account.credits_used !== account.credits_limit ? 'el-ok' : 'el-no'}`}
       >
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Email:</th>
@@ -21,27 +21,20 @@ export const DropdownTable = ({ account }: { account: IAccount }) => {
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Credits Used:</th>
           <td className="px-2">
-            {account.emailCreditsUsed === -1 ? 'N/account' : account.emailCreditsUsed}
+            {account.credits_used === -1 ? 'N/account' : account.credits_used}
           </td>
         </tr>
 
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Credits Limit:</th>
           <td className="px-2">
-            {account.emailCreditsLimit === -1 ? 'N/account' : account.emailCreditsLimit}
+            {account.credits_limit === -1 ? 'N/account' : account.credits_limit}
           </td>
         </tr>
 
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Credits Renewal Date:</th>
-          <td className="px-2">{fmtDate(account.renewalEndDate)}</td>
-        </tr>
-
-        <tr className="hover:border-cyan-600 hover:border-y">
-          <th className="whitespace-nowrap px-2 w-4">Trial Days Left:</th>
-          <td className="px-2">
-            {account.trialDaysLeft === -1 ? 'N/account' : account.trialDaysLeft}
-          </td>
+          <td className="px-2">{fmtDate(account.renewal_end_date)}</td>
         </tr>
 
         <tr className="hover:border-cyan-600 hover:border-y">
@@ -55,18 +48,8 @@ export const DropdownTable = ({ account }: { account: IAccount }) => {
         </tr>
 
         <tr className="hover:border-cyan-600 hover:border-y">
-          <th className="whitespace-nowrap px-2 w-4">Proxy:</th>
-          <td className="px-2">{account.proxy ? account.proxy : 'N/account'}</td>
-        </tr>
-
-        <tr className="hover:border-cyan-600 hover:border-y">
-          <th className="whitespace-nowrap px-2 w-4">Trial:</th>
-          <td className="px-2">{fmtDate(account.trialTime)}</td>
-        </tr>
-
-        <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Last Used:</th>
-          <td className="px-2">{fmtDate(account.lastUsed)}</td>
+          <td className="px-2">{fmtDate(account.last_used)}</td>
         </tr>
 
         <tr className="hover:border-cyan-600 hover:border-y">
@@ -83,15 +66,15 @@ export const DropdownTable = ({ account }: { account: IAccount }) => {
               <tbody>
                 {account.history.map((h, idx) => (
                   <tr key={idx}>
-                    <td className="overflow-scroll truncate">{h[0] || 'N/account'}</td>
-                    <td className="overflow-scroll truncate">{fmtDate(h[1])}</td>
-                    <td className="overflow-scroll truncate">{h[2] || 'N/account'} </td>
+                    <td className="overflow-scroll truncate">{h.total_page_scrape || 'N/account'}</td>
+                    <td className="overflow-scroll truncate">{fmtDate(h.scrape_time)}</td>
+                    <td className="overflow-scroll truncate">{h.list_name || 'N/account'} </td>
                   </tr>
                 ))}
                 <tr>
                   <td className="overflow-scroll bg-cyan-500/90 font-bold border-t-2">
                     {account.history.reduce((acc, cur) => {
-                      const o = typeof cur[0] !== 'number' ? 0 : cur[0]
+                      const o = typeof cur.total_page_scrape !== 'number' ? 0 : cur.total_page_scrape
                       return acc + o
                     }, 0)}
                   </td>

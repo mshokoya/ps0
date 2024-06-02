@@ -1,10 +1,9 @@
 
 type AddAccountArgs = {
-  addType: string
-  selectedDomain: string
+  add_type: string
+  selected_domain: string
   email: string
   password: string
-  recoveryEmail: string
 }
 
 type R<T = Record<string, any>> = {
@@ -21,13 +20,6 @@ type TQTask = {
   status?: string
   taskType: string
   processes: []
-}
-
-type STQTask = {
-  taskGroup: string
-  taskType: string
-  taskID: string
-  pid: string
 }
 
 type TaskQueueEvent<T = Record<string, any>, ReqType = string> = {
@@ -47,96 +39,6 @@ type TaskQueueEvent<T = Record<string, any>, ReqType = string> = {
   }
 }
 
-type ScrapeQueueEvent<T = Record<string, any>> = {
-  pid: string
-  ok?: boolean
-  taskID: string
-  taskGroup: string
-  taskType: string
-  message?: string
-  metadata?: {
-    taskID: string
-    taskGroup: string
-    taskType: string
-  } & { metadata?: T }
-}
-
-type SQueueItem<T = Record<string, any>> = {
-  pid: string
-  taskID: string
-  taskType
-  taskGroup: string
-  action: string
-  args: Omit<T, 'taskID'>
-  metadata: Record<string, any>
-}
-
-type SProcessQueueItem = {
-  task: SQueueItem
-  process: Promise<any>
-  abortController: AbortController
-}
-
-type ForkScrapeEventArgs = {
-  pid: string
-  taskGroup: string
-  action: (typeof CHANNELS)[keyof typeof CHANNELS]
-  args: Omit<Record<string, any>, taskID>
-  metadata: {
-    taskID?: string
-    taskGroup: string
-    taskType: string
-    metadata?: Record<string, any>
-  }
-}
-
-type ForkScrapeEvent = {
-  taskType: 'scrape' | 'move'
-  meta: ForkScrapeEventArgs
-}
-
-type ForkEvent<T = ForkScrapeEvent> = {
-  data: T
-}
-
-type ForkActions =
-  // account
-  | 'a_aum'
-  | 'a_aua'
-  | 'a_ala'
-  | 'a_adel'
-  | 'a_alm'
-  | 'a_ad'
-  | 'a_ac'
-  | 'a_au'
-  | 'a_aga'
-  | 'a_aa'
-  | 'a_aca'
-  // domain
-  | 'a_da'
-  | 'a_dv'
-  | 'a_dd'
-  | 'a_dga'
-  // metadata
-  | 'a_mga'
-  | 'a_md'
-  | 'a_mu'
-  // records
-  | 'a_rga'
-  | 'a_rg'
-  // scrape
-  | 'a_s'
-  // proxy
-  | 'a_pga'
-  | 'a_pa'
-
-type Forks = {
-  [key: string]: {
-    fork: ChildProcess
-    TIP: string[] // ids
-    stopType?: StopType
-  }
-}
 
 // type ApolloSocketEvent<T = Record<string, any>> = {
 //   taskID: string
@@ -152,37 +54,29 @@ type TaskQueue = {
   timeout: TQTask[]
 }
 
-type STaskQueue = {
-  queue: STQTask[]
-  processing: STQTask[]
-  timeout: STQTask[]
-}
-
 export type IAccount = {
   id: string
   domain: string
-  trialTime: string
   suspended: boolean
   verified: 'no' | 'confirm' | 'yes' // confirm = conformation email sent
-  loginType: 'default' | 'gmail' | 'outlook'
+  login_type: 'default' | 'gmail' | 'outlook'
   email: string
   password: string
   cookies: string
   proxy: string
-  lastUsed: number // new Date.getTime()
-  recoveryEmail: string
-  emailCreditsUsed: number
-  emailCreditsLimit: number
-  renewalDateTime: number | Date
-  renewalStartDate: number | Date
-  renewalEndDate: number | Date
-  trialDaysLeft: number
-  history: [
-    amountOfLeadsScrapedOnPage: number,
-    timeOfScrape: number,
-    listName: string,
-    scrapeID: string
-  ][]
+  last_used: number // new Date.getTime()
+  credits_used: number
+  credits_limit: number
+  renewal_date: number | Date
+  renewal_start_date: number | Date
+  renewal_end_date: number | Date
+  trial_days_left: number
+  history: {
+    total_page_scrape: number,
+    scrape_time: number,
+    list_name: string,
+    scrape_id: string
+  }[]
 }
 
 export type IDomain = {

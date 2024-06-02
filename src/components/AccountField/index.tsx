@@ -5,13 +5,12 @@ import {
   accountState,
   accountTaskHelper,
   stateResStatusHelper,
-  IAccount
 } from '../../core/state/account'
 import { appState$ } from '../../core/state'
 import { AccountTable } from './AccountTable/'
 import { AccountForms } from './AccountForms'
 import { Flex } from '@radix-ui/themes'
-import { IDomain, R } from '../..'
+import { IAccount, IDomain, R } from '../..'
 import { invoke } from "@tauri-apps/api";
 import { CHANNELS } from '../../core/channels'
 
