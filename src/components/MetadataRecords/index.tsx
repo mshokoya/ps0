@@ -5,9 +5,10 @@ import { RecordTable } from './RecordTable'
 import { Options } from './Options'
 import { batch } from '@legendapp/state'
 import { appState$ } from '../../core/state'
-import { IMetaData, IRecords } from '../..'
+import { IMetaData, IRecords, R } from '../..'
 import { metadataResStatusHelper, metadataState, metadataTaskHelper } from '../../core/state/metadata'
-import { fetchData } from '../../core/util'
+import { invoke } from '@tauri-apps/api/tauri'
+import { CHANNELS } from '../../core/channels'
 
 export const MetadataAndRecordField = observer(() => {
   const metaChecked = useObservable<number[]>([])
@@ -23,17 +24,17 @@ export const MetadataAndRecordField = observer(() => {
     metaChecked.get().forEach((m) => {
       metas[m].scrapes.forEach((d) => filter.push(d.scrapeID))
     })
-    return filter.length ? records.filter((r) => filter.includes(r.scrapeID)) : []
+    return filter.length ? records.filter((r) => filter.includes(r.scrape_id)) : []
   })
 
   const updateMeta = async (input: Partial<IMetaData>) => {
     reqInProcess.update.set(true)
     const metaID = metas[metadataState.selectedMeta.peek()].id
     metadataTaskHelper.add(metaID, { type: 'update', status: 'processing' })
-    await fetchData<IMetaData>('meta', CHANNELS.a_metadataUpdate, {
+    await invoke<R<IMetaData>>(CHANNELS.update_domain, {args: {
       id: input.id,
       name: input.name
-    })
+    }})
       .then((res) => {
         if (res.ok) {
           metadataResStatusHelper.add(metaID, ['update', 'ok'])
@@ -59,7 +60,7 @@ export const MetadataAndRecordField = observer(() => {
   const continueScraping = () => {
     const metaID = metas[metadataState.selectedMeta.peek()].id
     metadataTaskHelper.add(metaID, { type: 'continue', status: 'processing' })
-    fetchData('meta', CHANNELS.a_scrape, { id: metaID })
+    invoke<R<void>>(CHANNELS.scrape_task, {args: { id: metaID }})
   }
 
   // create warning popup
@@ -78,9 +79,9 @@ export const MetadataAndRecordField = observer(() => {
       }
     })
 
-    await fetchData<{ ok: string[]; fail: string[] }>('meta', CHANNELS.a_metadataDelete, {
+    await invoke<R<{ ok: string[]; fail: string[] }>>(CHANNELS.delete_metadatas, {args: {
       id: metaIDs
-    })
+    }})
       .then((res) => {
         batch(() => {
           if (res.ok) {
