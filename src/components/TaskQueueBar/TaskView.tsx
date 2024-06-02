@@ -4,12 +4,12 @@ import { useObservable, useSelector } from '@legendapp/state/react'
 import { Tooltip } from 'react-tooltip'
 import { TaskViewPopup } from './TaskViewPopup'
 import { taskQueue } from '../../core/state/taskQueue'
-import { TaskQueueEvent } from '../..'
+import { TQTask } from '../..'
 
 // https://react-tooltip.com/docs/options#available-props
 
 type TaskViewState = {
-  selectedTask: TaskQueueEvent | null
+  selectedTask: TQTask | null
   popup: boolean
 }
 
@@ -74,12 +74,12 @@ export const TaskView = () => {
             </div>
           ))}
         <Tooltip anchorSelect="#clickable" place="bottom-end" clickable>
-          <div>Task Type: {s.selectedTask.taskType.get()}</div>
+          <div>Task Type: {s.selectedTask.task_type.get()}</div>
           <div>Message: {s.selectedTask.message.get()}</div>
-          <div>Task Group: {s.selectedTask.metadata.taskGroup.get()}</div>
-          <div>Task ID: {s.selectedTask.metadata.taskID.get()}</div>
-          <div>Metadata Task Type: {s.selectedTask.metadata.taskType.get()}</div>
-          <div>Metadata AccountID: {s.selectedTask.metadata.metadata.accountID.get()}</div>
+          <div>Task Group: {s.selectedTask.action_data.task_group.get()}</div>
+          <div>Task ID: {s.selectedTask.task_id.get()}</div>
+          <div>Metadata Task Type: {s.selectedTask.action_data.task_type.get()}</div>
+          <div>Metadata AccountID: {s.selectedTask.metadata.account_id.get()}</div>
         </Tooltip>
       </div>
     </>

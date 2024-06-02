@@ -12,41 +12,18 @@ type R<T = Record<string, any>> = {
   ok: boolean
 }
 
-// type _DDD_ = {}
-
 type TQTask = {
-  taskGroup: string
-  taskID: string
-  status?: string
-  taskType: string
-  processes: []
-}
-
-type TaskQueueEvent<T = Record<string, any>, ReqType = string> = {
-  taskID: string
-  message?: string
-  ok?: boolean
-  status?: string
-  useFork: boolean
-  taskType: ReqType
-  timeout?: [timeout: number, rounds: number]
-  // entity/actions
-  metadata: {
-    taskID: string
-    taskGroup: string
-    taskType: string
-    metadata?: T
+  task_id: string
+  message: string
+  ok?: string
+  task_type: ReqType
+  metadata: TM
+  action_data: {
+    task_group: string, 
+    task_type: string, 
+    metadata?: {[key: string]: any},
   }
 }
-
-
-// type ApolloSocketEvent<T = Record<string, any>> = {
-//   taskID: string
-//   taskType: string
-//   message: string
-//   ok?: boolean
-//   metadata: T
-// }
 
 type TaskQueue = {
   queue: TQTask[]

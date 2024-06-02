@@ -1,9 +1,10 @@
 import { IoMdClose } from 'react-icons/io'
+import { TQTask } from '../..'
 
 type Props = {
   setPopup: () => void
   deleteTask: () => Promise<void>
-  task: TaskQueueSocketEvent | null
+  task: TQTask | null
 }
 
 type TaskViewReqType = 'delete'
@@ -32,7 +33,7 @@ export const TaskViewPopup = (p: Props) => {
 
         <div className="text-center border-b-2 border-cyan-600 mb-2">
           <h1>
-            <span className="text-cyan-600">{p.task?.metadata.taskID || ''}</span> Settings
+            <span className="text-cyan-600">{p.task?.task_id || ''}</span> Settings
           </h1>
         </div>
 
@@ -51,25 +52,24 @@ export const TaskViewPopup = (p: Props) => {
         <div className="border-cyan-600 border-2 w-full h-full grow overflow-scroll">
           Task Queue Info
           <br />
-          {p.task?.taskType && <div>Task Type: {p.task.taskType}</div>}
-          {p.task?.status && <div>Status: {p.task.status}</div>}
+          {p.task?.task_type && <div>Task Type: {p.task.task_type}</div>}
           {p.task?.message && <div>Message: {p.task.message}</div>}
           <br />
           <br />
           Task Info
           <br />
-          {p.task?.metadata.taskID && <div>TaskID: {p.task.metadata.taskID}</div>}
-          {p.task?.metadata.taskGroup && <div>Task Group: {p.task.metadata.taskGroup}</div>}
-          {p.task?.metadata.taskType && <div>Task Status: {p.task.metadata.taskType}</div>}
+          {p.task?.task_id && <div>TaskID: {p.task.task_id}</div>}
+          {p.task?.action_data.task_group && <div>Task Group: {p.task.action_data.task_group}</div>}
+          {p.task?.action_data.task_type && <div>Task Status: {p.task.action_data.task_type}</div>}
           <br />
           <br />
           MetaData
           <br />
-          {p.task?.metadata.metadata.accountID && (
-            <div>Account ID: {p.task.metadata.metadata.accountID}</div>
+          {p.task?.metadata.account_id && (
+            <div>Account ID: {p.task.metadata.account_id}</div>
           )}
-          {p.task?.metadata.metadata.domainID && (
-            <div>Domain ID: {p.task.metadata.metadata.domainID}</div>
+          {p.task?.metadata.domain_id && (
+            <div>Domain ID: {p.task.metadata.domain_id}</div>
           )}
         </div>
       </div>

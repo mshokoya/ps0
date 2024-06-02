@@ -6,22 +6,33 @@ import { Flex, Theme } from '@radix-ui/themes'
 import { TaskView } from './components/TaskQueueBar/TaskView'
 import { MetadataAndRecordField } from './components/MetadataRecords'
 import { ScrapeField } from './components/ScrapeField'
-import { taskQueue } from './core/state/taskQueue'
+import { useEffect } from 'react'
+import { listen } from '@tauri-apps/api/event'
 
 const App = observer(() => {
-  const viewForks = async () => {
-    // console.log(await window['fork'][CHANNELS.fork_get]())
-    console.log(taskQueue.get())
-  }
+  useEffect(() => {
+    const waitQueue = listen("waitQueue", (event) => {
+      console.log(event.payload);
+    });
 
-  const viewQueues = async () => {
-    // console.log(await window['fork'][CHANNELS.taskQueue_queues]())
-  }
+    const processQueue = listen("processQueue", (event) => {
+      console.log(event.payload);
+    });
+
+    const timeoutQueue = listen("timeoutQueue", (event) => {
+      console.log(event.payload);
+    });
+
+    // https://github.com/tauri-apps/tauri/discussions/5194
+    return () => {
+      waitQueue.then((f) => f());
+      processQueue.then((f) => f());
+      timeoutQueue.then((f) => f());
+    };
+  }, []);
 
   return (
     <Theme accentColor="gray" grayColor="mauve" radius="small" scaling="90%" appearance="dark">
-      <button onClick={() => viewQueues()}>view queues</button>
-      <button onClick={() => viewForks()}>view forks</button>
       <a className="ugly-download hidden" />
       <div className="flex relative">
         <Flex direction="column" className=" center h-screen z-0 w-full p-2" gap="3">
