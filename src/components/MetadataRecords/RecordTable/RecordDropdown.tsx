@@ -1,4 +1,5 @@
-import { IRecord } from '../../../../../shared/index'
+import { IRecord } from "../../.."
+
 
 export const RecordDropdown = ({ record }: { record: IRecord }) => {
   return (

@@ -1,12 +1,10 @@
 import { observable } from '@legendapp/state'
-
-import { IDomain, IMetaData, IRecords } from 'src/shared'
 // import { IProxy } from '../../components/ProxyField'
 
 import { IAccount } from './account'
 import { fetchData } from '../util'
-import { CHANNELS } from '../../../../shared/util'
 import { metaMockData } from '../mockdata'
+import { IDomain, IMetaData, IRecords } from '../..'
 
 export type Status<ReqType> = [reqType: ReqType, status: 'ok' | 'fail']
 export type ResStatus<T> = { [entityID: string]: Status<T>[] }

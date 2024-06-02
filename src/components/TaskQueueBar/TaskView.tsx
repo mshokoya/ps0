@@ -4,7 +4,7 @@ import { useObservable, useSelector } from '@legendapp/state/react'
 import { Tooltip } from 'react-tooltip'
 import { TaskViewPopup } from './TaskViewPopup'
 import { taskQueue } from '../../core/state/taskQueue'
-// import { TaskQueueEvent } from 'src/shared'
+import { TaskQueueEvent } from '../..'
 
 // https://react-tooltip.com/docs/options#available-props
 

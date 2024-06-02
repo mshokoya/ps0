@@ -1,16 +1,13 @@
 import { observer, useObservable, useObserve } from '@legendapp/state/react'
-import { taskQueue } from '@renderer/core/state/taskQueue'
 import { useCallback } from 'react'
 import ReactFlow, { addEdge, Background, useNodesState, useEdgesState, Controls } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { STaskQueue, StopType, TQTask, TaskQueue } from 'src/shared'
-import dagre from 'dagre'
-import { initialEdges, initialNodes } from '@renderer/core/state'
-import { scrapeTaskQueue } from '@renderer/core/state/scrapeQueue'
 import { Box, Button, CheckboxGroup, DropdownMenu, Flex, Text } from '@radix-ui/themes'
-import { CHANNELS } from '../../../../shared/util'
-import { forkState$ } from '@renderer/core/state/fork'
 import { ObservableObject, batch } from '@legendapp/state'
+import { STaskQueue, StopType, TaskQueue, TQTask } from '../..'
+import { taskQueue } from '../../core/state/taskQueue'
+import { scrapeTaskQueue } from '../../core/state/scrapeQueue'
+import { forkState$ } from '../../core/state/fork'
 
 const dagreGraph = new dagre.graphlib.Graph()
 dagreGraph.setDefaultEdgeLabel(() => ({}))

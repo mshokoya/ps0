@@ -1,6 +1,6 @@
-import { ObservableObject, ObservablePrimitiveBaseFns } from '@legendapp/state'
+import { ObservablePrimitiveBaseFns } from '@legendapp/state'
 import { Box, Button, Flex, Tabs, Text, TextField } from '@radix-ui/themes'
-import { domainTaskHelper } from '@renderer/core/state/domain'
+import { domainTaskHelper } from '../../../core/state/domain'
 
 type Props = {
   addDomain: () => Promise<void>

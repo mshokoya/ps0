@@ -2,11 +2,10 @@ import { fetchData } from '../../core/util'
 import { observer, useObservable, useSelector } from '@legendapp/state/react'
 import { domainState, domainTaskHelper, domainResStatusHelper } from '../../core/state/domain'
 import { appState$ } from '../../core/state'
-import { CHANNELS } from '../../../../shared/util'
 import { Flex } from '@radix-ui/themes'
 import { DomainTable } from './DomainTable'
-import { IDomain } from '@shared/index'
 import { DomainForms } from './DomainForm'
+import { IDomain } from '../..'
 
 export const DomainField = observer(() => {
   const domains = useSelector(appState$.domains) as IDomain[]

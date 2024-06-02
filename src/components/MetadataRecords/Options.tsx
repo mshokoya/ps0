@@ -1,7 +1,7 @@
 import { ObservableComputed } from '@legendapp/state'
 import { Button, DropdownMenu } from '@radix-ui/themes'
-import { downloadData } from '@renderer/core/util'
-import { IRecords } from '@shared/index'
+import { IRecords } from '../..'
+import { downloadData } from '../../core/util'
 
 export const Options = ({
   filteredRecords,

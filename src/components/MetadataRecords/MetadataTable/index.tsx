@@ -1,14 +1,14 @@
 import { ObservableObject } from '@legendapp/state'
 import { observer } from '@legendapp/state/react'
 import { Button, Dialog, ScrollArea } from '@radix-ui/themes'
-import { IMetaData } from '@shared/index'
 import { MouseEvent } from 'react'
 import { IoOptionsOutline } from 'react-icons/io5'
 import { MdCheckBox, MdCheckBoxOutlineBlank } from 'react-icons/md'
 import { SlOptionsVertical } from 'react-icons/sl'
 import { MetadataDropdown } from './MetadataDropdown'
 import { MetadataPopup } from '../MetadataPopups'
-import { metadataState } from '@renderer/core/state/metadata'
+import { IMetaData } from '../../..'
+import { metadataState } from '../../../core/state/metadata'
 
 type MetaSubCompArgs = {
   metas: IMetaData[]

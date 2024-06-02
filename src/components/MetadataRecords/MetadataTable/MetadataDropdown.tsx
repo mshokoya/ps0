@@ -1,5 +1,6 @@
-import { appState$ } from '@renderer/core/state'
-import { IMetaData } from '@shared/index'
+import { IMetaData } from "../../.."
+import { appState$ } from "../../../core/state"
+
 
 export const MetadataDropdown = ({ meta }: { meta: IMetaData }) => {
   return (

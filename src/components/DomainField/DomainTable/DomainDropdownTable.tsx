@@ -1,4 +1,5 @@
-import { IDomain } from '@shared/index'
+import { IDomain } from "../../.."
+
 
 export const DomainDropdownTable = ({ domain }: { domain: IDomain }) => {
   return (

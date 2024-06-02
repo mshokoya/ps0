@@ -1,5 +1,4 @@
 import { observable } from '@legendapp/state'
-import { CHANNELS } from '../../../../shared/util'
 
 type ForkStatus = 'stopping'
 

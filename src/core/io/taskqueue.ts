@@ -1,6 +1,6 @@
+import { TaskQueueEvent } from '../..'
 import { taskQueueHelper } from '../state/taskQueue'
 import { handleApolloProcessQueueEvents, handleApolloTaskQueueEvents } from './apollo'
-import { TaskQueueEvent } from 'src/shared'
 
 export function handleTaskQueueEvent(res: TaskQueueEvent<any>) {
   switch (res.taskType) {

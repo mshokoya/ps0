@@ -1,8 +1,8 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { ObservableObject } from '@legendapp/state'
-import { STaskQueue, TQTask, TaskQueue } from 'src/shared'
 import { batch } from '@legendapp/state'
+import { STaskQueue, TaskQueue } from '..'
 
 export const cn = (...args: ClassValue[]) => {
   return twMerge(clsx(...args))

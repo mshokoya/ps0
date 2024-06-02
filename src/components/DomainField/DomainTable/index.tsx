@@ -1,13 +1,13 @@
 import { observer } from '@legendapp/state/react'
 import { Button, Dialog, ScrollArea } from '@radix-ui/themes'
-import { appState$ } from '@renderer/core/state'
-import { domainResStatusHelper, domainState, domainTaskHelper } from '@renderer/core/state/domain'
 import { MouseEvent } from 'react'
 import { IoOptionsOutline } from 'react-icons/io5'
 import { SlOptionsVertical } from 'react-icons/sl'
 import { DomainDropdownTable } from './DomainDropdownTable'
 import { DomainPopup } from '../DomainPopup'
-import { IDomain } from '../../../../../shared/index'
+import { IDomain } from '../../..'
+import { domainResStatusHelper, domainState, domainTaskHelper } from '../../../core/state/domain'
+import { appState$ } from '../../../core/state'
 
 type Props = {
   domains: IDomain[]

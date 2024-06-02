@@ -1,8 +1,8 @@
 import { useObservable } from '@legendapp/state/react'
-import { DomainReqType } from '@renderer/core/state/domain'
-import { IDomain } from '@shared/index'
 import { DomainActionsComp } from './DomainActions'
 import { UpdateFields } from './UpdateDomain'
+import { IDomain } from '../../..'
+import { DomainReqType } from '../../../core/state/domain'
 
 type Props = {
   verifyDomain: () => Promise<void>

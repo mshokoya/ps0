@@ -1,7 +1,6 @@
 import { observable } from '@legendapp/state'
-
-import { TQTask, TaskQueue } from 'src/shared'
 import { TaskQueueHelper } from '../util'
+import { TaskQueue, TQTask } from '../..'
 
 export const taskQueue = observable<TaskQueue>({
   queue: [],

@@ -1,7 +1,4 @@
-// import { RecordField } from './components/Records/RecordField'
-// import { ScrapeField } from './components/ScrapeField'
 import { Sidebar } from './components/Sidebar'
-// import { TaskView } from './components/TaskView'
 import { PromptPopup } from './components/Prompt'
 import { promptState } from './core/state/prompt'
 import { observer } from '@legendapp/state/react'
@@ -9,10 +6,7 @@ import { Flex, Theme } from '@radix-ui/themes'
 import { TaskView } from './components/TaskQueueBar/TaskView'
 import { MetadataAndRecordField } from './components/MetadataRecords'
 import { ScrapeField } from './components/ScrapeField'
-import { appState$ } from './core/state'
 import { taskQueue } from './core/state/taskQueue'
-// import { CHANNELS } from '../../shared/util'
-// import { accountState } from './core/state/account'
 
 const App = observer(() => {
   const viewForks = async () => {

@@ -1,11 +1,11 @@
-import { DomainReqType, domainTaskHelper } from '@renderer/core/state/domain'
 import { DomainPopupState } from '.'
 import { ObservableObject } from '@legendapp/state'
-import { IDomain } from '@shared/index'
 import { observer } from '@legendapp/state/react'
 import { batch } from '@legendapp/state'
 import { Button, Dialog, Flex, Text, TextField } from '@radix-ui/themes'
-import { blinkCSS } from '@renderer/core/util'
+import { DomainReqType, domainTaskHelper } from '../../../core/state/domain'
+import { IDomain } from '../../..'
+import { blinkCSS } from '../../../core/util'
 
 type UpdateDomainProps = {
   handleRequest: (h: DomainReqType) => void

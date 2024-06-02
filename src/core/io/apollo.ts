@@ -1,6 +1,6 @@
+import { ScrapeQueueEvent, TaskQueueEvent } from '../..';
 import { AccountReqType, IAccount, accountTaskHelper, stateResStatusHelper } from '../state/account'
 import { appState$ } from '../state/index'
-import { ScrapeQueueEvent, TaskQueueEvent } from 'src/shared'
 
 export function handleApolloScrapeEndEvent(
   res:

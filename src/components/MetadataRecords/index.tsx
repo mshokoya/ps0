@@ -1,19 +1,13 @@
 import { observer, useComputed, useObservable, useSelector } from '@legendapp/state/react'
-import { IMetaData, IRecords } from 'src/shared'
 import { Flex } from '@radix-ui/themes'
-import { appState$ } from '@renderer/core/state'
 import { MetadataTable } from './MetadataTable'
 import { RecordTable } from './RecordTable'
 import { Options } from './Options'
-
-import { fetchData } from '@renderer/core/util'
-import {
-  metadataResStatusHelper,
-  metadataState,
-  metadataTaskHelper
-} from '@renderer/core/state/metadata'
-import { CHANNELS } from '../../../../shared/util'
 import { batch } from '@legendapp/state'
+import { appState$ } from '../../core/state'
+import { IMetaData, IRecords } from '../..'
+import { metadataResStatusHelper, metadataState, metadataTaskHelper } from '../../core/state/metadata'
+import { fetchData } from '../../core/util'
 
 export const MetadataAndRecordField = observer(() => {
   const metaChecked = useObservable<number[]>([])

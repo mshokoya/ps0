@@ -1,6 +1,4 @@
-import { FormEvent } from 'react'
 import { fetchData } from '../../core/util'
-import { IDomain } from '@shared/index'
 import { observer, useSelector } from '@legendapp/state/react'
 import { batch } from '@legendapp/state'
 import {
@@ -10,10 +8,10 @@ import {
   IAccount
 } from '../../core/state/account'
 import { appState$ } from '../../core/state'
-import { CHANNELS } from '../../../../shared/util'
 import { AccountTable } from './AccountTable/'
 import { AccountForms } from './AccountForms'
 import { Flex } from '@radix-ui/themes'
+import { IDomain } from '../..'
 
 export const AccountField = observer(() => {
   const state = accountState //useSelector ?

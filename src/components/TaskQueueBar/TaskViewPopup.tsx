@@ -1,5 +1,4 @@
 import { IoMdClose } from 'react-icons/io'
-import { TaskQueueSocketEvent } from '../core/io/taskqueue'
 
 type Props = {
   setPopup: () => void

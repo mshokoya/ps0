@@ -2,10 +2,10 @@ import { ObservableObject } from '@legendapp/state'
 import { batch } from '@legendapp/state'
 import { MetadataPopupState } from '.'
 import { Button, Dialog, Flex, Text, TextField } from '@radix-ui/themes'
-import { blinkCSS, cloneObject } from '@renderer/core/util'
 import { observer } from '@legendapp/state/react'
-import { IMetaData } from '@shared/index'
-import { MetadataReqType, metadataTaskHelper } from '@renderer/core/state/metadata'
+import { MetadataReqType, metadataTaskHelper } from '../../../core/state/metadata'
+import { IMetaData } from '../../..'
+import { blinkCSS, cloneObject } from '../../../core/util'
 
 type UFProps = {
   handleRequest: (input: MetadataReqType) => void

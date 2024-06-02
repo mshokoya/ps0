@@ -1,9 +1,9 @@
 import { ObservableObject } from '@legendapp/state'
 import { Button, Dialog, Flex, Spinner } from '@radix-ui/themes'
-import { MetadataReqType, metadataTaskHelper } from '@renderer/core/state/metadata'
-import { blinkCSS } from '@renderer/core/util'
-import { IMetaData } from '@shared/index'
 import { MetadataPopupState } from '.'
+import { IMetaData } from '../../..'
+import { MetadataReqType, metadataTaskHelper } from '../../../core/state/metadata'
+import { blinkCSS } from '../../../core/util'
 
 export type MetadataPopupProps = {
   meta: IMetaData

@@ -1,7 +1,7 @@
 import { Dispatch, SetStateAction, useState } from 'react'
 import { IoMdClose } from 'react-icons/io'
-import { fetchData } from '../core/util'
 import { IProxy } from './ProxyField'
+import { fetchData } from '../../core/util'
 
 type Props = {
   setPopup: Dispatch<SetStateAction<number | null>>

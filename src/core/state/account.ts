@@ -1,7 +1,6 @@
 import { observable } from '@legendapp/state'
 import { ResStatus, ResStatusHelpers, TaskHelpers, TaskInProcess } from '../util'
 import { appState$ } from '.'
-import { CHANNELS } from '../../../../shared/util'
 
 export const accountState = observable<State>({
   input: { email: '', password: '', recoveryEmail: '' },

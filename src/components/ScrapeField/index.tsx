@@ -2,25 +2,12 @@ import { observer, useObservable } from '@legendapp/state/react'
 import { Button, Checkbox, Flex, Separator, Text, TextArea, TextField } from '@radix-ui/themes'
 import { FormEvent, MouseEvent } from 'react'
 import { GiCancel } from 'react-icons/gi'
-import { CHANNELS } from '../../../../shared/util'
-import {
-  chuckRange,
-  fetchData,
-  getEmailStatusFromApolloURL,
-  getLeadColFromApolloURL,
-  getRangeFromApolloURL,
-  removeEmailStatusInApolloURL,
-  removeLeadColInApolloURL,
-  setEmailStatusInApolloURL,
-  setLeadColInApolloURL,
-  setRangeInApolloURL,
-  toMs
-} from '@renderer/core/util'
 import { batch } from '@legendapp/state'
-import { selectAccForScrapingFILO } from '@renderer/core/state/account'
-import { appState$ } from '@renderer/core/state'
 import { Chunk } from './Chunk'
 import { Diagram } from './Diagram'
+import { chuckRange, fetchData, getEmailStatusFromApolloURL, getLeadColFromApolloURL, getRangeFromApolloURL, removeEmailStatusInApolloURL, removeLeadColInApolloURL, setEmailStatusInApolloURL, setLeadColInApolloURL, setRangeInApolloURL, toMs } from '../../core/util'
+import { selectAccForScrapingFILO } from '../../core/state/account'
+import { appState$ } from '../../core/state'
 
 type State = {
   name: string

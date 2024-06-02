@@ -1,10 +1,10 @@
 import { ObservableComputed } from '@legendapp/state'
-import { IRecords } from '@shared/index'
 import { MouseEvent } from 'react'
 import { BiLinkAlt } from 'react-icons/bi'
 import { FaFacebookF, FaLinkedinIn, FaTwitter } from 'react-icons/fa'
 import { RecordDropdown } from './RecordDropdown'
 import { ScrollArea } from '@radix-ui/themes'
+import { IRecords } from '../../..'
 
 type RecordsSubCompArgs = {
   filteredRecords: ObservableComputed<IRecords[]>

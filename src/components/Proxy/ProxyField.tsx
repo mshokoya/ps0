@@ -1,9 +1,9 @@
 import { FormEvent, useEffect, useState, Dispatch, ChangeEvent, MouseEvent } from 'react'
-import { fetchData } from '../core/util'
 import { SlOptionsVertical } from 'react-icons/sl'
 import { IoOptionsOutline } from 'react-icons/io5'
 import { ProxyPopup } from './ProxyPopup'
-import { proxyMockData } from '../core/mockdata'
+import { proxyMockData } from '../../core/mockdata'
+import { fetchData } from '../../core/util'
 
 export type IProxy = {
   id: string
@@ -98,9 +98,6 @@ export const ProxyField = () => {
         if (d.data.valid === true) {
           setProxies((p) => [...p, d.data.data])
         }
-
-        console.log('here')
-
         setreqInProcess(false)
       })
       .catch((err: any) => {

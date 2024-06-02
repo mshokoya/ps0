@@ -1,9 +1,9 @@
 import { ObservableObject } from '@legendapp/state'
 import { DomainPopupState } from '.'
-import { blinkCSS } from '@renderer/core/util'
 import { Button, Dialog, Flex, Spinner } from '@radix-ui/themes'
-import { DomainReqType, domainTaskHelper } from '@renderer/core/state/domain'
-import { IDomain } from '@shared/index'
+import { DomainReqType, domainTaskHelper } from '../../../core/state/domain'
+import { IDomain } from '../../..'
+import { blinkCSS } from '../../../core/util'
 
 type MProps = {
   handleRequest: (a: DomainReqType) => Promise<void>

@@ -1,7 +1,7 @@
-import { ScrapeQueueEvent } from 'src/shared'
 import { handleApolloScrapeProcessQueueEvents, handleApolloScrapeTaskQueueEvents } from './apollo'
 import { scrapeTaskQueueHelper } from '../state/scrapeQueue'
 import { batch } from '@legendapp/state'
+import { ScrapeQueueEvent } from '../..'
 
 export function handleScrapeQueueEvent(res: ScrapeQueueEvent<unknown>) {
   switch (res.taskType) {

@@ -1,9 +1,9 @@
 import { useObservable } from '@legendapp/state/react'
-import { MetadataReqType } from '@renderer/core/state/metadata'
-import { IMetaData } from '../../../../shared/index'
 import { MetadataActions } from './Actions'
 import { UpdateFields } from './Update'
-import { cloneObject } from '@renderer/core/util'
+import { IMetaData } from '../../..'
+import { cloneObject } from '../../../core/util'
+import { MetadataReqType } from '../../../core/state/metadata'
 
 export type MetadataPopupProps = {
   meta: IMetaData

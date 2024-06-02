@@ -167,7 +167,6 @@ type STaskQueue = {
 export type IAccount = {
   id: string
   domain: string
-  accountType: 'free' | 'premium'
   trialTime: string
   suspended: boolean
   verified: 'no' | 'confirm' | 'yes' // confirm = conformation email sent
@@ -235,7 +234,7 @@ export type IRecord = {
   Title: string
   'Company Name': string
   'Company Website': string
-  'Comapny Linkedin': string
+  'Company Linkedin': string
   'Company Twitter': string
   'Company Facebook': string
   Email: string
