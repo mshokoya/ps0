@@ -5,9 +5,11 @@ import { GiCancel } from 'react-icons/gi'
 import { batch } from '@legendapp/state'
 import { Chunk } from './Chunk'
 import { Diagram } from './Diagram'
-import { chuckRange, fetchData, getEmailStatusFromApolloURL, getLeadColFromApolloURL, getRangeFromApolloURL, removeEmailStatusInApolloURL, removeLeadColInApolloURL, setEmailStatusInApolloURL, setLeadColInApolloURL, setRangeInApolloURL, toMs } from '../../core/util'
+import { chuckRange, getEmailStatusFromApolloURL, getLeadColFromApolloURL, getRangeFromApolloURL, removeEmailStatusInApolloURL, removeLeadColInApolloURL, setEmailStatusInApolloURL, setLeadColInApolloURL, setRangeInApolloURL, toMs } from '../../core/util'
 import { selectAccForScrapingFILO } from '../../core/state/account'
 import { appState$ } from '../../core/state'
+import { invoke } from '@tauri-apps/api/tauri'
+import { CHANNELS } from '../../core/channels'
 
 type State = {
   name: string
@@ -68,7 +70,7 @@ export const ScrapeField = observer(() => {
     if (!s.aar.accounts.length) return
     if (s.aar.chunk.length !== s.aar.accounts.length) return
 
-    await fetchData('scrape', CHANNELS.a_scrape, {
+    await invoke(CHANNELS.scrape_task, {args: {
       name: state.name,
       url: state.url,
       chunk: state.aar.chunk,
@@ -79,7 +81,7 @@ export const ScrapeField = observer(() => {
         rounds: 1
       },
       maxLeads: 53
-    })
+    }})
       .then((d) => {
         console.log(d)
       })
