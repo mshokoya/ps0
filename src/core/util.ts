@@ -311,8 +311,11 @@ export const downloadData = (
   const file = new File([data], fileName, { type })
   const exportUrl = URL.createObjectURL(file)
 
+  // @ts-ignore
   el.href = exportUrl
+    // @ts-ignore
   el.download = fileName
+    // @ts-ignore
   el.click()
   URL.revokeObjectURL(exportUrl)
 }
@@ -321,8 +324,8 @@ const setCSVColumn = (data: Record<string, any>[]) => Object.keys(data[0]).join(
 
 const arrOfObjToCsv = (data: Record<string, any>) => {
   return data
-    .map((f) => Object.values(f))
-    .map((e) => e.join(','))
+    .map((f: Record<string, any>) => Object.values(f))
+    .map((e: string[]) => e.join(','))
     .join('\n')
 }
 
