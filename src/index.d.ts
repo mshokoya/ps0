@@ -71,16 +71,8 @@ export type IMetaData = {
   url: string
   params: { [key: string]: string }
   name: string
-  scrapes: { scrapeID: string; listName: string; length: number; date: number }[]
-  accounts: { accountID: string; range: [min: number, max: number] }[]
-}
-
-export type IProxy = {
-  id: string
-  proxy: string
-  protocol: string
-  host: string
-  port: string
+  scrapes: { scrape_id: string; list_name: string; length: number; date: number }[]
+  accounts: { account_id: string; range: [min: number, max: number] }[]
 }
 
 export type IRecords = {
@@ -100,7 +92,7 @@ export type IRecord = {
   company_website: string
   company_linkedin: string
   company_twitter: string
-  comapny_facebook: string
+  company_facebook: string
   email: string
   is_verified: boolean
   company_location: string
