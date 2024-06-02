@@ -1,6 +1,9 @@
 import { observable } from '@legendapp/state'
 import { ResStatus, ResStatusHelpers, TaskHelpers, TaskInProcess } from '../util'
 import { appState$ } from '.'
+import { IAccount } from '../..'
+import { invoke } from '@tauri-apps/api/tauri'
+import { CHANNELS } from '../channels'
 
 export const accountState = observable<State>({
   input: { email: '', password: '', recoveryEmail: '' },
@@ -46,13 +49,11 @@ export const selectAccForScrapingFILO = async (
 ): Promise<(IAccount & { totalScrapedInLast30Mins: number })[]> => {
   const accs: (IAccount & { totalScrapedInLast30Mins: number })[] = []
 
-  const allAccInUse = (await window['cache']
-    [CHANNELS.cache_getAllAccountIDs]()
-    .catch(() => [])) as string[]
+  const allAccInUse = await invoke<string[]>(CHANNELS.accounts_in_use)
 
   let allAccounts = appState$.accounts
     .get()
-    .filter((a) => a.verified === 'yes' && !allAccInUse.includes(a.id))
+    .filter((a) => a.verified === 'yes' && !allAccInUse.includes(a._id))
     .map((a) => ({ ...a, totalScrapedInLast30Mins: 0 })) as (IAccount & {
     totalScrapedInLast30Mins: number
   })[]
@@ -73,70 +74,29 @@ export const selectAccForScrapingFILO = async (
 
   if (accsNeeded === 0) return accs
 
-  // if not enough unused accounts left, get account that have been used the least in the last 30mins
   allAccounts.sort((a, b) => {
     const totalLeadsScrapedIn30MinsA = totalLeadsScrapedInTimeFrame(a)
     const totalLeadsScrapedIn30MinsB = totalLeadsScrapedInTimeFrame(b)
-    a['totalScrapedInLast30Mins'] = totalLeadsScrapedIn30MinsA
-    b['totalScrapedInLast30Mins'] = totalLeadsScrapedIn30MinsB
+    a['total_scraped_recently'] = totalLeadsScrapedIn30MinsA
+    b['total_scraped_recently'] = totalLeadsScrapedIn30MinsB
     return totalLeadsScrapedIn30MinsB - totalLeadsScrapedIn30MinsA
   })
 
   const accounts = accs.concat(allAccounts).splice(-accsNeeded)
-
   return accounts
 }
 
 const totalLeadsScrapedInTimeFrame = (a: IAccount) => {
   const timeLimit = 1000 * 60 * 30 // 30mins
   return a.history.reduce(
-    (
-      acc: number,
-      cv: [
-        amountOfLeadsScrapedOnPage: number,
-        timeOfScrape: number,
-        listName: string,
-        scrapeID: string
-      ]
-    ) => {
-      if (isNaN(cv[0]) || isNaN(cv[1])) console.log(cv)
-      const isWithin30minMark = new Date().getTime() - cv[1] >= timeLimit
-
-      return isWithin30minMark ? acc + (cv[0] as any) : acc
+    (acc, cv) => {
+      // if (isNaN(cv[0]) || isNaN(cv[1])) console.log(cv)
+      const isWithin30minMark = new Date().getTime() - cv.scrape_time >= timeLimit
+      return isWithin30minMark ? acc + cv.total_page_scrape : acc
     },
     0
   )
 }
-
-// export type IAccount = {
-//   id: string
-//   domain: string
-//   accountType: string
-//   trialTime: string
-//   suspended: boolean
-//   verified: 'no' | 'confirm' | 'yes' // confirm = conformation email sent
-//   loginType: 'default' | 'gmail' | 'outlook'
-//   email: string
-//   password: string
-//   cookies: string
-//   firstname: string
-//   lastname: string
-//   proxy: string
-//   lastUsed: number // new Date.getTime()
-//   recoveryEmail: string
-//   emailCreditsUsed: number
-//   emailCreditsLimit: number
-//   renewalDateTime: number | Date
-//   renewalStartDate: number | Date
-//   renewalEndDate: number | Date
-//   trialDaysLeft: number
-//   history: [
-//     amountOfLeadsScrapedOnPage: number,
-//     timeOfScrape: number,
-//     listName: string,
-//     scrapeID: string
-//   ][]
-// }
 
 export type State = {
   input: Partial<IAccount>
