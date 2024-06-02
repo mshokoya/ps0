@@ -32,18 +32,22 @@ export const cloneObject = (a: Record<any, any> | any[]) => {
 
 // https://stackoverflow.com/questions/9640266/convert-hhmmss-string-to-seconds-only-in-javascript
 // https://stackoverflow.com/questions/41296950/convert-hours-and-minute-to-millisecond-using-javascript-or-jquery
-export const toMs = (hrs, min, sec) =>
+export const toMs = (hrs: string, min: string, sec: string) =>
   (parseInt(hrs) * 60 * 60 + parseInt(min) * 60 + parseInt(sec)) * 1000
 
 export const fmtDate = (n: any) => (n && n !== 'n/a' ? new Date(n).toDateString() : 'N/A')
 
-export const fetchData = async <T>(
-  ipcGroup: string,
-  channel: string,
-  ...args: any
-): Promise<FetchData<T>> => {
-  return await window[ipcGroup][channel](...args)
-}
+// export const fetchData = async <T>(
+//   ipcGroup: string,
+//   channel: string,
+//   ...args: any
+// ): Promise<FetchData<T>> => {
+//   return await window[ipcGroup][channel](...args)
+// }
+
+// export const fetchData = async <T>(channel: string, args: {[key: string]: any}): Promise<FetchData<T>> => {
+//   return await import { invoke } from "@tauri-apps/api";
+// }
 
 export const blinkCSS = (reqInProces: boolean = false, color: string = 'text-cyan-600') =>
   `${reqInProces ? `blink ${color}` : ''}`

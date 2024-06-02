@@ -1,6 +1,3 @@
-type IPC_APP = {
-  ipcMain: IpcMain
-}
 
 type AddAccountArgs = {
   addType: string
@@ -10,10 +7,7 @@ type AddAccountArgs = {
   recoveryEmail: string
 }
 
-type IPC_EVT_Response<T = Record<string, any>> = {
-  channel: string
-  id: string
-  type: string
+type R<T = Record<string, any>> = {
   message: string
   data: T
   ok: boolean
