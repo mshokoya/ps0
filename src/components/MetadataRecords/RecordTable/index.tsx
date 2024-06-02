@@ -61,39 +61,39 @@ export const RecordTable = ({ filteredRecords }: RecordsSubCompArgs) => {
                     className="py-3 px-2 border-opacity-30 border border-cyan-600 bg-black sticky left-0  truncate"
                     data-type="extend"
                   >
-                    <div className="mb-2 truncate">{record.data.Name}</div>
+                    <div className="mb-2 truncate">{record.data.name}</div>
                     <div>
-                      <a href={record.data.Linkedin} data-type="link"></a>
+                      <a href={record.data.linkedin} data-type="link"></a>
                       <FaLinkedinIn />
                     </div>
                   </td>
 
                   <td className="py-3 px-2 truncate" data-type="extend">
-                    {record.data.Title}
+                    {record.data.title}
                   </td>
 
                   <td
                     className="py-3 px-2 overflow-hidden w-full max-w-full min-w-full"
                     data-type="extend"
                   >
-                    <div className="mb-2 truncate">{record.data['Company Name']}</div>
+                    <div className="mb-2 truncate">{record.data.company_name}</div>
                     <div className="flex gap-3">
-                      {record.data['Company Website'] && (
+                      {record.data.company_website && (
                         <span>
                           <BiLinkAlt />
                         </span>
                       )}
-                      {record.data['Company Linkedin'] && (
+                      {record.data.company_linkedin && (
                         <span>
                           <FaLinkedinIn />
                         </span>
                       )}
-                      {record.data['Company Twitter'] && (
+                      {record.data.company_twitter && (
                         <span>
                           <FaTwitter />
                         </span>
                       )}
-                      {record.data['Company Facebook'] && (
+                      {record.data.comapny_facebook && (
                         <span>
                           <FaFacebookF />
                         </span>
@@ -102,27 +102,27 @@ export const RecordTable = ({ filteredRecords }: RecordsSubCompArgs) => {
                   </td>
 
                   <td className="py-3 px-2 truncate" data-type="extend">
-                    {record.data.Email}
+                    {record.data.email}
                   </td>
 
                   <td className="py-3 px-2 truncate" data-type="extend">
-                    {record.data['Company Location']}
+                    {record.data.company_location}
                   </td>
 
                   <td className="py-3 px-2 truncate text-center" data-type="extend">
-                    {record.data.Employees}
+                    {record.data.employees}
                   </td>
 
                   <td className="py-3 px-2 truncate" data-type="extend">
-                    {record.data.Phone}
+                    {record.data.phone}
                   </td>
 
                   <td className="py-3 px-2 truncate" data-type="extend">
-                    {record.data.Industry}
+                    {record.data.industry}
                   </td>
 
                   <td className="py-3 px-2 truncate" data-type="extend">
-                    {record.data.Keywords}
+                    {record.data.keywords}
                   </td>
                 </tr>
                 <RecordDropdown record={record.data} />

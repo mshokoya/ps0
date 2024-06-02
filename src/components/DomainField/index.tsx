@@ -1,11 +1,12 @@
-import { fetchData } from '../../core/util'
 import { observer, useObservable, useSelector } from '@legendapp/state/react'
 import { domainState, domainTaskHelper, domainResStatusHelper } from '../../core/state/domain'
 import { appState$ } from '../../core/state'
 import { Flex } from '@radix-ui/themes'
 import { DomainTable } from './DomainTable'
 import { DomainForms } from './DomainForm'
-import { IDomain } from '../..'
+import { IDomain, R } from '../..'
+import { invoke } from '@tauri-apps/api/tauri'
+import { CHANNELS } from '../../core/channels'
 
 export const DomainField = observer(() => {
   const domains = useSelector(appState$.domains) as IDomain[]
@@ -13,7 +14,7 @@ export const DomainField = observer(() => {
 
   const addDomain = async () => {
     domainTaskHelper.add('domain', { type: 'create', status: 'processing' })
-    await fetchData<IDomain>('domain', CHANNELS.a_domainAdd, domainState.input.peek())
+    await invoke<R<IDomain>>(CHANNELS.add_domain, {args: domainState.input.peek()})
       .then((d) => {
         if (d.ok) {
           domainResStatusHelper.add('domain', ['create', 'ok'])
@@ -37,10 +38,9 @@ export const DomainField = observer(() => {
     const domainID = domains[domainState.selectedDomain.peek()].id
     const domain = domains[domainState.selectedDomain.peek()].domain
     domainTaskHelper.add(domainID, { type: 'delete', status: 'processing' })
-    await fetchData<IDomain>('domain', CHANNELS.a_domainDelete, domain)
+    await invoke<R<IDomain>>(CHANNELS.delete_domain, {args: { domain }})
       .then((res) => {
         if (res.ok) {
-          closePopup()
           domainResStatusHelper.add(domainID, ['delete', 'ok'])
           appState$.domains.find((d) => d.id.peek() === domainID)?.delete()
         } else {
@@ -62,7 +62,7 @@ export const DomainField = observer(() => {
     const domainID = domains[domainState.selectedDomain.peek()].id
     const domain = domains[domainState.selectedDomain.peek()].domain
     domainTaskHelper.add(domainID, { type: 'verify', status: 'processing' })
-    await fetchData<IDomain>('domain', CHANNELS.a_domainVerify, domain)
+    await invoke<R<IDomain>>(CHANNELS.verify_domain, {args: {domain}})
       .then((res) => {
         if (res.ok) {
           domainResStatusHelper.add(domainID, ['verify', 'ok'])

@@ -84,8 +84,8 @@ export type IDomain = {
   id: string
   domain: string
   verified: boolean
-  mx_Records: boolean
-  txt_Records: boolean
+  mx_records: boolean
+  txt_records: boolean
   message: string
 }
 

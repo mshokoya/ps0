@@ -45,7 +45,6 @@ export const DomainTable = observer((p: Props) => {
             <thead className="sticky top-0 bg-[#202226] text-[0.8rem] z-10">
               <tr>
                 <th className="p-2">Domain</th>
-                <th className="p-2">Email</th>
                 <th className="p-2">Is Verified</th>
                 <th className="p-2">MX Records</th>
                 <th className="p-2">TXT Records</th>
@@ -72,16 +71,13 @@ export const DomainTable = observer((p: Props) => {
                       {domain.domain}
                     </td>
                     <td className="overflow-scroll truncate" data-type="extend">
-                      {domain.authEmail}
-                    </td>
-                    <td className="overflow-scroll truncate" data-type="extend">
                       {domain.verified ? 'yes' : 'no'}
                     </td>
                     <td className="overflow-scroll truncate" data-type="extend">
-                      {domain.MXRecords ? 'yes' : 'no'}
+                      {domain.mx_records ? 'yes' : 'no'}
                     </td>
                     <td className="overflow-scroll truncate" data-type="extend">
-                      {domain.TXTRecords ? 'yes' : 'no'}
+                      {domain.txt_records ? 'yes' : 'no'}
                     </td>
                     <td className="overflow-scroll sticky bg-[#111111] right-0" data-type="opt">
                       <Dialog.Trigger>
