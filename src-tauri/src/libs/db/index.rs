@@ -1,11 +1,8 @@
 use anyhow::{Ok, Result};
-use async_std::task::block_on;
-use fake::Opt;
+use async_std::{sync::Mutex, task::block_on};
 use serde::de::DeserializeOwned;
 use surrealdb::{engine::local::{Db, File}, sql::Value, Surreal};
-use std::{collections::BTreeMap, fmt::Debug, sync::{Arc, Mutex}};
-
-use crate::libs::db::accounts::types::Account;
+use std::{fmt::Debug, sync::Arc};
 
 pub struct DB(pub Arc<Mutex<Surreal<Db>>>);
 
@@ -20,21 +17,21 @@ impl DB {
     }
 
     pub async fn select_one<T: DeserializeOwned + Debug>(&self, table: &str, id: &str) -> Result<Option<T>> {
-        let entity: Option<T> = self.0.lock().unwrap().query(format!("SELECT * FROM {} WHERE id={}", table, id)).await?.take(0)?;
+        let entity: Option<T> = self.0.lock().await.query(format!("SELECT * FROM {} WHERE id={}", table, id)).await?.take(0)?;
         println!("SELECT ONE");
         println!("{entity:?}");
         Ok(entity)
     }
 
     pub async fn select_all<T: DeserializeOwned + Debug>(&self, table: &str) -> Result<Option<Vec<T>>> {
-        let entity: Option<Vec<T>> = self.0.lock().unwrap().query(format!("SELECT * FROM {}", table)).await?.take(0)?;
+        let entity: Option<Vec<T>> = self.0.lock().await.query(format!("SELECT * FROM {}", table)).await?.take(0)?;
         println!("SELECT ALL");
         println!("{entity:?}");
         Ok(entity)
     }
 
     pub async fn update_one<T: DeserializeOwned + Debug>(&self, table: &str, id: &str, update: Value) -> Result<Option<Vec<T>>> {
-        let entity:Option<Vec<T>> = self.0.lock().unwrap()
+        let entity:Option<Vec<T>> = self.0.lock().await
             .query("UPDATE $filter MERGE $data RETURN *")
             .bind(("$filter", format!("{table}:{id}")))
             .bind(update)
@@ -46,7 +43,7 @@ impl DB {
     }
 
     pub async fn delete_one<T: DeserializeOwned + Debug>(&self, table: &str, id: &str) -> Result<Option<T>> {
-        let entity: Option<T> = self.0.lock().unwrap().delete((table, id)).await?;
+        let entity: Option<T> = self.0.lock().await.delete((table, id)).await?;
         println!("DELETE ONE");
         println!("{entity:?}");
         Ok(entity)

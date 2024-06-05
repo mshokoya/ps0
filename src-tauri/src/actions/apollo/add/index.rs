@@ -1,4 +1,3 @@
-use anyhow::{anyhow, Context};
 use serde::Deserialize;
 use serde_json::{from_value, Value};
 use surrealdb::sql::Id;
@@ -26,7 +25,7 @@ pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
         "default".to_string()
     };
 
-    let db: Option<Account> = match ctx.state::<DB>().0.lock().unwrap()
+    let db: Option<Account> = match ctx.state::<DB>().0.lock().await
         .create(("account", Id::rand()))
         .content(Account {
             id: None, 
