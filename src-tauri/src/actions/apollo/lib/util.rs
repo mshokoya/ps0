@@ -1,13 +1,10 @@
-use std::{time::Duration};
-
+use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
 use async_std::task;
 use chromiumoxide::{Element, Page};
-use polodb_core::bson::{doc, to_bson, Document};
 use serde::{Deserialize, Serialize};
-use serde_json::{to_string, Value};
+use serde_json::to_string;
 use url_build_parse::{build_url, parse_url};
-
 use crate::libs::db::accounts::types::Cookies;
 
 // ===== Apollo Error ======

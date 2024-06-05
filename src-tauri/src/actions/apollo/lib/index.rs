@@ -1,8 +1,7 @@
 use std::time::Duration;
-
 use anyhow::{anyhow, Context, Result};
 use async_std::task::sleep;
-use polodb_core::bson::doc;
+use serde_json::json;
 use tauri::Manager;
 
 use crate::libs::{db::accounts::types::Account, taskqueue::types::TaskActionCTX};
@@ -46,7 +45,10 @@ pub async fn log_into_apollo_then_visit(
     ctx.handle
         .emit_all(
             "apollo",
-            doc! {"task_id": ctx.task_id, "message": "Logged into apollo"},
+            json!({
+                "task_id": ctx.task_id, 
+                "message": "Logged into apollo"
+            }),
         )
         .unwrap();
 
@@ -143,18 +145,18 @@ pub async fn apollo_login_credits_info(
             r#"
             async () => {
                 const emailCreditInfo = document.querySelectorAll('div[class="zp_ajv0U"]')
-      
+
                 const renewalDate = document.querySelector('[class="zp_SJzex"]')
-      
+
                 const renewalStartEnd = document.querySelector('[class="zp_kQfcf"]')
-      
+
                 const trialDaysLeft = document.querySelector('[class="zp_EanJu"]')
-      
+
                 return {
-                  email_credits_info: emailCreditInfo[1].innerText,
-                  renewal_date: renewalDate.innerText,
-                  renewal_start_end: renewalStartEnd.innerText,
-                  trial_days_left: trialDaysLeft ? trialDaysLeft.innerText : null
+                    email_credits_info: emailCreditInfo[1].innerText,
+                    renewal_date: renewalDate.innerText,
+                    renewal_start_end: renewalStartEnd.innerText,
+                    trial_days_left: trialDaysLeft ? trialDaysLeft.innerText : null
                 }
             }
         "#,
