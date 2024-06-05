@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 // https://serde.rs/field-attrs.html
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Record {
     pub id: String,
     pub scrape_id: String,
@@ -11,7 +11,7 @@ pub struct Record {
     pub data: RecordData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecordData {
     pub name: String,
     pub firstname: String,

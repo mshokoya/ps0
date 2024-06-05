@@ -92,7 +92,7 @@ pub async fn apollo_create(
         &account_id_str,
             to_value(
                 Account {
-                id: Some(account_id),
+                id: account_id.to_string(),
                 domain: args.domain,
                 trial_time: None,
                 suspended: false,

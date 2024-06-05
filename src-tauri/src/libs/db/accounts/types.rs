@@ -1,7 +1,7 @@
 use chromiumoxide::cdp::browser_protocol::network::CookieParam;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Account {
     pub id: String,
     pub domain: String, // enum Domain
@@ -22,7 +22,7 @@ pub struct Account {
     pub total_scraped_recently: u16
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct History {
     pub total_page_scrape: u16,
     pub scrape_time: u128,

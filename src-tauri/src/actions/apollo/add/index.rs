@@ -25,10 +25,12 @@ pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
         "default".to_string()
     };
 
+    let id = Id::rand();
+
     let db: Option<Account> = match ctx.state::<DB>().0.lock().await
-        .create(("account", Id::rand()))
+        .create(("account", id.clone()))
         .content(Account {
-            id: None, 
+            id: id.to_string(), 
             email: args.email,
             password: args.password,
             domain,

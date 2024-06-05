@@ -1,16 +1,12 @@
-use std::borrow::{Borrow, BorrowMut};
 use std::cmp::{self, min};
-use std::ops::Deref;
 use std::time::Duration;
 use async_std::task::sleep;
 use chromiumoxide::Page;
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use anyhow::{anyhow, Context, Result};
-use serde::Serialize;
 use serde_json::{from_value, json, Value};
-use surrealdb::method::Query;
-use surrealdb::sql::{to_value, Id, Query};
+use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
 use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
@@ -598,14 +594,25 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
     format!("UPDATE account:{} SET $accountdata;", &account.id),
     format!("UPDATE metadata:{} SET $metarecord;", &metadata.id),
   ];
-  for idx in 0..data.len() {
-    query.push(format!("CREATE record:{} SET $recorddata{};", Id::rand(), idx));
+  for d in data {
+    query.push(
+        format!(
+          "CREATE record:{} SET {};", 
+          Id::rand(),
+          to_value(json!({
+            "scrape_id": &scrape_id,
+            "url": &metadata.url,
+            "data": &d
+          }))?
+        
+      )
+    );
   }
   query.push("COMMIT TRANSACTION;".to_string());
   
   let db_state = ctx.handle.state::<DB>();
   let db_guard = db_state.0.lock().await;
-  let mut query = db_guard
+  let query = db_guard
     .query(query.join(" "))
     .bind(("accountdata", to_value(json!({
         "cookies": cookies,
@@ -625,32 +632,11 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
         "accounts": &metadata.accounts
       })
       )?)
-    );
+    )
+    .await?;
 
-  let mut query_res = &query;
-
-  for (idx, r) in data.iter().enumerate()  {
-    add_bind(query_res, (
-      format!("recorddata{idx}"), 
-      to_value(json!({
-        "scrape_id": &scrape_id,
-        "url": &metadata.url,
-        "data": r
-      }))
-    ))
-
-  }
-
-  // query.borrow_mut().await?;
-  
   todo!()
-  
 }
-
-fn add_bind(mut query: surrealdb::method::Query<'_, surrealdb::engine::local::Db>, val: (impl Serialize, impl Serialize)) {
-  query.bind(val);
-}
-
 
 
 // ============1 ref=============
