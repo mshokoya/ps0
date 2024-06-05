@@ -28,7 +28,7 @@ use tauri::Manager;
 
 static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 
-#[async_std::main]
+#[tokio::main]
 // https://stackoverflow.com/questions/73551266/tauri-is-there-some-way-to-access-apphandler-or-window-in-regular-struct-or-sta
 async fn main() {
     tauri::Builder::default()
@@ -47,7 +47,7 @@ async fn main() {
         app.manage(IMAP::new());
 
         // scraper
-        unsafe { SCRAPER.init() };
+        // unsafe { SCRAPER.init() };
 
         let app_handle = app.app_handle().clone();
         std::panic::set_hook(Box::new(move |info| {

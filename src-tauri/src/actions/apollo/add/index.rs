@@ -13,9 +13,10 @@ struct NewAccArg {
 
 #[tauri::command]
 pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
+
     let args: NewAccArg = match from_value(args) {
         Ok(acc) => acc,
-        Err(_) => {return R::fail_none(None)}
+        Err(_) => { return R::fail_none(None)}
     };
 
     let domain = args.email.split("@").collect::<Vec<&str>>()[1].to_string();
@@ -27,8 +28,18 @@ pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
 
     let id = Id::rand();
 
-    let db: Option<Account> = match ctx.state::<DB>().0.lock().await
-        .create(("account", id.clone()))
+
+
+    let db = ctx.state::<DB>();
+    let db_guard = db.0.lock().await;
+
+    
+    println!("WE ADDING ACCOUNT");
+    println!("{:#?}", db);
+    println!("{:#?}", db_guard);
+
+
+        match db_guard.create::<Option<Account>>(("account", id.clone()))
         .content(Account {
             id: id.to_string(), 
             email: args.email,
@@ -48,14 +59,24 @@ pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
             history: vec![],
             total_scraped_recently: 0,
         }).await {
-            Ok(account) => account,
+            Ok(account) => {
+                println!("WE ADDING ACCOUNT");
+                println!("{:#?}", account);
+                account
+            },
             Err(_) => return R::fail_none(Some("Failed to register account"))
         };
+
+    R::fail_none(None)
     
-    match db {
-        Some(account) => R::ok_data(account),
-        None => R::fail_none(None)
-    }
+    // match db {
+    //     Some(account) => {
+    //         println!("WE ADDING ACCOUNT");
+    //         println!("{:#?}", account);
+    //         R::ok_data(account)
+    //     },
+    //     None => R::fail_none(None)
+    // }
 }
 
 // pub _id: String,

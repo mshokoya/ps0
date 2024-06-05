@@ -354,6 +354,7 @@ dependencies = [
  "blocking",
  "futures-lite 2.3.0",
  "once_cell",
+ "tokio",
 ]
 
 [[package]]
@@ -2090,6 +2091,7 @@ dependencies = [
  "surrealdb",
  "tauri",
  "tauri-build",
+ "tokio",
  "ts-rs",
  "url-build-parse",
  "uuid",

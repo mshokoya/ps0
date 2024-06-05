@@ -4,6 +4,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use surrealdb::{engine::local::{Db, File}, sql::Value, Surreal};
 use std::{fmt::Debug, sync::Arc};
 
+#[derive(Debug)]
 pub struct DB(pub Arc<Mutex<Surreal<Db>>>);
 
 impl DB {
