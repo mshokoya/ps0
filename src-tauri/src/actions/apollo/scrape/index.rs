@@ -1,12 +1,16 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::cmp::{self, min};
+use std::ops::Deref;
 use std::time::Duration;
 use async_std::task::sleep;
 use chromiumoxide::Page;
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use anyhow::{anyhow, Context, Result};
+use serde::Serialize;
 use serde_json::{from_value, json, Value};
-use surrealdb::sql::{to_value, Id};
+use surrealdb::method::Query;
+use surrealdb::sql::{to_value, Id, Query};
 use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
 use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
@@ -69,29 +73,6 @@ pub async fn scrape_task(ctx: AppHandle, args: Value) -> R<()> {
 
     R::ok_none()
 }
-
-// args.get("accounts").iter().copied().for_each(|acc| {
-//   let account_id = acc.get("account_id").unwrap().to_string();
-//   let argss = json!({
-//     "url": &fmt_args.url,
-//     "range": acc.get("range").as_ref().unwrap(),
-//     "account_id": &account_id,
-//     "metadata": &metadata,
-//     "max_leads_limit": &fmt_args.max_leads_limit
-//   });
-
-//   cache.add_accounts(meta_id.clone().unwrap().as_str().unwrap(), &mut vec![account_id.clone()]).await;
-
-//   ctx.state::<TaskQueue>().w_enqueue(Task {
-//     task_id: Uuid::new(),
-//     task_type: TaskType::ApolloScrape,
-//     task_group: TaskGroup::Apollo,
-//     message: "Scraping",
-//     metadata: meta_id.clone(),
-//     timeout: args.get("timeout").and_then(|v| from_value(v.clone()).ok()),
-//     args: Some(argss),
-//   });
-// });
 
 pub async fn apollo_scrape(
     mut ctx: TaskActionCTX,
@@ -173,7 +154,6 @@ pub async fn apollo_scrape(
         &new_credits,
         &cookies,
         data,
-        "0:0:0:0:8080",
         &scrape_id
       ).await?;
 
@@ -611,59 +591,186 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   Ok(row.inner_text().await?)
 }
 
-async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, proxy: &str, scrape_id: &str) -> Result<(Account, Metadata)> {
+async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<(Account, Metadata)> {
+  
+  let mut query = vec![
+    "BEGIN TRANSACTION;".to_string(),
+    format!("UPDATE account:{} SET $accountdata;", &account.id),
+    format!("UPDATE metadata:{} SET $metarecord;", &metadata.id),
+  ];
+  for idx in 0..data.len() {
+    query.push(format!("CREATE record:{} SET $recorddata{};", Id::rand(), idx));
+  }
+  query.push("COMMIT TRANSACTION;".to_string());
+  
   let db_state = ctx.handle.state::<DB>();
-  let db = db_state.db.lock().unwrap();
-
-  let mut session = db.start_session()?;
-  session.start_transaction(None)?;
-
-  let account_collection = db.collection::<Account>(&Entity::Account.name());
-  let _ = account_collection.update_one_with_session(
-    doc! {"_id": &account._id}, 
-    doc! {
-      "$set": {
+  let db_guard = db_state.0.lock().await;
+  let mut query = db_guard
+    .query(query.join(" "))
+    .bind(("accountdata", to_value(json!({
         "cookies": cookies,
         "last_used": time_ms().to_string(),
-        "history": to_bson(&account.history).unwrap(),
-        "proxy": proxy,
+        "history": &account.history,
         "credits_used": credits.credits_used.to_string(),
         "credits_limit": credits.credits_limit.to_string(),
         "renewal_date": credits.renewal_date.to_string(),
         "renewal_start_date": credits.renewal_start_date.to_string(),
         "renewal_end_date": credits.renewal_end_date.to_string(),
         "trial_days_left": credits.trial_days_left.as_ref().or(None)
-      }
-    },
-    &mut session
-  );
+        })
+      )?)
+    )
+    .bind(("metarecord", to_value(json!({
+        "scrapes": &metadata.scrapes,
+        "accounts": &metadata.accounts
+      })
+      )?)
+    );
 
-  let metadata_collection = db.collection::<Metadata>(&Entity::Metadata.name());
-  let _ = metadata_collection.update_one_with_session(
-    doc! {"_id": &account._id},
-    doc! {
-      "$set": {
-        "scrapes": to_bson(&metadata.scrapes).unwrap(),
-        "accounts": to_bson(&metadata.accounts).unwrap()
-      }
-    },
-    &mut session
-  );
+  let mut query_res = &query;
 
-  let records = data.iter().map(|r| doc! {
-    "_id": ObjectId::new().to_hex(),
-    "scrape_id": &scrape_id,
-    "url": &metadata.url,
-    "data": to_bson(r).unwrap()
-  }).collect::<Vec<Document>>();
+  for (idx, r) in data.iter().enumerate()  {
+    add_bind(query_res, (
+      format!("recorddata{idx}"), 
+      to_value(json!({
+        "scrape_id": &scrape_id,
+        "url": &metadata.url,
+        "data": r
+      }))
+    ))
+
+  }
+
+  // query.borrow_mut().await?;
   
-  let record_collection = db.collection::<Document>(&Entity::Record.name());
-  record_collection.insert_many_with_session(records, &mut session).unwrap();
-
-  session.commit_transaction().unwrap();
-
-  let account = db_state.find_one::<Account>(Entity::Account, Some(doc! {"_id": &account._id})).unwrap();
-  let metadata = db_state.find_one::<Metadata>(Entity::Metadata, Some(doc! {"_id": &metadata._id})).unwrap();
-
-  Ok((account, metadata))
+  todo!()
+  
 }
+
+fn add_bind(mut query: surrealdb::method::Query<'_, surrealdb::engine::local::Db>, val: (impl Serialize, impl Serialize)) {
+  query.bind(val);
+}
+
+
+
+// ============1 ref=============
+
+
+// async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<(Account, Metadata)> {
+  
+//   let mut query = vec![
+//     "BEGIN TRANSACTION;".to_string(),
+//     format!("UPDATE account:{} SET $accountdata;", &account.id),
+//     format!("UPDATE metadata:{} SET $metarecord;", &metadata.id),
+//   ];
+//   for idx in 0..data.len() {
+//     query.push(format!("CREATE record:{} SET $recorddata{};", Id::rand(), idx));
+//   }
+//   query.push("COMMIT TRANSACTION;".to_string());
+  
+//   let db_state = ctx.handle.state::<DB>();
+//   let db_guard = db_state.0.lock().await;
+//   let mut query = db_guard
+//     .query(query.join(" "))
+//     .bind(("accountdata", to_value(json!({
+//         "cookies": cookies,
+//         "last_used": time_ms().to_string(),
+//         "history": &account.history,
+//         "credits_used": credits.credits_used.to_string(),
+//         "credits_limit": credits.credits_limit.to_string(),
+//         "renewal_date": credits.renewal_date.to_string(),
+//         "renewal_start_date": credits.renewal_start_date.to_string(),
+//         "renewal_end_date": credits.renewal_end_date.to_string(),
+//         "trial_days_left": credits.trial_days_left.as_ref().or(None)
+//         })
+//       )?)
+//     )
+//     .bind(("metarecord", to_value(json!({
+//         "scrapes": &metadata.scrapes,
+//         "accounts": &metadata.accounts
+//       })
+//       )?)
+//     );
+
+//   let mut query_res = &query;
+
+//   for (idx, r) in data.iter().enumerate()  {
+//     add_bind(query_res, (
+//       format!("recorddata{idx}"), 
+//       to_value(json!({
+//         "scrape_id": &scrape_id,
+//         "url": &metadata.url,
+//         "data": r
+//       }))
+//     ))
+
+//   }
+
+//   // query.borrow_mut().await?;
+  
+//   todo!()
+// }
+
+// fn add_bind(mut query: surrealdb::method::Query<'_, surrealdb::engine::local::Db>, val: (impl Serialize, impl Serialize)) {
+//   query.bind(val);
+// }
+
+
+// ===============================
+
+// ==================polodb=====================
+
+// let db_state = ctx.handle.state::<DB>();
+  // let db = db_state.db.lock().unwrap();
+
+  // let mut session = db.start_session()?;
+  // session.start_transaction(None)?;
+
+  // let account_collection = db.collection::<Account>(&Entity::Account.name());
+  // let _ = account_collection.update_one_with_session(
+  //   doc! {"_id": &account._id}, 
+  //   doc! {
+  //     "$set": {
+  //       "cookies": cookies,
+  //       "last_used": time_ms().to_string(),
+  //       "history": to_bson(&account.history).unwrap(),
+  //       "proxy": proxy,
+  //       "credits_used": credits.credits_used.to_string(),
+  //       "credits_limit": credits.credits_limit.to_string(),
+  //       "renewal_date": credits.renewal_date.to_string(),
+  //       "renewal_start_date": credits.renewal_start_date.to_string(),
+  //       "renewal_end_date": credits.renewal_end_date.to_string(),
+  //       "trial_days_left": credits.trial_days_left.as_ref().or(None)
+  //     }
+  //   },
+  //   &mut session
+  // );
+
+  // let metadata_collection = db.collection::<Metadata>(&Entity::Metadata.name());
+  // let _ = metadata_collection.update_one_with_session(
+  //   doc! {"_id": &account._id},
+  //   doc! {
+  //     "$set": {
+  //       "scrapes": to_bson(&metadata.scrapes).unwrap(),
+  //       "accounts": to_bson(&metadata.accounts).unwrap()
+  //     }
+  //   },
+  //   &mut session
+  // );
+
+  // let records = data.iter().map(|r| doc! {
+  //   "_id": ObjectId::new().to_hex(),
+  //   "scrape_id": &scrape_id,
+  //   "url": &metadata.url,
+  //   "data": to_bson(r).unwrap()
+  // }).collect::<Vec<Document>>();
+  
+  // let record_collection = db.collection::<Document>(&Entity::Record.name());
+  // record_collection.insert_many_with_session(records, &mut session).unwrap();
+
+  // session.commit_transaction().unwrap();
+
+  // let account = db_state.find_one::<Account>(Entity::Account, Some(doc! {"_id": &account._id})).unwrap();
+  // let metadata = db_state.find_one::<Metadata>(Entity::Metadata, Some(doc! {"_id": &metadata._id})).unwrap();
+
+  // Ok((account, metadata))
