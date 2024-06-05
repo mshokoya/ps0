@@ -1,20 +1,15 @@
-use anyhow::Result;
-use serde_json::{to_value, Value};
-use surrealdb::sql::Id;
+use anyhow::{anyhow, Context, Result};
+use serde_json::{json, to_value as to_serde_value, Value};
+use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo_then_visit};
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::Account;
+use crate::libs::db::index::DB;
 use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
-    libs::{
-        db::{
-            entity::Entity,
-            index::DB,
-        },
-        taskqueue::types::{Task, TaskActionCTX, TaskGroup},
-    },
+    libs::taskqueue::types::{Task, TaskActionCTX, TaskGroup},
     SCRAPER,
 };
 
@@ -57,11 +52,13 @@ pub async fn apollo_check(
     let args: ApolloCheckArgs = serde_json::from_value(args.unwrap())?;
     let db = ctx.handle.state::<DB>();
 
-    println!("{:?}",args.account_id);
-
-    let account = db
-        .find_one::<Account>(Entity::Account, Some(doc! {"_id": args.account_id}))
-        .unwrap();
+    let Some(account) = db
+    .select_one::<Account>("account", &args.account_id)
+    .await
+    .context(anyhow!("Failed to check account, could not find registered account"))?
+    else {
+        return Err(anyhow!("Failed to check account, could not find registered account"))
+    };
 
     ctx.page = Some(unsafe { SCRAPER.incog().await? });
 
@@ -75,24 +72,28 @@ pub async fn apollo_check(
     ctx.handle
         .emit_all(
             TaskGroup::Apollo.into(),
-            doc! {"taskID": ctx.task_id, "message": "navigated to the credits page"},
-        )
-        .unwrap();
+            json!({
+                "taskID": &ctx.task_id, 
+                "message": "navigated to the credits page"
+            })
+        )?;
 
     let update = apollo_login_credits_info(&ctx).await?;
 
     db.update_one(
-        Entity::Account,
-        doc! {"_id": ""},
-        doc! {"$set": to_document(&update)?},
-    )?;
+        "account", 
+        &args.account_id, 
+        to_value(&update)?
+    ).await?;
 
     ctx.handle
         .emit_all(
             TaskGroup::Apollo.into(),
-            doc! {"taskID": ctx.task_id, "message": format!("successfully obtained {} credits info", account.email)},
-        )
-        .unwrap();
+            json!({
+                "taskID": ctx.task_id, 
+                "message": format!("successfully obtained {} credits info", account.email)
+            }),
+        )?;
 
-    Ok(Some(to_value(update)?))
+    Ok(Some(to_serde_value(update)?))
 }
