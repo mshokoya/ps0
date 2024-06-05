@@ -16,9 +16,9 @@ use crate::{
 use super::types::ApolloCheckArgs;
 
 #[tauri::command]
-pub fn check_task(ctx: AppHandle, args: Value) -> R<()> {
-    let timeout = match args.get("timeout") {
-        Some(val) => {serde_json::from_value(val.take()).unwrap_or(None)}
+pub fn check_task(ctx: AppHandle, mut args: Value) -> R<()> {
+    let timeout = match args.get_mut("timeout") {
+        Some(val) => serde_json::from_value(val.take()).unwrap_or(None),
         None => None
     };
 
@@ -80,7 +80,7 @@ pub async fn apollo_check(
 
     let update = apollo_login_credits_info(&ctx).await?;
 
-    db.update_one(
+    db.update_one::<Account>(
         "account", 
         &args.account_id, 
         to_value(&update)?

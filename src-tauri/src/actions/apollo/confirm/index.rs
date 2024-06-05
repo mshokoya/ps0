@@ -4,9 +4,9 @@ use fake::faker::name::en::{FirstName, LastName};
 use serde::Deserialize;
 use simple_password_generator::PasswordGenerator;
 use anyhow::{anyhow, Result};
-use async_std::task::{sleep};
-use polodb_core::bson::{doc, Uuid};
+use async_std::task::sleep;
 use serde_json::{from_value, Value};
+use surrealdb::sql::{Id, json};
 use tauri::{AppHandle, Manager};
 use fake::Fake;
 use crate::actions::apollo::lib::util::wait_for_selector;
@@ -17,10 +17,7 @@ use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
     libs::{
-        db::{
-            entity::Entity,
-            index::DB,
-        },
+        db::index::DB,
         taskqueue::types::{Task, TaskActionCTX, TaskGroup},
     },
     SCRAPER,
@@ -28,18 +25,18 @@ use crate::{
 
 #[derive(Deserialize)]
 struct ApolloConfirmArgs {
-  account_id: String
+    account_id: String
 }
 
 #[tauri::command]
-pub fn confirm_task(ctx: AppHandle, args: Value) -> R {
+pub fn confirm_task(ctx: AppHandle, args: Value) -> R<()> {
     let metadata = match args.get("account_id") {
         Some(val) => Some(val.clone()),
         None => None,
     };
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Uuid::new(),
+        task_id: Id::uuid(),
         task_type: TaskType::ApolloConfirm,
         task_group: TaskGroup::Apollo,
         message: "Confirm account",
@@ -61,13 +58,14 @@ pub async fn apollo_confirm(
     let imap = ctx.handle.state::<IMAP>();
     ctx.page =  Some(unsafe { SCRAPER.incog().await? });
     let page = ctx.page.as_ref().unwrap();
+    let db = ctx.handle.state::<DB>();
 
-    let account = match ctx.handle.state::<DB>().find_one::<Account>(
-      Entity::Account, 
-      Some(doc! {"_id": &args.account_id}),
-    ) {
-      Some(account) => account,
-      None => {return Err(anyhow!("failed to find email"))}
+    let account = match db.select_one::<Account>(
+        "account",
+        &args.account_id,
+    ).await? {
+        Some(account) => account,
+        None => {return Err(anyhow!("Failed to find email"))}
     };
 
     // match wait_for_selector(&page, r#"[class="CybotCookiebotDialogBodyButton"]"#, 10, 3).await {
@@ -150,15 +148,16 @@ pub async fn apollo_confirm(
             url.contains("enrichment-status") ||
             url.contains("settings")
         {
-            let _ = ctx.handle.state::<DB>().update_one(
-                Entity::Account, 
-                doc! {"_id": args.account_id}, 
-                doc! {"verified": "yes"}
-            ).unwrap();
+            let _ = db.update_one::<Account>(
+                    "account", 
+                    &args.account_id, 
+                    json(r#"{"verified": "yes"}"#)?
+                    // to_value(json!({"verified": "yes"}))?
+            ).await?;
             return Ok(None)
         }
         sleep(Duration::from_secs(3)).await;
         counter += 1;
     }
-    Err(anyhow!("Failed to signup: please try again"))
+    Err(anyhow!("Failed to signup, please try again"))
 }

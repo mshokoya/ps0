@@ -2,12 +2,11 @@ use std::time::Duration;
 use async_std::future::timeout;
 use fake::faker::internet::en::Username;
 use fake::faker::name::en::{FirstName, LastName};
-use polodb_core::bson::oid::ObjectId;
 use simple_password_generator::PasswordGenerator;
 use anyhow::{anyhow, Result};
 use async_std::task::sleep;
-use polodb_core::bson::{doc, to_document, Uuid};
-use serde_json::{from_value, json, Value};
+use serde_json::{from_value, json as to_serde_json, Value};
+use surrealdb::sql::{to_value, Id, json};
 use tauri::{AppHandle, Manager};
 use fake::Fake;
 use crate::actions::apollo::lib::util::wait_for_selector;
@@ -18,10 +17,7 @@ use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
     libs::{
-        db::{
-            entity::Entity,
-            index::DB,
-        },
+        db::index::DB,
         taskqueue::types::{Task, TaskActionCTX, TaskGroup},
     },
     SCRAPER,
@@ -30,14 +26,14 @@ use crate::{
 use super::types::ApolloCreateArgs;
 
 #[tauri::command]
-pub fn create_task(ctx: AppHandle, args: Value) -> R {
+pub fn create_task(ctx: AppHandle, args: Value) -> R<()> {
     let metadata = match args.get("domain") {
-        Some(val) => Some(json!({"domain": val.clone()})),
+        Some(val) => Some(to_serde_json!({"domain": val.clone()})),
         None => None,
     };
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Uuid::new(),
+        task_id: Id::uuid(),
         task_type: TaskType::ApolloCreate,
         task_group: TaskGroup::Apollo,
         message: "Creating account",
@@ -87,31 +83,34 @@ pub async fn apollo_create(
         }
     }
 
-    let account_id = ObjectId::new().to_hex();
+    let account_id = Id::rand();
+    let account_id_str = account_id.to_string();
+    let db = ctx.handle.state::<DB>();
 
-    ctx.handle.state::<DB>().insert_one(
-        Entity::Account, 
-        to_document(&Account {
-            _id: account_id.clone(),
-            domain: args.domain,
-            trial_time: None,
-            suspended: false,
-            login_type: "default".to_string(), // (FIX) make it dynamic
-            verified: "confirm".to_string(),
-            email: email.clone(),
-            password: password.clone(),
-            proxy: None,
-            credits_used: None,
-            credit_limit: None,
-            renewal_date: None,
-            renewal_start_date: None,
-            renewal_end_date: None,
-            last_used: None,
-            cookies: None,
-            history: vec![],
-            total_scraped_recently: 0
-        })?
-    )?;
+    db.insert_one::<Account>(
+        "account", 
+        &account_id_str,
+            to_value(
+                Account {
+                id: Some(account_id),
+                domain: args.domain,
+                trial_time: None,
+                suspended: false,
+                login_type: "default".to_string(), // (FIX) make it dynamic
+                verified: "confirm".to_string(),
+                email: email.clone(),
+                password: password.clone(),
+                credits_used: None,
+                credit_limit: None,
+                renewal_date: None,
+                renewal_start_date: None,
+                renewal_end_date: None,
+                last_used: None,
+                cookies: None,
+                history: vec![],
+                total_scraped_recently: 0
+            })?
+    );
 
     sleep(Duration::from_secs(15)).await;
     let receiver = imap.watch().await;
@@ -187,11 +186,13 @@ pub async fn apollo_create(
             url.contains("enrichment-status") ||
             url.contains("settings")
         {
-            let _ = ctx.handle.state::<DB>().update_one(
-                Entity::Account, 
-                doc! {"_id": &account_id}, 
-                doc! {"verified": "yes"}
-            ).unwrap();
+            let _ = ctx.handle.state::<DB>()
+            .update_one::<Account>(
+                "account", 
+                &account_id_str, 
+                json(r#"{"verified": "yes"}"#)?
+                // to_value(json!({"verified": "yes"}))?
+            ).await?;
             return Ok(None)
         }
         sleep(Duration::from_secs(3)).await;

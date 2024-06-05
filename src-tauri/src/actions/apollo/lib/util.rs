@@ -140,11 +140,3 @@ pub fn get_page_in_url(url: &str) -> Option<u8> {
         None => None
     }
 }
-
-pub fn filter(args: Vec<Value>) -> Option<Document> {
-    if args.is_empty() {
-        None
-    } else {
-        Some(doc! { "$or": to_bson(&args).unwrap() })
-    }
-}

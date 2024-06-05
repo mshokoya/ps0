@@ -1,6 +1,6 @@
 use anyhow::{Ok, Result};
 use async_std::{sync::Mutex, task::block_on};
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 use surrealdb::{engine::local::{Db, File}, sql::Value, Surreal};
 use std::{fmt::Debug, sync::Arc};
 
@@ -14,6 +14,19 @@ impl DB {
             Ok(db)
         })?;
         Ok(Self(Arc::new(Mutex::new(db))))
+    }
+
+    pub async fn insert_one<T: Serialize + DeserializeOwned + Debug>(&self, table: &str, id:&str, content: Value) -> Result<Option<Vec<T>>> {
+        let entity: Option<Vec<T>> = self.0.lock()
+            .await
+            .query("CREATE $th SET $data")
+            .bind(("th", format!("{table}:{id}")))
+            .bind(("data", content))
+            .await?
+            .take(0)?;
+        println!("INSERT ONE");
+        println!("{entity:?}");
+        Ok(entity)
     }
 
     pub async fn select_one<T: DeserializeOwned + Debug>(&self, table: &str, id: &str) -> Result<Option<T>> {
@@ -33,8 +46,8 @@ impl DB {
     pub async fn update_one<T: DeserializeOwned + Debug>(&self, table: &str, id: &str, update: Value) -> Result<Option<Vec<T>>> {
         let entity:Option<Vec<T>> = self.0.lock().await
             .query("UPDATE $filter MERGE $data RETURN *")
-            .bind(("$filter", format!("{table}:{id}")))
-            .bind(update)
+            .bind(("filter", format!("{table}:{id}")))
+            .bind(("data", update))
             .await?
             .take(0)?;
         println!("UPDATE ONE");
