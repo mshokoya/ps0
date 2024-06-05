@@ -19,25 +19,25 @@ pub struct Domain {
 // }
 
 #[tauri::command]
-pub async fn verify_domain(ctx: AppHandle, args: Domain) -> Response2<Option<VerifyDomain>> {
+pub async fn verify_domain(ctx: AppHandle, args: Domain) -> Response2<VerifyDomain> {
   match ctx.state::<Forwarder>().verify_domain(&args.domain).await {
-    Ok(res) => Response2 {ok: true, message: None, data: Some(res)},
+    Ok(res) => Response2::ok_data(res),
     Err(_) => Response2 {ok: false, message: None, data: None}
   }
 }
 
 #[tauri::command]
-pub async fn delete_domain(ctx: AppHandle, args: Domain) -> Response2<Option<()>> {
+pub async fn delete_domain(ctx: AppHandle, args: Domain) -> Response2<()> {
   match ctx.state::<Forwarder>().delete_domain(&args.domain).await {
-    Ok(_) => Response2 {ok: true, message: None, data: None},
+    Ok(_) => Response2::ok_none(),
     Err(_) => Response2 {ok: false, message: None, data: None}
   }
 }
 
 #[tauri::command]
-pub async fn add_domain(ctx: AppHandle, args: Domain) -> Response2<Option<CreateDomain>> {
+pub async fn add_domain(ctx: AppHandle, args: Domain) -> Response2<CreateDomain> {
   match ctx.state::<Forwarder>().add_domain(&args.domain).await {
-    Ok(res) => Response2 {ok: true, message: None, data: Some(res)},
+    Ok(res) => Response2::ok_data(res),
     Err(_) => Response2 {ok: false, message: None, data: None}
   }
 }

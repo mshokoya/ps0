@@ -9,6 +9,7 @@ import { observer } from '@legendapp/state/react'
 type Props = {
   domains: IDomain[]
   addAccount: () => Promise<void>
+  createAccount: () => Promise<void>
   selectedDomain: ObservableObject<string>
   accountTaskHelper: ReturnType<typeof TaskHelpers<AccountReqType>>
   stateResStatusHelper: ReturnType<typeof ResStatusHelpers<AccountReqType>>
@@ -18,6 +19,14 @@ type Props = {
 
 export const AccountForms = observer((p: Props) => {
   const isCreateReq = !!accountTaskHelper.findTaskByReqType('account', 'create')
+
+  const handleAction = () => {
+    p.addType.peek() === 'email'
+      ? p.addAccount()
+      : p.createAccount()
+    
+  }
+
   return (
     <Flex direction="column" gap="3" width="260px">
       <Tabs.Root defaultValue="email" onValueChange={(e: string) => p.addType.set(e)}>
@@ -46,7 +55,7 @@ export const AccountForms = observer((p: Props) => {
         </Box>
       </Tabs.Root>
       <Box width="100px" mb="3">
-        <Button size="1" disabled={isCreateReq} onClick={() => p.addAccount()}>
+        <Button size="1" disabled={isCreateReq} onClick={() => {handleAction()}}>
           Add Account
         </Button>
       </Box>

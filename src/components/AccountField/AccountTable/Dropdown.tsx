@@ -7,7 +7,7 @@ export const DropdownTable = observer(({ account }: { account: IAccount }) => {
   return (
     <tr className="hidden text-left">
       <table
-        className={`hidden border-cyan-600 border-y text-[0.9rem] ${account.credits_used !== account.credits_limit ? 'el-ok' : 'el-no'}`}
+        className={`hidden border-cyan-600 border-y text-[0.9rem] ${account.credits_used !== account.credit_limit ? 'el-ok' : 'el-no'}`}
       >
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Email:</th>
@@ -29,7 +29,7 @@ export const DropdownTable = observer(({ account }: { account: IAccount }) => {
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Credits Limit:</th>
           <td className="px-2">
-            {account.credits_limit === -1 ? 'N/account' : account.credits_limit}
+            {account.credit_limit === -1 ? 'N/account' : account.credit_limit}
           </td>
         </tr>
 

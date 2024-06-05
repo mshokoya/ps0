@@ -3,9 +3,13 @@ import { AccountReqType, accountTaskHelper, stateResStatusHelper } from '../stat
 import { appState$ } from '../state/index'
 
 export function handleApolloScrapeEndEvent(
-  res: TQTask<{ account_id: string; taskType: string }>
+  res: TQTask<{ account_id: string; task_type: string }>
 ) {
-  if (res.ok === undefined) return
+  console.log("THIS IS THE APOLLO RES")
+  console.log(res)
+  return
+  // 
+  // if (res.ok === undefined) return
   const [account_id, idx, task] = accountTaskHelper.getTaskByTaskID(res.task_id)
   if (!account_id || idx === -1 || !task) return
 
@@ -21,7 +25,7 @@ export function handleApolloScrapeEndEvent(
   }, 1700)
 }
 
-function processApolloEventData(task: TQTask<{ account_id: string; taskType: string }>) {
+function processApolloEventData(task: TQTask<{ account_id: string; task_type: string }>) {
   switch (task.task_type) {
     // case 'login'
     // case 'delete':

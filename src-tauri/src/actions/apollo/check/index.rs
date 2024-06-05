@@ -1,22 +1,19 @@
 use anyhow::Result;
-use polodb_core::bson::oid::ObjectId;
-use polodb_core::bson::{doc, to_document, Uuid};
 use serde_json::{to_value, Value};
+use surrealdb::sql::Id;
 use tauri::{AppHandle, Manager};
-
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo_then_visit};
 use crate::actions::controllers::TaskType;
-use crate::libs::db::accounts::types::{Account, AccountArg};
+use crate::libs::db::accounts::types::Account;
 use crate::libs::taskqueue::index::TaskQueue;
-use crate::libs::taskqueue::types::Channels;
 use crate::{
-    actions::controllers::{Response as R},
+    actions::controllers::Response as R,
     libs::{
         db::{
             entity::Entity,
             index::DB,
         },
-        taskqueue::types::{TQTimeout, Task, TaskActionCTX, TaskGroup},
+        taskqueue::types::{Task, TaskActionCTX, TaskGroup},
     },
     SCRAPER,
 };
@@ -24,21 +21,24 @@ use crate::{
 use super::types::ApolloCheckArgs;
 
 #[tauri::command]
-pub fn check_task(ctx: AppHandle, args: Value) -> R {
-    let to = args.get("timeout").unwrap().to_owned();
-    let timeout: Option<TQTimeout> = serde_json::from_value(to).unwrap_or(None);
+pub fn check_task(ctx: AppHandle, args: Value) -> R<()> {
+    let timeout = match args.get("timeout") {
+        Some(val) => {serde_json::from_value(val.take()).unwrap_or(None)}
+        None => None
+    };
+
     let metadata = match args.get("account_id") {
         Some(val) => Some(val.to_owned()),
-        None => None,
+        None => return R::fail_none(Some("account not found")),
     };
 
     let fmt_args = match args.get("account_id") {
         Some(_) => Some(args.to_owned()),
-        None => return R::fail_none(),
+        None => return R::fail_none(Some("account not found")),
     };
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Uuid::new(),
+        task_id: Id::uuid(),
         task_type: TaskType::ApolloCheck,
         task_group: TaskGroup::Apollo,
         message: "Getting credits",
@@ -74,7 +74,7 @@ pub async fn apollo_check(
 
     ctx.handle
         .emit_all(
-            Channels::Apollo.into(),
+            TaskGroup::Apollo.into(),
             doc! {"taskID": ctx.task_id, "message": "navigated to the credits page"},
         )
         .unwrap();
@@ -89,7 +89,7 @@ pub async fn apollo_check(
 
     ctx.handle
         .emit_all(
-            Channels::Apollo.into(),
+            TaskGroup::Apollo.into(),
             doc! {"taskID": ctx.task_id, "message": format!("successfully obtained {} credits info", account.email)},
         )
         .unwrap();

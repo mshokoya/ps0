@@ -7,10 +7,9 @@ use simple_password_generator::PasswordGenerator;
 use anyhow::{anyhow, Result};
 use async_std::task::sleep;
 use polodb_core::bson::{doc, to_document, Uuid};
-use serde_json::{from_value, Value};
+use serde_json::{from_value, json, Value};
 use tauri::{AppHandle, Manager};
 use fake::Fake;
-
 use crate::actions::apollo::lib::util::wait_for_selector;
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::Account;
@@ -32,8 +31,8 @@ use super::types::ApolloCreateArgs;
 
 #[tauri::command]
 pub fn create_task(ctx: AppHandle, args: Value) -> R {
-    let metadata = match args.get("account_id") {
-        Some(val) => Some(val.clone()),
+    let metadata = match args.get("domain") {
+        Some(val) => Some(json!({"domain": val.clone()})),
         None => None,
     };
 

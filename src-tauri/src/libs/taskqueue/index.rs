@@ -1,13 +1,14 @@
 use crate::actions::controllers::TaskType;
 use async_std::task::{sleep, spawn};
-use polodb_core::bson::Uuid;
+use serde_json::to_value;
+use surrealdb::sql::Uuid;
 use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 // use String::String;
 
-use super::types::{ActionData, Channels, Process, Task, TaskActionCTX, TaskEvent};
+use super::types::{ActionData, TaskGroup, Process, Task, TaskEvent};
 
 #[derive(Debug)]
 pub struct TaskQueue {
@@ -39,7 +40,7 @@ impl TaskQueue {
         self.wait_queue.lock().unwrap().push_back(task_cln);
         self.app_handle
             .emit_all(
-                Channels::WaitQueue.into(),
+                TaskGroup::WaitQueue.into(),
                 TaskEvent {
                     task_id: &task.task_id,
                     message: "added new task to wait queue".to_string(),
@@ -64,7 +65,7 @@ impl TaskQueue {
         };
         let task_cln = task.clone();
         self.app_handle.emit_all(
-                Channels::WaitQueue.into(),
+                TaskGroup::WaitQueue.into(),
                 TaskEvent {
                     task_id: &task_cln.task_id,
                     message: "removed task from wait queue".to_string(),
@@ -87,7 +88,7 @@ impl TaskQueue {
         self.process_queue.lock().unwrap().push_back(process);
         self.app_handle
             .emit_all(
-                Channels::ProcessQueue.into(),
+                TaskGroup::ProcessQueue.into(),
                 TaskEvent {
                     task_id: &task.task_id,
                     message: "new task added to processing queue".to_string(),
@@ -121,7 +122,7 @@ impl TaskQueue {
 
         self.app_handle
             .emit_all(
-                Channels::ProcessQueue.into(),
+                TaskGroup::ProcessQueue.into(),
                 TaskEvent {
                     task_id,
                     message: "removed completed task from queue".to_string(),
@@ -147,7 +148,7 @@ impl TaskQueue {
                 app_handle.state::<TaskQueue>().w_enqueue(task_cln.clone());
                 app_handle
                     .emit_all(
-                        Channels::TimeoutQueue.into(),
+                        TaskGroup::TimeoutQueue.into(),
                         TaskEvent {
                             task_id: &task_cln.task_id,
                             message: "removed task from timeout queue".to_string(),
@@ -166,7 +167,7 @@ impl TaskQueue {
         }
         self.app_handle
             .emit_all(
-                Channels::TimeoutQueue.into(),
+                TaskGroup::TimeoutQueue.into(),
                 TaskEvent {
                     task_id: &task.task_id,
                     message: "added task to timeout queue".to_string(),
@@ -197,7 +198,7 @@ impl TaskQueue {
     //     println!("{}", "t d 3");
     //     self.app_handle
     //         .emit_all(
-    //             Channels::TimeoutQueue.into(),
+    //             TaskGroup::TimeoutQueue.into(),
     //             TaskEvent {
     //                 task_id: task.task_id,
     //                 message: "removed task from timeout queue",
@@ -230,36 +231,40 @@ impl TaskQueue {
         let tsk_cln = task.clone();
 
         let ps = spawn(async move {
-            let mut ok: bool = false;
-            let mut message = "removed completed task from queue".to_string();
-            let metadata = match tsk_cln
-                .task_type
-                .exec(
-                    TaskActionCTX {
-                        handle: handle.clone(),
-                        task_id: tsk_cln.task_id,
-                        page: None,
-                    },
-                    tsk_cln.args,
-                )
-                .await
-            {
-                Ok(val) => {
-                    ok = true;
-                    val
-                }
-                Err(err) => {
-                    message = err.to_string();
-                    ok = false;
-                    None
-                }
-            };
+            // let mut ok: bool = false;
+            // let mut message = "removed completed task from queue".to_string();
+            // let metadata = match tsk_cln
+            //     .task_type
+            //     .exec(
+            //         TaskActionCTX {
+            //             handle: handle.clone(),
+            //             task_id: tsk_cln.task_id,
+            //             page: None,
+            //         },
+            //         tsk_cln.args,
+            //     )
+            //     .await
+            // {
+            //     Ok(val) => {
+            //         ok = true;
+            //         val
+            //     }
+            //     Err(err) => {
+            //         message = err.to_string();
+            //         ok = false;
+            //         None
+            //     }
+            // };
 
-            handle.state::<TaskQueue>().p_dequeue(&tsk_cln.task_id);
+            sleep(Duration::from_secs(5)).await;
+            let ok = true;
+            let message = "removed completed task from queue".to_string();
+            let metadata = to_value("fkldjnswkdsfoasld").ok();
+
 
             handle
                 .emit_all(
-                    Channels::ProcessQueue.into(),
+                    tsk_cln.task_group.into(),
                     TaskEvent {
                         task_id: &tsk_cln.task_id,
                         message,
@@ -274,6 +279,8 @@ impl TaskQueue {
                     },
                 )
                 .unwrap();
+
+                handle.state::<TaskQueue>().p_dequeue(&tsk_cln.task_id);
         });
 
         self.p_enqueue(Process { task, ps });

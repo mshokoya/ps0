@@ -11,44 +11,70 @@ use super::apollo::{
 };
 
 #[derive(Serialize, Debug)]
-pub struct Response2<T> {
+pub struct Response<T> {
     pub ok: bool,
     pub message: Option<String>,
-    pub data: T,
+    pub data: Option<T>,
 }
 
-#[derive(Serialize, Debug)]
-pub struct Response {
-    pub ok: bool,
-    pub message: Option<String>,
-    pub data: Option<Value>,
-}
-
-impl Response {
+impl<T> Response<T> {
     pub fn ok_none() -> Self {
-        Response {
+        Response::<T> {
             ok: true,
             message: None,
             data: None,
         }
     }
 
-    pub fn ok_data(data: Value) -> Self {
-        Response{
+    pub fn ok_data(data: T) -> Self {
+        Response {
             ok: true,
             message: None,
             data: Some(data)
         }
     }
 
-    pub fn fail_none() -> Self {
-        Response {
+    pub fn fail_none(msg: Option<&str>) -> Self {
+        Response::<T> {
             ok: false,
-            message: None,
+            message: msg.and(Some(msg.unwrap().to_string())),
             data: None,
         }
     }
 }
+
+// #[derive(Serialize, Debug)]
+// pub struct Response {
+//     pub ok: bool,
+//     pub message: Option<String>,
+//     pub data: Option<Value>,
+// }
+
+// impl Response {
+//     pub fn ok_none() -> Self {
+//         Response {
+//             ok: true,
+//             message: None,
+//             data: None,
+//         }
+//     }
+
+//     pub fn ok_data(data: Value) -> Self {
+//         Response{
+//             ok: true,
+//             message: None,
+//             data: Some(data)
+//         }
+//     }
+
+//     pub fn fail_none() -> Self {
+//         Response {
+//             ok: false,
+//             message: None,
+//             data: None,
+//         }
+//     }
+// }
 
 #[derive(Debug, Deserialize)]
 pub struct ConfirmTaskArgs {

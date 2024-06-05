@@ -1,8 +1,8 @@
 use async_std::task::{spawn, JoinHandle};
 use chromiumoxide::Page;
-use polodb_core::bson::Uuid;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use surrealdb::sql::Uuid;
 use tauri::AppHandle;
 
 use crate::actions::controllers::TaskType;
@@ -50,26 +50,19 @@ pub struct ActionData<'a> {
 
 #[derive(Clone, Copy, Serialize, Debug)]
 pub enum TaskGroup {
-    // Enqueue,
-    // Dequeue,
-    Apollo,
-}
-
-#[derive(Debug)]
-pub enum Channels {
     WaitQueue,
     ProcessQueue,
     TimeoutQueue,
     Apollo,
 }
 
-impl Into<&str> for Channels {
+impl Into<&str> for TaskGroup {
     fn into(self) -> &'static str {
         match self {
-            Channels::WaitQueue => "waitQueue",
-            Channels::ProcessQueue => "processQueue",
-            Channels::TimeoutQueue => "timeoutQueue",
-            Channels::Apollo => "apollo",
+            TaskGroup::WaitQueue => "waitQueue",
+            TaskGroup::ProcessQueue => "processQueue",
+            TaskGroup::TimeoutQueue => "timeoutQueue",
+            TaskGroup::Apollo => "apollo",
         }
     }
 }

@@ -18,6 +18,7 @@ export const CHANNELS = {
   confirm_task: "confirm_task",
   scrape_task: "scrape_task",
   add_domain: "add_domain", 
+  add_account: "add_account",
   verify_domain: "verify_domain", 
   delete_domain: "delete_domain",
   accounts_in_use: "accounts_in_use",

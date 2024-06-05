@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-
-use polodb_core::bson::{oid::ObjectId, Uuid};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use surrealdb::sql::Id;
 // use ts_rs::TS;
 
 // export type IMetaData = {
@@ -18,7 +17,7 @@ use serde_json::Value;
 // #[ts(export)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Metadata {
-    pub _id: String,
+    pub id: Option<Id>,
     pub url: String,
     pub params: HashMap<String, String>,
     pub name: String,
@@ -46,7 +45,7 @@ pub struct Scrapes {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MetadataArg {
-    pub _id: Option<String>,
+    pub id: Option<Id>,
     pub url: Option<String>,
     pub params: Option<HashMap<String, Value>>,
     pub name: Option<String>,

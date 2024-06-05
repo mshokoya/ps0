@@ -5,12 +5,10 @@ use async_std::task::sleep;
 use polodb_core::bson::{doc, to_document, Uuid};
 use serde_json::{to_value, Value};
 use tauri::{AppHandle, Manager};
-
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo, log_into_apollo_then_visit};
 use crate::actions::controllers::TaskType;
 use crate::libs::db::accounts::types::{Account};
 use crate::libs::taskqueue::index::TaskQueue;
-use crate::libs::taskqueue::types::Channels;
 use crate::{
     actions::controllers::{Response as R},
     libs::{
@@ -70,7 +68,7 @@ pub async fn apollo_demine(
 
     ctx.handle
         .emit_all(
-            Channels::Apollo.into(),
+            TaskGroup::Apollo.into(),
             doc! {"taskID": ctx.task_id, "message": format!("successfully obtained {} credits info", account.email)},
         )
         .unwrap();

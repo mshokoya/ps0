@@ -1,9 +1,10 @@
 use chromiumoxide::cdp::browser_protocol::network::CookieParam;
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Id;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Account {
-    pub _id: String,
+    pub id: Option<Id>,
     pub domain: String, // enum Domain
     pub trial_time: Option<u64>,
     pub suspended: bool,
@@ -11,7 +12,6 @@ pub struct Account {
     pub verified: String, // yes, no, confirm
     pub email: String,
     pub password: String,
-    pub proxy: Option<String>,
     pub credits_used: Option<u16>,
     pub credit_limit: Option<u16>,
     pub renewal_date: Option<String>,
@@ -53,7 +53,7 @@ struct CookieParse {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AccountArg {
-    pub _id: Option<String>,
+    pub id: Option<String>,
     pub domain: Option<String>, // enum Domain
     pub trial_time: Option<u64>,
     pub suspended: Option<bool>,

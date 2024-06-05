@@ -1,6 +1,5 @@
 use anyhow::{Context, Result};
-use polodb_core::bson::doc;
-
+use serde_json::json;
 use super::types::{CreateDomain, VerifyDomain};
 
 // (FIX) correct response data
@@ -12,10 +11,10 @@ impl Forwarder {
     reqwest::Client::new()
     .post("https://api.forwardemail.net/v1/domains")
     .bearer_auth(self.0.clone())
-    .json(&doc! {
+    .json(&json!({
       "catchall":"auth@email.com", //()FIX use proper domain
       "domain": domain
-    })
+    }))
     .send()
     .await?
     .json::<CreateDomain>()

@@ -43,7 +43,7 @@ export type IAccount = {
   proxy: string
   last_used: number // new Date.getTime()
   credits_used: number
-  credits_limit: number
+  credit_limit: number
   renewal_date: number | Date
   renewal_start_date: number | Date
   renewal_end_date: number | Date

@@ -4,18 +4,18 @@ import { handleApolloTaskQueueEvents } from './apollo'
 
 export function handleTaskQueueEvent(res: TQTask) {
   switch (res.task_type) {
-    case 'enqueue':
+    case 'Enqueue':
       taskQueueHelper.addToQueue(res.metadata.queue, res)
       break
 
-    case 'dequeue':
+    case 'Dequeue':
       taskQueueHelper.delete(res.metadata.queue, res.task_id)
       break
   }
 
-  switch (res.action_data.task_group) {
-    case 'apollo':
-      handleApolloTaskQueueEvents(res as TQTask<{ account_id: string, queue: keyof TaskQueue }>)
-      break
-  }
+  // switch (res.action_data.task_group) {
+  //   case 'apollo':
+  //     handleApolloTaskQueueEvents(res as TQTask<{ account_id: string, queue: keyof TaskQueue }>)
+  //     break
+  // }
 }

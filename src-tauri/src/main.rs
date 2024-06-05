@@ -16,7 +16,8 @@ use actions::apollo::{
     login::index::login_task,
     create::index::create_task,
     scrape::index::scrape_task,
-    cache::accounts_in_use
+    cache::accounts_in_use,
+    add::index::add_account
 };
 use libs::{cache::ApolloCache, forwarder::index::Forwarder, taskqueue::index::TaskQueue};
 use libs::{db::index::DB, scraper::Scraper};
@@ -40,7 +41,6 @@ async fn main() {
 
         // db
         let db = DB::new();
-        db.init();
         app.manage(db);
 
         // imap
@@ -86,7 +86,8 @@ async fn main() {
             add_domain, 
             verify_domain, 
             delete_domain,
-            accounts_in_use
+            accounts_in_use,
+            add_account
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

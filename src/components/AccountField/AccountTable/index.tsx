@@ -77,7 +77,7 @@ export const AccountTable = observer((p: Props) => {
                     <tr
                       className={`
                     text-[0.8rem] text-center hover:border-cyan-600 hover:border
-                    ${account.credits_used !== account.credits_limit ? 'el-ok' : 'el-no'}
+                    ${account.credits_used !== account.credit_limit ? 'el-ok' : 'el-no'}
                     ${accountTaskHelper.getEntityTasks(account.id).length ? 'fieldBlink' : ''}
                     ${stateResStatusHelper.getByID(account.id, 0)[1] === 'ok' ? 'resOK' : ''}
                     ${stateResStatusHelper.getByID(account.id, 0)[1] === 'fail' ? 'resFail' : ''}
@@ -89,7 +89,7 @@ export const AccountTable = observer((p: Props) => {
                         {account.email}
                       </td>
                       <td className="overflow-scroll truncate" data-type="extend">
-                        {fmtCredits(account.credits_limit, account.credits_used)}
+                        {fmtCredits(account.credit_limit, account.credits_used)}
                       </td>
                       <td className="overflow-scroll truncate" data-type="extend">
                         {account.verified}
