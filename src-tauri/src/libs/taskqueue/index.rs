@@ -1,7 +1,7 @@
 use crate::actions::controllers::TaskType;
 use async_std::task::{sleep, spawn};
 use serde_json::to_value;
-use surrealdb::sql::Uuid;
+use surrealdb::sql::Id;
 use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -106,7 +106,7 @@ impl TaskQueue {
         self.exec();
     }
 
-    pub fn p_dequeue(&self, task_id: &Uuid) {
+    pub fn p_dequeue(&self, task_id: &Id) {
         let ps = remove_process(&self.process_queue, task_id).unwrap();
         let mut task = ps.task.clone();
 
@@ -287,13 +287,13 @@ impl TaskQueue {
     }
 }
 
-// fn remove_task(queue: &Mutex<VecDeque<Task>>, task_id: &Uuid) -> Option<Task> {
+// fn remove_task(queue: &Mutex<VecDeque<Task>>, task_id: &Id) -> Option<Task> {
 //     let mut tq = queue.lock().unwrap();
 //     let idx = tq.iter().position(|t| t.task_id == *task_id).unwrap_or(225);
 //     tq.swap_remove_back(idx)
 // }
 
-fn remove_process(queue: &Mutex<VecDeque<Process>>, task_id: &Uuid) -> Option<Process> {
+fn remove_process(queue: &Mutex<VecDeque<Process>>, task_id: &Id) -> Option<Process> {
     let mut pq = queue.lock().unwrap();
     let idx = pq
         .iter()
