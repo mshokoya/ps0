@@ -1,37 +1,32 @@
 use std::time::Duration;
-
 use anyhow::{anyhow, Result};
 use async_std::task::sleep;
-use polodb_core::bson::{doc, to_bson, Uuid};
-use serde_json::{ from_value, to_value, Value};
+use serde_json::{ from_value, to_value as to_serde_value, Value};
+use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager};
-
 use crate::actions::apollo::lib::index::apollo_login_credits_info;
 use crate::actions::controllers::TaskType;
+use crate::libs::db::accounts::types::Account;
 use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
     libs::{
-        db::{
-            entity::Entity,
-            index::DB,
-        },
+        db::index::DB,
         taskqueue::types::{Task, TaskActionCTX, TaskGroup},
     },
     SCRAPER,
 };
-
 use super::types::ApolloLoginArgs;
 
 #[tauri::command]
-pub fn login_task(ctx: AppHandle, args: Value) -> R {
+pub fn login_task(ctx: AppHandle, args: Value) -> R<()> {
     let metadata = match args.get("account_id") {
         Some(val) => Some(val.clone()),
         None => None,
     };
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Uuid::new(),
+        task_id: Id::uuid(),
         task_type: TaskType::ApolloLogin,
         task_group: TaskGroup::Apollo,
         message: "Demine account popups",
@@ -63,12 +58,12 @@ pub async fn apollo_login(
       if url?.unwrap().contains("#/settings/credits/current") {
         let credits = apollo_login_credits_info(&ctx).await?;
         let args: ApolloLoginArgs = from_value(args.unwrap())?;
-        let _ = ctx.handle.state::<DB>().update_one(
-          Entity::Account, 
-          doc! {"_id": args.account_id }, 
-          doc! { "$set" : to_bson(&credits).unwrap() }
+        let _ = ctx.handle.state::<DB>().update_one::<Account>(
+          "account", 
+          &args.account_id, 
+          to_value(&credits)?
         );
-        return Ok(Some(to_value(credits)?))
+        return Ok(Some(to_serde_value(credits)?))
       }
     }
 }

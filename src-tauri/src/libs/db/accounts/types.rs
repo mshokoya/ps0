@@ -1,10 +1,9 @@
 use chromiumoxide::cdp::browser_protocol::network::CookieParam;
 use serde::{Deserialize, Serialize};
-use surrealdb::sql::Id;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Account {
-    pub id: Option<Id>,
+    pub id: String,
     pub domain: String, // enum Domain
     pub trial_time: Option<u64>,
     pub suspended: bool,

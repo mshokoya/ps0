@@ -4,10 +4,9 @@ use async_std::task::sleep;
 use chromiumoxide::Page;
 use fake::faker::internet::en::Username;
 use fake::Fake;
-use polodb_core::bson::oid::ObjectId;
 use anyhow::{anyhow, Context, Result};
-use polodb_core::bson::{doc, to_bson, Document, Uuid};
 use serde_json::{from_value, json, Value};
+use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
 use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
@@ -20,10 +19,7 @@ use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
     actions::controllers::Response as R,
     libs::{
-        db::{
-            entity::Entity,
-            index::DB,
-        },
+        db::index::DB,
         taskqueue::types::{Task, TaskActionCTX, TaskGroup},
     },
     SCRAPER,
@@ -33,7 +29,7 @@ use super::types::{PreviousLead, ScrapeActionArgs, ScrapeTaskArgs, MAX_LEADS_ON_
 
 
 #[tauri::command]
-pub async fn scrape_task(ctx: AppHandle, args: Value) -> R {
+pub async fn scrape_task(ctx: AppHandle, args: Value) -> R<()> {
     // (FIX) should create meta_id in backend 
     let meta_id = match args.get("meta_id") {
         Some(val) => Some(val.clone()),
@@ -41,7 +37,10 @@ pub async fn scrape_task(ctx: AppHandle, args: Value) -> R {
     };
 
     let fmt_args: ScrapeTaskArgs = from_value(args.clone()).unwrap();
-    let metadata = init_meta(&ctx.state::<DB>(), &fmt_args);
+    let metadata = match init_meta(&ctx.state::<DB>(), &fmt_args).await {
+      Ok(meta) => meta,
+      Err(_) => return R::fail_none(Some("Failed to scrape, could not initialize metadata"))
+    };
 
     let cache = ctx.state::<ApolloCache>();
 
@@ -58,7 +57,7 @@ pub async fn scrape_task(ctx: AppHandle, args: Value) -> R {
       cache.add_accounts(meta_id.as_ref().unwrap().as_str().unwrap(), &mut vec![account_id.clone()]).await;
 
       ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Uuid::new(),
+        task_id: Id::uuid(),
         task_type: TaskType::ApolloScrape,
         task_group: TaskGroup::Apollo,
         message: "Scraping",
@@ -103,10 +102,14 @@ pub async fn apollo_scrape(
     let page = ctx.page.as_ref().unwrap();
     let db = ctx.handle.state::<DB>();
     
-    let mut account = db.find_one::<Account>(
-      Entity::Account,
-      Some(doc! {"_id": &args.account_id})
-    ).unwrap();
+    let Some(mut account) = db.select_one::<Account>(
+      "account",
+      &args.account_id
+    )
+    .await? 
+    else {
+      return Err(anyhow!("Failed to scrape, could not find registered account"))
+    };
 
     log_into_apollo(&ctx, &account).await?;
 
@@ -131,7 +134,7 @@ pub async fn apollo_scrape(
       num_leads_to_scrape = cmp::min(num_leads_to_scrape, MAX_LEADS_ON_PAGE.into());
       if num_leads_to_scrape <= 0 { return Ok(None) }
 
-      let scrape_id = Uuid::new().to_string();
+      let scrape_id = Id::uuid().to_string();
       let list_name = Username().fake::<String>();
   
       let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
@@ -187,32 +190,51 @@ pub async fn apollo_scrape(
     Ok(None)
 }
 
-fn init_meta(db: &State<DB>, args: &ScrapeTaskArgs) -> Metadata {
-  match db.find_one::<Metadata>(
-    Entity::Metadata,
-    Some(doc! {"_id": &args.meta_id})
-  ) {
-    Some(meta) => meta,
+async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metadata> {
+  match db.select_one::<Metadata>(
+    "metadata",
+    &args.meta_id
+  ).await? {
+    Some(meta) => Ok(meta),
     None => {
-      let scrapes: Vec<Scrapes> = vec![];
-      db.insert_one(
-        Entity::Metadata,
-        doc! {
-          "_id": &args.meta_id,
-          "url": &args.url,
-          "params": to_bson(&args.params).unwrap(),
-          "name": &args.name,
-          "scrapes": to_bson(&scrapes).unwrap(),
-          "accounts": to_bson(&args.accounts).unwrap(),
-        }
-      ).unwrap();
-      db.find_one::<Metadata>(
-        Entity::Metadata,
-        Some(doc! {"_id": &args.meta_id})
-      ).unwrap()
+      let Some(meta) = db.insert_one::<Metadata>(
+        "metadata",
+        &args.meta_id,
+        to_value(
+          Metadata {
+            id: args.meta_id.clone(),
+            url: args.url.clone(),
+            params: args.params.clone(),
+            name: args.name.clone(),
+            scrapes: vec![],
+            accounts: args.accounts.clone()
+          }
+        )?
+      ).await? else {
+        return  Err(anyhow!("Failed to scrape, could not register metadata"))
+      };
+
+      if meta.len() == 0 {
+        return  Err(anyhow!("Failed to scrape, could not register metadata"))
+      };
+
+      let Some(meta) = meta.first().cloned() else {
+        return  Err(anyhow!("Failed to scrape, could not register metadata"))
+      };
+
+      Ok(meta.clone())
     }
   }
 }
+
+// doc! {
+//   "_id": &args.meta_id,
+//   "url": &args.url,
+//   "params": to_bson(&args.params).unwrap(),
+//   "name": &args.name,
+//   "scrapes": to_bson(&scrapes).unwrap(),
+//   "accounts": to_bson(&args.accounts).unwrap(),
+// }
 
 async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, account: &mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
   let db_state = ctx.handle.state::<DB>();

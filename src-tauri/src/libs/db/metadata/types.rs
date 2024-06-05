@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use surrealdb::sql::Id;
 // use ts_rs::TS;
 
 // export type IMetaData = {
@@ -15,9 +14,9 @@ use surrealdb::sql::Id;
 
 // #[derive(TS)]
 // #[ts(export)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Metadata {
-    pub id: Option<Id>,
+    pub id: String,
     pub url: String,
     pub params: HashMap<String, String>,
     pub name: String,
@@ -27,7 +26,7 @@ pub struct Metadata {
 
 // #[derive(TS)]
 // #[ts(export)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Accounts {
     pub account_id: String,
     pub chunk: [u32; 2],
@@ -35,7 +34,7 @@ pub struct Accounts {
 
 // #[derive(TS)]
 // #[ts(export)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Scrapes {
     pub scrape_id: String,
     pub list_name: String,
@@ -45,7 +44,7 @@ pub struct Scrapes {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MetadataArg {
-    pub id: Option<Id>,
+    pub id: Option<String>,
     pub url: Option<String>,
     pub params: Option<HashMap<String, Value>>,
     pub name: Option<String>,
