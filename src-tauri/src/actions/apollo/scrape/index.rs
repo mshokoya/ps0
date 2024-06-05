@@ -237,15 +237,6 @@ async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Meta
 // }
 
 async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, account: &mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
-  let db_state = ctx.handle.state::<DB>();
-  let db = db_state.db.lock().unwrap();
-
-  let mut session = db.start_session()?;
-  session.start_transaction(None)?;
-
-  let metadata_collection = db.collection::<Metadata>(&Entity::Metadata.name());
-  let account_collection = db.collection::<Account>(&Entity::Account.name());
-
   metadata.scrapes.push(Scrapes {
     scrape_id: scrape_id.to_string(), 
     list_name: list_name.to_string(), 
@@ -253,26 +244,27 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
     date: time_ms()
   });
 
-  metadata_collection.update_one_with_session(
-    doc! {"_id": &metadata._id}, 
-    doc! {"scrapes": to_bson(&metadata.scrapes)?}, 
-    &mut session
-  )?;
-
   account.history.push(History {
     total_page_scrape: 0, 
     scrape_time: time_ms(), 
     list_name: list_name.to_string(),
     scrape_id: scrape_id.to_string()
   });
-
-  account_collection.update_one_with_session(
-    doc! {"_id": &account._id}, 
-    doc! {"history": to_bson(&account.history)?},
-    &mut session
-  )?;
-
-  session.commit_transaction()?;
+  
+  let db_state = ctx.handle.state::<DB>();
+  db_state.0.lock()
+  .await
+  .query("
+    BEGIN TRANSACTION;
+    UPDATE $metafilter SET $metadata;
+    UPDATE $accountfilter SET $accountdata;
+    COMMIT TRANSACTION;
+  ")
+  .bind(("metafilter", format!("metadata:{}", &metadata.id) ))
+  .bind(("metadata", to_value(&metadata.scrapes)?))
+  .bind(("accountfilter", format!("account:{}", &account.id)))
+  .bind(("accountdata", to_value(&account.history)?))
+  .await?;
 
   Ok(())
 }
@@ -364,249 +356,249 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
 
 async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {
   ctx.page.as_ref().unwrap().evaluate_function(
-    r#"
+  r#"
     async () => {
-    window.na = "N/A";
-    window.el = {
-      columns: {
-        name: {
-          name: (columnEl) => isEl(columnEl.querySelector(".zp_xVJ20 > a")).innerHTML || na,
-          linkedin: (columnEl) => isEl(columnEl.getElementsByClassName("zp-link zp_OotKe")[0]).href || na
+      window.na = "N/A";
+      window.el = {
+        columns: {
+          name: {
+            name: (columnEl) => isEl(columnEl.querySelector(".zp_xVJ20 > a")).innerHTML || na,
+            linkedin: (columnEl) => isEl(columnEl.getElementsByClassName("zp-link zp_OotKe")[0]).href || na
+          },
+          title: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
+          company: {
+            name: (columnEl) => isEl(columnEl.getElementsByClassName("zp_WM8e5 zp_kTaD7")[0]).innerHTML || na,
+            socialsList: (columnEl) => columnEl.getElementsByClassName("zp-link zp_OotKe") || []
+          },
+          location: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
+          employees: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
+          email: {
+            emailButton: (columnEl) => columnEl.getElementsByClassName("zp-button zp_zUY3r zp_jSaSY zp_MCSwB zp_IYteB")[0],
+            emailText: (columnEl) => isEl(columnEl.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0]).innerHTML || na,
+            noEmailText: (columnEl) => isEl(columnEl.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0]).innerHTML || na
+          },
+          industry: (columnEl) => isEl(columnEl.getElementsByClassName("zp_PHqgZ zp_TNdhR")[0]).innerHTML || na,
+          keywords: (columnEl) => columnEl.getElementsByClassName("zp_yc3J_ zp_FY2eJ")
         },
-        title: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
-        company: {
-          name: (columnEl) => isEl(columnEl.getElementsByClassName("zp_WM8e5 zp_kTaD7")[0]).innerHTML || na,
-          socialsList: (columnEl) => columnEl.getElementsByClassName("zp-link zp_OotKe") || []
+        nav: {
+          nextPageButton: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[2],
+          prevPageButton: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[1],
+          toggleFilterVisibility: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[0]
         },
-        location: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
-        employees: (columnEl) => isEl(columnEl.querySelector(".zp_Y6y8d")).innerHTML || na,
-        email: {
-          emailButton: (columnEl) => columnEl.getElementsByClassName("zp-button zp_zUY3r zp_jSaSY zp_MCSwB zp_IYteB")[0],
-          emailText: (columnEl) => isEl(columnEl.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0]).innerHTML || na,
-          noEmailText: (columnEl) => isEl(columnEl.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0]).innerHTML || na
+        ad: {
+          isAdRow: (trEl) => isEl(trEl).className === "zp_DNo9Q zp_Ub5ME"
         },
-        industry: (columnEl) => isEl(columnEl.getElementsByClassName("zp_PHqgZ zp_TNdhR")[0]).innerHTML || na,
-        keywords: (columnEl) => columnEl.getElementsByClassName("zp_yc3J_ zp_FY2eJ")
-      },
-      nav: {
-        nextPageButton: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[2],
-        prevPageButton: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[1],
-        toggleFilterVisibility: () => document.getElementsByClassName("zp-button zp_zUY3r zp_MCSwB zp_xCVC8")[0]
-      },
-      ad: {
-        isAdRow: (trEl) => isEl(trEl).className === "zp_DNo9Q zp_Ub5ME"
-      },
-      errors: {
-        freePlan: {
-          error: () => document.getElementsByClassName("zp_lMRYw zp_YYCg6 zp_iGbgU")[0],
-          closeButton: () => document.getElementsByClassName(
-            "zp-icon mdi mdi-close zp_dZ0gM zp_foWXB zp_j49HX zp_c5Xci"
-          )[0].click()
-        },
-        limitedVersionError: () => document.getElementsByClassName(
-          "apolloio-css-vars-reset zp zp-modal zp_iDDtd zp_APRN8 api-error-modal"
-        )[0]
-      }
-    };
-    window.isEl = (el2) => el2 ? el2 : {};
-    window.scrapeSingleRow = async (tbody) => {
-      const res = {};
-      const columnNames = document.querySelectorAll("th");
-      let tr = tbody.childNodes[0];
-      if (el.ad.isAdRow(tr)) {
-        tr = tbody.childNodes[1];
-      }
-      for (let i = 0; i < columnNames.length; i++) {
-        switch (columnNames[i].innerText) {
-          case "Name":
-            const nameCol = scrapeNameColumn(tr.childNodes[i]);
-            res["name"] = nameCol.name;
-            res["firstname"] = nameCol.name.trim().split(" ")[0];
-            res["lastname"] = nameCol.name.trim().split(" ")[1];
-            res["linkedin"] = nameCol.linkedin;
-            break;
-          case "Title":
-            res["title"] = scrapeTitleColumn(tr.childNodes[i]);
-            break;
-          case "Company":
-            const companyCol = scrapeCompanyColumn(tr.childNodes[i]);
-            res["company_name"] = companyCol.companyName;
-            res["company_website"] = companyCol.companyWebsite;
-            res["company_linkedin"] = companyCol.companyLinkedin;
-            res["company_twitter"] = companyCol.companyTwitter;
-            res["company_facebook"] = companyCol.companyFacebook;
-            break;
-          case "Quick Actions":
-            res["email_1"] = await scrapeActionColumn(tr.childNodes[i]);
-            break;
-          case "Contact Location":
-            res["company_location"] = scrapeLocationColumn(tr.childNodes[i]);
-            break;
-          case "Employees":
-            res["employees"] = scrapeEmployeesColumn(tr.childNodes[i]);
-            break;
-          case "Phone":
-            res["phone"] = scrapePhoneColumn(tr.childNodes[i]);
-            break;
-          case "Industry":
-            res["industry"] = scrapeIndustryColumn(tr.childNodes[i]);
-            break;
-          case "Keywords":
-            res["keywords"] = scrapeKeywordsColumn(tr.childNodes[i]);
+        errors: {
+          freePlan: {
+            error: () => document.getElementsByClassName("zp_lMRYw zp_YYCg6 zp_iGbgU")[0],
+            closeButton: () => document.getElementsByClassName(
+              "zp-icon mdi mdi-close zp_dZ0gM zp_foWXB zp_j49HX zp_c5Xci"
+            )[0].click()
+          },
+          limitedVersionError: () => document.getElementsByClassName(
+            "apolloio-css-vars-reset zp zp-modal zp_iDDtd zp_APRN8 api-error-modal"
+          )[0]
         }
-      }
-      return res;
-    };
-    window.scrapeSinglePage = async () => {
-      const allRows = getRows();
-      const data = [];
-      for (const row of allRows) {
-        const singleRow = await scrapeSingleRow(row);
-        if (singleRow)
-          data.push(singleRow);
-      }
-      return data;
-    };
-    window.scrapeNameColumn = (nameColumn) => ({
-      name: el.columns.name.name(nameColumn),
-      linkedin: el.columns.name.linkedin(nameColumn)
-    });
-    window.scrapeTitleColumn = (titleColumn) => el.columns.title(titleColumn);
-    window.scrapeCompanyColumn = (companyColumn) => {
-      return {
-        companyName: el.columns.company.name(companyColumn) || na,
-        companyWebsite: na,
-        companyLinkedin: na,
-        companyTwitter: na,
-        companyFacebook: na,
-        ...Array.from(el.columns.company.socialsList(companyColumn)).reduce(
-          (a, c) => ({
-            ...a,
-            // @ts-ignore
-            ...populateSocialsLinks(c.href)
-          }),
-          {}
-        )
       };
-    };
-    window.scrapeLocationColumn = (locationColumn) => el.columns.location(locationColumn);
-    window.scrapeEmployeesColumn = (employeesColumn) => el.columns.employees(employeesColumn);
-    window.scrapePhoneColumn = (phoneColumn) => phoneColumn.innerText === "Request Mobile Number" ? na : phoneColumn.innerText;
-    window.scrapePhoneColumn = (phoneColumn) => phoneColumn.innerText === "Request Mobile Number" ? na : phoneColumn.innerText;
-    window.scrapeEmailColumn = async (emailColumn) => {
-      let loopCounter = 0;
-      const loopEnd = 10;
-      let email = "";
-      const emailButton = emailColumn.getElementsByClassName(
-        "zp-button zp_zUY3r zp_jSaSY zp_MCSwB zp_IYteB"
-      )[0];
-      let emailText = emailColumn.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0];
-      let noEmailText = emailColumn.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0];
-      if (emailButton) {
-        emailButton.click();
-        while (!noEmailText && !emailText && loopCounter < loopEnd) {
-          await sleep(15e3);
-          loopCounter++;
-          emailText = emailColumn.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0];
-          noEmailText = emailColumn.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0];
+      window.isEl = (el2) => el2 ? el2 : {};
+      window.scrapeSingleRow = async (tbody) => {
+        const res = {};
+        const columnNames = document.querySelectorAll("th");
+        let tr = tbody.childNodes[0];
+        if (el.ad.isAdRow(tr)) {
+          tr = tbody.childNodes[1];
         }
-        if (emailText) {
-          email = emailText.innerHTML;
-        }
-      } else if (emailText) {
-        email = emailText.innerHTML;
-      }
-      return email ? email : na;
-    };
-    window.scrapeActionColumn = async (emailColumn) => {
-      let loopCounter = 0;
-      const loopEnd = 3;
-      let email = "";
-      const emailButton = emailColumn.querySelector(
-        '[class="zp-button zp_zUY3r zp_n9QPr zp_MCSwB"]'
-      );
-      let emailPopupButton = emailColumn.querySelector(
-        '[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_IYteB"]'
-      );
-      let noEmailButton = emailColumn.querySelector(
-        '[class="zp-button zp_zUY3r zp_BAp0M zp_jSaSY zp_MCSwB zp_IYteB zp_wUX4E zp_wUX4E"]'
-      );
-      if (emailButton) {
-        emailButton.click();
-        while (!emailPopupButton && !noEmailButton && loopCounter < loopEnd) {
-          await sleep(5e3);
-          loopCounter++;
-          emailPopupButton = emailColumn.querySelector(
-            '[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_IYteB"]'
-          );
-          noEmailButton = emailColumn.querySelector(
-            '[class="zp-button zp_zUY3r zp_BAp0M zp_jSaSY zp_MCSwB zp_IYteB zp_wUX4E zp_wUX4E"]'
-          );
-          if (emailPopupButton) {
-            emailPopupButton.click();
-            email = await emailPopupButtonClick(emailPopupButton);
-          } else if (noEmailButton) {
-            email = na;
+        for (let i = 0; i < columnNames.length; i++) {
+          switch (columnNames[i].innerText) {
+            case "Name":
+              const nameCol = scrapeNameColumn(tr.childNodes[i]);
+              res["name"] = nameCol.name;
+              res["firstname"] = nameCol.name.trim().split(" ")[0];
+              res["lastname"] = nameCol.name.trim().split(" ")[1];
+              res["linkedin"] = nameCol.linkedin;
+              break;
+            case "Title":
+              res["title"] = scrapeTitleColumn(tr.childNodes[i]);
+              break;
+            case "Company":
+              const companyCol = scrapeCompanyColumn(tr.childNodes[i]);
+              res["company_name"] = companyCol.companyName;
+              res["company_website"] = companyCol.companyWebsite;
+              res["company_linkedin"] = companyCol.companyLinkedin;
+              res["company_twitter"] = companyCol.companyTwitter;
+              res["company_facebook"] = companyCol.companyFacebook;
+              break;
+            case "Quick Actions":
+              res["email_1"] = await scrapeActionColumn(tr.childNodes[i]);
+              break;
+            case "Contact Location":
+              res["company_location"] = scrapeLocationColumn(tr.childNodes[i]);
+              break;
+            case "Employees":
+              res["employees"] = scrapeEmployeesColumn(tr.childNodes[i]);
+              break;
+            case "Phone":
+              res["phone"] = scrapePhoneColumn(tr.childNodes[i]);
+              break;
+            case "Industry":
+              res["industry"] = scrapeIndustryColumn(tr.childNodes[i]);
+              break;
+            case "Keywords":
+              res["keywords"] = scrapeKeywordsColumn(tr.childNodes[i]);
           }
         }
-      } else if (emailPopupButton) {
-        email = await emailPopupButtonClick(emailPopupButton);
-      } else if (noEmailButton) {
-        email = na;
-      }
-      return email ? email : na;
-    };
-    window.emailPopupButtonClick = async (emailPopupButton) => {
-      let email = "-";
-      let loopCounter = 0;
-      const loopEnd = 5;
-      let emailText = document.getElementsByClassName("zp_t08Bv")[0];
-      emailPopupButton.click();
-      if (!emailText) {
-        while (!emailText && loopCounter < loopEnd) {
-          await sleep(1e3);
-          loopCounter++;
-          emailText = document.getElementsByClassName("zp_t08Bv")[0];
+        return res;
+      };
+      window.scrapeSinglePage = async () => {
+        const allRows = getRows();
+        const data = [];
+        for (const row of allRows) {
+          const singleRow = await scrapeSingleRow(row);
+          if (singleRow)
+            data.push(singleRow);
+        }
+        return data;
+      };
+      window.scrapeNameColumn = (nameColumn) => ({
+        name: el.columns.name.name(nameColumn),
+        linkedin: el.columns.name.linkedin(nameColumn)
+      });
+      window.scrapeTitleColumn = (titleColumn) => el.columns.title(titleColumn);
+      window.scrapeCompanyColumn = (companyColumn) => {
+        return {
+          companyName: el.columns.company.name(companyColumn) || na,
+          companyWebsite: na,
+          companyLinkedin: na,
+          companyTwitter: na,
+          companyFacebook: na,
+          ...Array.from(el.columns.company.socialsList(companyColumn)).reduce(
+            (a, c) => ({
+              ...a,
+              // @ts-ignore
+              ...populateSocialsLinks(c.href)
+            }),
+            {}
+          )
+        };
+      };
+      window.scrapeLocationColumn = (locationColumn) => el.columns.location(locationColumn);
+      window.scrapeEmployeesColumn = (employeesColumn) => el.columns.employees(employeesColumn);
+      window.scrapePhoneColumn = (phoneColumn) => phoneColumn.innerText === "Request Mobile Number" ? na : phoneColumn.innerText;
+      window.scrapePhoneColumn = (phoneColumn) => phoneColumn.innerText === "Request Mobile Number" ? na : phoneColumn.innerText;
+      window.scrapeEmailColumn = async (emailColumn) => {
+        let loopCounter = 0;
+        const loopEnd = 10;
+        let email = "";
+        const emailButton = emailColumn.getElementsByClassName(
+          "zp-button zp_zUY3r zp_jSaSY zp_MCSwB zp_IYteB"
+        )[0];
+        let emailText = emailColumn.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0];
+        let noEmailText = emailColumn.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0];
+        if (emailButton) {
+          emailButton.click();
+          while (!noEmailText && !emailText && loopCounter < loopEnd) {
+            await sleep(15e3);
+            loopCounter++;
+            emailText = emailColumn.getElementsByClassName("zp-link zp_OotKe zp_Iu6Pf")[0];
+            noEmailText = emailColumn.getElementsByClassName("zp_RIH0H zp_Iu6Pf")[0];
+          }
           if (emailText) {
             email = emailText.innerHTML;
           }
+        } else if (emailText) {
+          email = emailText.innerHTML;
         }
-      } else if (emailText) {
-        email = emailText.innerHTML;
-      }
-      emailPopupButton.click();
-      return email;
-    };
-    window.scrapeIndustryColumn = (industryColumn) => el.columns.industry(industryColumn);
-    window.scrapeKeywordsColumn = (keywordsColumn) => {
-      return Array.from(el.columns.keywords(keywordsColumn)).reduce(
-        (a, cv) => a += cv.innerHTML,
-        ""
-      );
-    };
-    window.populateSocialsLinks = (companyLink) => {
-      const data = {};
-      const lowerCompanyLink = companyLink.toLowerCase();
-      if (!lowerCompanyLink.includes("linkedin.") && !lowerCompanyLink.includes("twitter.") && !lowerCompanyLink.includes("facebook.")) {
-        data["companyWebsite"] = companyLink;
-      } else if (lowerCompanyLink.includes("linkedin.")) {
-        data["companyLinkedin"] = companyLink;
-      } else if (lowerCompanyLink.includes("twitter.")) {
-        data["companyTwitter"] = companyLink;
-      } else if (lowerCompanyLink.includes("facebook.")) {
-        data["companyFacebook"] = companyLink;
-      }
-      return data;
-    };
-    window.sleep = (ms) => {
-      return new Promise((resolve) => setTimeout(resolve, ms));
-    };
-    window.getRows = () => {
-      return document.getElementsByClassName("zp_RFed0");
-    };
-    return await scrapeSinglePage();
-  }
-    "#,
+        return email ? email : na;
+      };
+      window.scrapeActionColumn = async (emailColumn) => {
+        let loopCounter = 0;
+        const loopEnd = 3;
+        let email = "";
+        const emailButton = emailColumn.querySelector(
+          '[class="zp-button zp_zUY3r zp_n9QPr zp_MCSwB"]'
+        );
+        let emailPopupButton = emailColumn.querySelector(
+          '[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_IYteB"]'
+        );
+        let noEmailButton = emailColumn.querySelector(
+          '[class="zp-button zp_zUY3r zp_BAp0M zp_jSaSY zp_MCSwB zp_IYteB zp_wUX4E zp_wUX4E"]'
+        );
+        if (emailButton) {
+          emailButton.click();
+          while (!emailPopupButton && !noEmailButton && loopCounter < loopEnd) {
+            await sleep(5e3);
+            loopCounter++;
+            emailPopupButton = emailColumn.querySelector(
+              '[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_IYteB"]'
+            );
+            noEmailButton = emailColumn.querySelector(
+              '[class="zp-button zp_zUY3r zp_BAp0M zp_jSaSY zp_MCSwB zp_IYteB zp_wUX4E zp_wUX4E"]'
+            );
+            if (emailPopupButton) {
+              emailPopupButton.click();
+              email = await emailPopupButtonClick(emailPopupButton);
+            } else if (noEmailButton) {
+              email = na;
+            }
+          }
+        } else if (emailPopupButton) {
+          email = await emailPopupButtonClick(emailPopupButton);
+        } else if (noEmailButton) {
+          email = na;
+        }
+        return email ? email : na;
+      };
+      window.emailPopupButtonClick = async (emailPopupButton) => {
+        let email = "-";
+        let loopCounter = 0;
+        const loopEnd = 5;
+        let emailText = document.getElementsByClassName("zp_t08Bv")[0];
+        emailPopupButton.click();
+        if (!emailText) {
+          while (!emailText && loopCounter < loopEnd) {
+            await sleep(1e3);
+            loopCounter++;
+            emailText = document.getElementsByClassName("zp_t08Bv")[0];
+            if (emailText) {
+              email = emailText.innerHTML;
+            }
+          }
+        } else if (emailText) {
+          email = emailText.innerHTML;
+        }
+        emailPopupButton.click();
+        return email;
+      };
+      window.scrapeIndustryColumn = (industryColumn) => el.columns.industry(industryColumn);
+      window.scrapeKeywordsColumn = (keywordsColumn) => {
+        return Array.from(el.columns.keywords(keywordsColumn)).reduce(
+          (a, cv) => a += cv.innerHTML,
+          ""
+        );
+      };
+      window.populateSocialsLinks = (companyLink) => {
+        const data = {};
+        const lowerCompanyLink = companyLink.toLowerCase();
+        if (!lowerCompanyLink.includes("linkedin.") && !lowerCompanyLink.includes("twitter.") && !lowerCompanyLink.includes("facebook.")) {
+          data["companyWebsite"] = companyLink;
+        } else if (lowerCompanyLink.includes("linkedin.")) {
+          data["companyLinkedin"] = companyLink;
+        } else if (lowerCompanyLink.includes("twitter.")) {
+          data["companyTwitter"] = companyLink;
+        } else if (lowerCompanyLink.includes("facebook.")) {
+          data["companyFacebook"] = companyLink;
+        }
+        return data;
+      };
+      window.sleep = (ms) => {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      };
+      window.getRows = () => {
+        return document.getElementsByClassName("zp_RFed0");
+      };
+      return await scrapeSinglePage();
+    }
+  "#,
   )
   .await?
   .into_value::<Vec<RecordDataArg>>().context("Failed To collect and parce leads")
