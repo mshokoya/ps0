@@ -50,7 +50,7 @@ export const MetadataDropdown = ({ meta }: { meta: IMetaData }) => {
                   meta.accounts.map((a0, idx) => (
                     <tr key={idx}>
                       <td className="overflow-scroll truncate">
-                        {appState$.accounts.peek().find((a1) => a1.id === a0.accountID)?.email}
+                        {appState$.accounts.peek().find((a1) => a1._id === a0.account_id)?.email}
                       </td>
                       <td className="overflow-scroll truncate">{a0.range[0]}</td>
                       <td className="overflow-scroll truncate">{a0.range[1]}</td>
@@ -76,7 +76,7 @@ export const MetadataDropdown = ({ meta }: { meta: IMetaData }) => {
                 {meta.scrapes?.length &&
                   meta.scrapes.map((a0, idx) => (
                     <tr key={idx}>
-                      <td className="overflow-scroll truncate">{a0.listName}</td>
+                      <td className="overflow-scroll truncate">{a0.list_name}</td>
                       <td className="overflow-scroll truncate">{a0.length}</td>
                       <td className="overflow-scroll truncate">{a0.date}</td>
                     </tr>

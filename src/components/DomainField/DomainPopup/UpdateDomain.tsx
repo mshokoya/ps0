@@ -14,7 +14,7 @@ type UpdateDomainProps = {
 }
 
 export const UpdateFields = observer(({ obs, handleRequest, domain }: UpdateDomainProps) => {
-  const isUpdateReq = !!domainTaskHelper.findTaskByReqType(domain.id, 'update')
+  const isUpdateReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'update')
 
   const backToMain = () => {
     batch(() => {

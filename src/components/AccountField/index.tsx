@@ -33,7 +33,6 @@ export const AccountField = observer(() => {
       }}).then((data) => {
         if (data.ok) {
           console.log(data)
-          // appState$.accounts.push(data.data)
           stateResStatusHelper.add('new', ['new', 'ok'])
         } else {
           console.log(data)
@@ -88,7 +87,7 @@ export const AccountField = observer(() => {
 
   const login = async () => {
     const selectedAcc = state.selectedAcc.peek()
-    const account_id = accounts[selectedAcc].id
+    const account_id = accounts[selectedAcc]._id
 
     try {
       if (!accountTaskHelper.isEntityPiplineEmpty(account_id))
@@ -115,7 +114,7 @@ export const AccountField = observer(() => {
   }
 
   const checkAccount = async () => {
-    const account_id = accounts[state.selectedAcc.peek()].id
+    const account_id = accounts[state.selectedAcc.peek()]._id
 
     try {
       if (!accountTaskHelper.isEntityPiplineEmpty(account_id))
@@ -142,7 +141,7 @@ export const AccountField = observer(() => {
   }
 
   const updateAccount = async (input: Partial<IAccount>) => {
-    const account_id = accounts[state.selectedAcc.peek()].id
+    const account_id = accounts[state.selectedAcc.peek()]._id
 
     try {
       if (!accountTaskHelper.isEntityPiplineEmpty(account_id))
@@ -156,7 +155,7 @@ export const AccountField = observer(() => {
       }}).then((data) => {
         if (data.ok) {
           stateResStatusHelper.add(account_id, ['update', 'ok'])
-          appState$.accounts.find((a) => a.id.peek() === account_id)?.set(data.data)
+          appState$.accounts.find((a) => a._id.peek() === account_id)?.set(data.data)
         } else {
           stateResStatusHelper.add(account_id, ['update', 'fail'])
         }
@@ -175,7 +174,7 @@ export const AccountField = observer(() => {
   }
 
   const clearMines = async () => {
-    const account_id = accounts[state.selectedAcc.peek()].id
+    const account_id = accounts[state.selectedAcc.peek()]._id
     try {
       if (!accountTaskHelper.isEntityPiplineEmpty(account_id))
         throw new Error('[Error]: Account already in use, please wait for account to be free')
@@ -207,7 +206,7 @@ export const AccountField = observer(() => {
   }
 
   const confirmAccount = async () => {
-    const account_id = accounts[state.selectedAcc.peek()].id
+    const account_id = accounts[state.selectedAcc.peek()]._id
     try {
       if (!accountTaskHelper.isEntityPiplineEmpty(account_id))
         throw new Error('[Error]: Account already in use, please wait for account to be free')
@@ -234,7 +233,7 @@ export const AccountField = observer(() => {
 
   // (FIX) complete func (dont delete, just archive)
   const deleteAccount = async () => {
-    const account_id = accounts[state.selectedAcc.peek()].id
+    const account_id = accounts[state.selectedAcc.peek()]._id
 
     try {
       if (!accountTaskHelper.isEntityPiplineEmpty(account_id))
@@ -247,7 +246,7 @@ export const AccountField = observer(() => {
           data.ok
             ? stateResStatusHelper.add(account_id, ['delete', 'ok'])
             : stateResStatusHelper.add(account_id, ['delete', 'fail'])
-          // appState$.accounts.set((a1) => a1.filter((a2) => a2.id !== account_id))
+          // appState$.accounts.set((a1) => a1.filter((a2) => a2._id !== account_id))
         })
       })
     } catch (err) {

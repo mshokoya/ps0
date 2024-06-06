@@ -14,7 +14,7 @@ type UFProps = {
 }
 
 export const UpdateFields = observer(({ obs, handleRequest, meta }: UFProps) => {
-  const isUpdateReq = !!metadataTaskHelper.findTaskByReqType(meta.id, 'update')
+  const isUpdateReq = !!metadataTaskHelper.findTaskByReqType(meta._id, 'update')
 
   const backToMain = () => {
     batch(() => {

@@ -93,7 +93,7 @@ export const RecordTable = ({ filteredRecords }: RecordsSubCompArgs) => {
                           <FaTwitter />
                         </span>
                       )}
-                      {record.data.comapny_facebook && (
+                      {record.data.company_facebook && (
                         <span>
                           <FaFacebookF />
                         </span>

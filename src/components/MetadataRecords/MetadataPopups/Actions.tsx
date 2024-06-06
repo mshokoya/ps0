@@ -12,9 +12,9 @@ export type MetadataPopupProps = {
 }
 
 export const MetadataActions = (p: MetadataPopupProps) => {
-  const isContinueReq = !!metadataTaskHelper.findTaskByReqType(p.meta.id, 'continue')
-  const isUpdateReq = !!metadataTaskHelper.findTaskByReqType(p.meta.id, 'update')
-  const isDeleteReq = !!metadataTaskHelper.findTaskByReqType(p.meta.id, 'delete')
+  const isContinueReq = !!metadataTaskHelper.findTaskByReqType(p.meta._id, 'continue')
+  const isUpdateReq = !!metadataTaskHelper.findTaskByReqType(p.meta._id, 'update')
+  const isDeleteReq = !!metadataTaskHelper.findTaskByReqType(p.meta._id, 'delete')
 
   return (
     <Flex direction="column">

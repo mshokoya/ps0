@@ -206,7 +206,7 @@ export const ScrapeField = observer(() => {
       timeout: s.aar.timeout.peek(),
       chunk,
       accounts: accounts.map((a) => ({
-        id: a.id,
+        id: a._id,
         email: a.email,
         totalScrapedInTimeFrame: a.totalScrapedInLast30Mins
       }))

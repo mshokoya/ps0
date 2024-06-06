@@ -44,8 +44,7 @@ export const TaskViewPopup = (p: Props) => {
               handleRequest('delete')
             }}
           >
-            {' '}
-            Delete Task{' '}
+            {' '}Delete Task{' '}
           </button>
         </div>
 

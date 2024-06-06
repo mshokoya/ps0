@@ -59,9 +59,9 @@ export const DomainTable = observer((p: Props) => {
                   <tr
                     className={`
                       ${domain.verified ? 'el-ok' : 'el-no'}
-                      ${domainTaskHelper.isEntityPiplineEmpty(domain.id) ? '' : 'fieldBlink'}
-                      ${domainResStatusHelper.getByID(domain.id, 0)[1] === 'ok' ? 'resOK' : ''}
-                      ${domainResStatusHelper.getByID(domain.id, 0)[1] === 'fail' ? 'resFail' : ''}
+                      ${domainTaskHelper.isEntityPiplineEmpty(domain._id) ? '' : 'fieldBlink'}
+                      ${domainResStatusHelper.getByID(domain._id, 0)[1] === 'ok' ? 'resOK' : ''}
+                      ${domainResStatusHelper.getByID(domain._id, 0)[1] === 'fail' ? 'resFail' : ''}
                       text-[0.8rem] text-center hover:border-cyan-600 hover:border
                     `}
                     data-idx={idx}

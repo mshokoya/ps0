@@ -5,9 +5,6 @@ import { appState$ } from '../state/index'
 export function handleApolloScrapeEndEvent(
   res: TQTask<{ account_id: string; task_type: string }>
 ) {
-  console.log("THIS IS THE APOLLO RES")
-  console.log(res)
-  return
   // 
   // if (res.ok === undefined) return
   const [account_id, idx, task] = accountTaskHelper.getTaskByTaskID(res.task_id)
@@ -38,7 +35,7 @@ function processApolloEventData(task: TQTask<{ account_id: string; task_type: st
     case 'confirm':
     case 'check': {
       if (task.ok) {
-        const acc = appState$.accounts.find((a) => a.id.get() === task.metadata.account_id)
+        const acc = appState$.accounts.find((a) => a._id.get() === task.metadata.account_id)
         if (acc) acc.set({ ...acc.get(), ...(task.action_data.metadata as IAccount) })
       }
       break

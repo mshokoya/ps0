@@ -78,9 +78,9 @@ export const AccountTable = observer((p: Props) => {
                       className={`
                     text-[0.8rem] text-center hover:border-cyan-600 hover:border
                     ${account.credits_used !== account.credit_limit ? 'el-ok' : 'el-no'}
-                    ${accountTaskHelper.getEntityTasks(account.id).length ? 'fieldBlink' : ''}
-                    ${stateResStatusHelper.getByID(account.id, 0)[1] === 'ok' ? 'resOK' : ''}
-                    ${stateResStatusHelper.getByID(account.id, 0)[1] === 'fail' ? 'resFail' : ''}
+                    ${accountTaskHelper.getEntityTasks(account._id).length ? 'fieldBlink' : ''}
+                    ${stateResStatusHelper.getByID(account._id, 0)[1] === 'ok' ? 'resOK' : ''}
+                    ${stateResStatusHelper.getByID(account._id, 0)[1] === 'fail' ? 'resFail' : ''}
                   `}
                       data-idx={idx}
                       key={idx}

@@ -31,7 +31,7 @@ export const selectAccForScrapingFILO = async (
 
   let allAccounts = appState$.accounts
     .get()
-    .filter((a) => a.verified === 'yes' && !allAccInUse.includes(a.id))
+    .filter((a) => a.verified === 'yes' && !allAccInUse.includes(a._id))
     .map((a) => ({ ...a, totalScrapedInLast30Mins: 0 })) as (IAccount & {
     totalScrapedInLast30Mins: number
   })[]
@@ -47,8 +47,8 @@ export const selectAccForScrapingFILO = async (
     }
   }
 
-  const _accIds = accs.map((a) => a.id)
-  allAccounts = allAccounts.filter((a) => !_accIds.includes(a.id))
+  const _accIds = accs.map((a) => a._id)
+  allAccounts = allAccounts.filter((a) => !_accIds.includes(a._id))
 
   if (accsNeeded === 0) return accs
 

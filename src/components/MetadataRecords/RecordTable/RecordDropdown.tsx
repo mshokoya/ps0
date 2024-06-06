@@ -35,7 +35,7 @@ export const RecordDropdown = ({ record }: { record: IRecord }) => {
         </tr>
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2">Company Facebook:</th>
-          <td className="px-2">{record.comapny_facebook}</td>
+          <td className="px-2">{record.company_facebook}</td>
         </tr>
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2">Email:</th>

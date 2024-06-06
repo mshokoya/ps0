@@ -22,23 +22,23 @@ export const MetadataAndRecordField = observer(() => {
   const filteredRecords = useComputed(() => {
     const filter: string[] = []
     metaChecked.get().forEach((m) => {
-      metas[m].scrapes.forEach((d) => filter.push(d.scrapeID))
+      metas[m].scrapes.forEach((d) => filter.push(d.scrape_id))
     })
     return filter.length ? records.filter((r) => filter.includes(r.scrape_id)) : []
   })
 
   const updateMeta = async (input: Partial<IMetaData>) => {
     reqInProcess.update.set(true)
-    const metaID = metas[metadataState.selectedMeta.peek()].id
+    const metaID = metas[metadataState.selectedMeta.peek()]._id
     metadataTaskHelper.add(metaID, { type: 'update', status: 'processing' })
     await invoke<R<IMetaData>>(CHANNELS.update_domain, {args: {
-      id: input.id,
+      _id: input._id,
       name: input.name
     }})
       .then((res) => {
         if (res.ok) {
           metadataResStatusHelper.add(metaID, ['update', 'ok'])
-          appState$.metas.find((m) => m.id.peek() === metaID)?.set(res.data)
+          appState$.metas.find((m) => m._id.peek() === metaID)?.set(res.data)
         } else {
           metadataResStatusHelper.add(metaID, ['update', 'fail'])
         }
@@ -58,9 +58,9 @@ export const MetadataAndRecordField = observer(() => {
   }
 
   const continueScraping = () => {
-    const metaID = metas[metadataState.selectedMeta.peek()].id
+    const metaID = metas[metadataState.selectedMeta.peek()]._id
     metadataTaskHelper.add(metaID, { type: 'continue', status: 'processing' })
-    invoke<R<void>>(CHANNELS.scrape_task, {args: { id: metaID }})
+    invoke<R<void>>(CHANNELS.scrape_task, {args: { _id: metaID }})
   }
 
   // create warning popup
@@ -70,8 +70,8 @@ export const MetadataAndRecordField = observer(() => {
 
     const metaIDs =
       type === 'single'
-        ? [metas[metadataState.selectedMeta.peek()].id]
-        : metaChecked.get().map((idx) => metas[idx].id)
+        ? [metas[metadataState.selectedMeta.peek()]._id]
+        : metaChecked.get().map((idx) => metas[idx]._id)
 
     batch(() => {
       for (const id of metaIDs) {
@@ -86,7 +86,7 @@ export const MetadataAndRecordField = observer(() => {
         batch(() => {
           if (res.ok) {
             for (const id of res.data.ok) {
-              appState$.metas.set((m1) => m1.filter((m2) => m2.id !== id))
+              appState$.metas.set((m1) => m1.filter((m2) => m2._id !== id))
               metadataResStatusHelper.add(id, ['delete', 'ok'])
             }
             for (const id of res.data.fail) {

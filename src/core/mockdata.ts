@@ -2,7 +2,7 @@ import { IAccount, IDomain, IMetaData, IRecords } from ".."
 
 export const domainMockData: IDomain[] = [
   {
-    id: 'dasdsaas1',
+    _id: 'dasdsaas1',
     domain: 'dasdsaas12',
     verified: true,
     mx_records: true,
@@ -10,7 +10,7 @@ export const domainMockData: IDomain[] = [
     message: "dsafsas"
   },
   {
-    id: 'dasdsaas2',
+    _id: 'dasdsaas2',
     domain: 'dasdsaas23',
     verified: false,
     mx_records: true,
@@ -18,7 +18,7 @@ export const domainMockData: IDomain[] = [
     message: "dsafsas"
   },
   {
-    id: 'dasdsaas3',
+    _id: 'dasdsaas3',
     domain: 'dasdsaas34',
     verified: true,
     mx_records: true,
@@ -26,7 +26,7 @@ export const domainMockData: IDomain[] = [
     message: "dsafsas"
   },
   {
-    id: 'dasdsaas4',
+    _id: 'dasdsaas4',
     domain: 'dasdsaas4321',
     verified: false,
     mx_records: false,
@@ -34,7 +34,7 @@ export const domainMockData: IDomain[] = [
     message: "dsafsas"
   },
   {
-    id: 'dasdsaas5',
+    _id: 'dasdsaas5',
     domain: 'dasdsaas234',
     verified: true,
     mx_records: true,
@@ -42,7 +42,7 @@ export const domainMockData: IDomain[] = [
     message: "dsafsas"
   },
   {
-    id: 'dasdsaas6',
+    _id: 'dasdsaas6',
     domain: 'das423412dsaas',
     verified: true,
     mx_records: true,
@@ -53,7 +53,7 @@ export const domainMockData: IDomain[] = [
 
 export const accountMockData: IAccount[] = [
   {
-    id: '123451',
+    _id: '123451',
     domain: 'domain',
     suspended: false,
     email: 'msefdsadsadefsdfsdfssadswdaedasdsasada@h.co.uk',
@@ -63,7 +63,7 @@ export const accountMockData: IAccount[] = [
     last_used: new Date().getTime(),
     verified: "no",
     login_type: "default",
-    credits_limit: 100,
+    credit_limit: 100,
     credits_used: 300,
     renewal_date: 2121, 
     renewal_start_date: 532, 
@@ -74,7 +74,7 @@ export const accountMockData: IAccount[] = [
     ]
   },
   {
-    id: '123452',
+    _id: '123452',
     domain: 'domain',
     suspended: false,
     email: 'msefdsadsadefsdfsdfssadswdaedasdsasada@h.co.uk',
@@ -84,7 +84,7 @@ export const accountMockData: IAccount[] = [
     last_used: new Date().getTime(),
     verified: "no",
     login_type: "default",
-    credits_limit: 100,
+    credit_limit: 100,
     credits_used: 300,
     renewal_date: 2121, 
     renewal_start_date: 532, 
@@ -95,7 +95,7 @@ export const accountMockData: IAccount[] = [
     ]
   },
   {
-    id: '123453',
+    _id: '123453',
     domain: 'domain',
     suspended: false,
     email: 'msefdsadsadefsdfsdfssadswdaedasdsasada@h.co.uk',
@@ -105,7 +105,7 @@ export const accountMockData: IAccount[] = [
     last_used: new Date().getTime(),
     verified: "no",
     login_type: "default",
-    credits_limit: 100,
+    credit_limit: 100,
     credits_used: 300,
     renewal_date: 2121, 
     renewal_start_date: 532, 
@@ -116,7 +116,7 @@ export const accountMockData: IAccount[] = [
     ]
   },
   {
-    id: '123454',
+    _id: '123454',
     domain: 'domain',
     suspended: false,
     email: 'msefdsadsadefsdfsdfssadswdaedasdsasada@h.co.uk',
@@ -126,7 +126,7 @@ export const accountMockData: IAccount[] = [
     last_used: new Date().getTime(),
     verified: "no",
     login_type: "default",
-    credits_limit: 100,
+    credit_limit: 100,
     credits_used: 300,
     renewal_date: 2121, 
     renewal_start_date: 532, 
@@ -140,7 +140,7 @@ export const accountMockData: IAccount[] = [
 
 export const metaMockData: IMetaData[] = [
   {
-    id: '123451',
+    _id: '123451',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -155,7 +155,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123452',
+    _id: '123452',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -170,7 +170,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123453',
+    _id: '123453',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -185,7 +185,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123454',
+    _id: '123454',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -200,7 +200,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123455',
+    _id: '123455',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -215,7 +215,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123456',
+    _id: '123456',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -230,7 +230,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123457',
+    _id: '123457',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -245,7 +245,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123458',
+    _id: '123458',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -260,7 +260,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123459',
+    _id: '123459',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -275,7 +275,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '123450',
+    _id: '123450',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -290,7 +290,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234510',
+    _id: '1234510',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -305,7 +305,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234511',
+    _id: '1234511',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -320,7 +320,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234512',
+    _id: '1234512',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -335,7 +335,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234513',
+    _id: '1234513',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -350,7 +350,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234514',
+    _id: '1234514',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -365,7 +365,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234515',
+    _id: '1234515',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -380,7 +380,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234517',
+    _id: '1234517',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -395,7 +395,7 @@ export const metaMockData: IMetaData[] = [
     ]
   },
   {
-    id: '1234516',
+    _id: '1234516',
     url: 'www.gom',
     params: { lol: 'fds', poll: 'cascas' },
     name: 'dad',
@@ -413,7 +413,7 @@ export const metaMockData: IMetaData[] = [
 
 export const recordMockData: IRecords[] = [
   {
-    id: '123451',
+    _id: '123451',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -437,7 +437,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123452',
+    _id: '123452',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -461,7 +461,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123453',
+    _id: '123453',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -485,7 +485,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123454',
+    _id: '123454',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -509,7 +509,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123455',
+    _id: '123455',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -533,7 +533,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123456',
+    _id: '123456',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -557,7 +557,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123457',
+    _id: '123457',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -581,7 +581,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123458',
+    _id: '123458',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -605,7 +605,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123459',
+    _id: '123459',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -629,7 +629,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '123450',
+    _id: '123450',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -653,7 +653,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234510',
+    _id: '1234510',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -677,7 +677,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234511',
+    _id: '1234511',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -701,7 +701,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234512',
+    _id: '1234512',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -725,7 +725,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234513',
+    _id: '1234513',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -749,7 +749,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234514',
+    _id: '1234514',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -773,7 +773,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234515',
+    _id: '1234515',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -797,7 +797,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234516',
+    _id: '1234516',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -821,7 +821,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234517',
+    _id: '1234517',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -845,7 +845,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234518',
+    _id: '1234518',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -869,7 +869,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234519',
+    _id: '1234519',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -893,7 +893,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234520',
+    _id: '1234520',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -917,7 +917,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234521',
+    _id: '1234521',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -941,7 +941,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234522',
+    _id: '1234522',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -965,7 +965,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234523',
+    _id: '1234523',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -989,7 +989,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234524',
+    _id: '1234524',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -1013,7 +1013,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234525',
+    _id: '1234525',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -1037,7 +1037,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234526',
+    _id: '1234526',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -1061,7 +1061,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234527',
+    _id: '1234527',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -1085,7 +1085,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234528',
+    _id: '1234528',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -1109,7 +1109,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234529',
+    _id: '1234529',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -1133,7 +1133,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234530',
+    _id: '1234530',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {
@@ -1157,7 +1157,7 @@ export const recordMockData: IRecords[] = [
     }
   },
   {
-    id: '1234531',
+    _id: '1234531',
     scrape_id: 'd',
     url: 'http:/dsadsa.com',
     data: {

@@ -32,7 +32,7 @@ type TaskQueue = {
 }
 
 export type IAccount = {
-  id: string
+  _id: string
   domain: string
   suspended: boolean
   verified: 'no' | 'confirm' | 'yes' // confirm = conformation email sent
@@ -58,7 +58,7 @@ export type IAccount = {
 }
 
 export type IDomain = {
-  id: string
+  _id: string
   domain: string
   verified: boolean
   mx_records: boolean
@@ -67,7 +67,7 @@ export type IDomain = {
 }
 
 export type IMetaData = {
-  id: string
+  _id: string
   url: string
   params: { [key: string]: string }
   name: string
@@ -76,7 +76,7 @@ export type IMetaData = {
 }
 
 export type IRecords = {
-  id: string
+  _id: string
   scrape_id: string
   url: string
   data: IRecord

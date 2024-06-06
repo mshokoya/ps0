@@ -15,7 +15,7 @@ type UFProps = {
 }
 
 export const UpdateFields = observer(({ obs, handleRequest, account }: UFProps) => {
-  const isUpdateReq = !!accountTaskHelper.findTaskByReqType(account.id, 'update')
+  const isUpdateReq = !!accountTaskHelper.findTaskByReqType(account._id, 'update')
 
   const backToMain = () => {
     batch(() => {

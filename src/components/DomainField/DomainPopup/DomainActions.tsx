@@ -12,9 +12,9 @@ type MProps = {
 }
 
 export const DomainActionsComp = ({ handleRequest, domain, obs }: MProps) => {
-  const isVerifyReq = !!domainTaskHelper.findTaskByReqType(domain.id, 'verify')
-  const isDeleteReq = !!domainTaskHelper.findTaskByReqType(domain.id, 'delete')
-  const isUpdateReq = !!domainTaskHelper.findTaskByReqType(domain.id, 'update')
+  const isVerifyReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'verify')
+  const isDeleteReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'delete')
+  const isUpdateReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'update')
 
   return (
     <Flex direction="column">

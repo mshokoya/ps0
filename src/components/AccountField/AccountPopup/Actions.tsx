@@ -14,12 +14,12 @@ type MProps = {
 }
 
 export const AccountActionsComp = observer((p: MProps) => {
-  const isLoginReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'login')
-  const isCheckReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'check')
-  const isUpdateReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'update')
-  const isMinesReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'mines')
-  const isDeleteReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'delete')
-  const isConfirmReq = !!accountTaskHelper.findTaskByReqType(p.account.id, 'confirm')
+  const isLoginReq = !!accountTaskHelper.findTaskByReqType(p.account._id, 'login')
+  const isCheckReq = !!accountTaskHelper.findTaskByReqType(p.account._id, 'check')
+  const isUpdateReq = !!accountTaskHelper.findTaskByReqType(p.account._id, 'update')
+  const isMinesReq = !!accountTaskHelper.findTaskByReqType(p.account._id, 'mines')
+  const isDeleteReq = !!accountTaskHelper.findTaskByReqType(p.account._id, 'delete')
+  const isConfirmReq = !!accountTaskHelper.findTaskByReqType(p.account._id, 'confirm')
 
   return (
     <Flex direction="column">
