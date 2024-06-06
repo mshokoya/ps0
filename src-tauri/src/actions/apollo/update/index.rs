@@ -13,26 +13,38 @@ use crate::{
 
 
 #[derive(Debug, Deserialize)]
-struct UpdateArg {
-    pub id: String,
+pub struct UpdateArg {
+    pub account_id: String,
     pub fields: Value
 }
 
 #[tauri::command]
-pub async fn update_account(ctx: AppHandle, args: Serde_Value) -> R<Account> {
-  let p_args = match from_value::<UpdateArg>(args) {
-    Ok(var) => var,
-    Err(_) => return R::fail_none(Some("Failed to update account, could not get the data"))
-  };
+pub async fn update_account(ctx: AppHandle, args: UpdateArg) -> R<Account> {
+  // println!("UPDATE ONE 111");
+  // println!("{args:#?}");
+  // let p_args = match from_value::<UpdateArg>(args) {
+  //   Ok(var) => var,
+  //   Err(_) => return R::fail_none(Some("Failed to update account, could not get the data"))
+  // };
+  // println!("UPDATE ONE 222");
+  // println!("{p_args:#?}");
 
   match ctx.state::<DB>()
     .update_one::<Account>(
       "account", 
-      &p_args.id, 
-      p_args.fields
+      &args.account_id, 
+      args.fields
     ).await {
-    Ok(acc) => R::ok_data(acc.unwrap().first().cloned().unwrap()),
-    Err(_) => R::fail_none(None)
+    Ok(acc) => {
+      println!("UPDATE ONE 333");
+      println!("{acc:#?}");
+      R::ok_data(acc.unwrap().first().cloned().unwrap())
+    },
+    Err(e) => {
+      println!("UPDATE ONE 444");
+      println!("{:#?}", e);
+      R::fail_none(None)
+    }
   }
 }
 
@@ -46,7 +58,7 @@ pub async fn update_metadata(ctx: AppHandle, args: Serde_Value) -> R<Metadata> {
   match ctx.state::<DB>()
     .update_one::<Metadata>(
       "metadata", 
-      &p_args.id, 
+      &p_args.account_id, 
       p_args.fields
     ).await {
     Ok(acc) => R::ok_data(acc.unwrap().first().cloned().unwrap()),
@@ -66,7 +78,7 @@ pub async fn update_domain(ctx: AppHandle, args: Serde_Value) -> R<Domain> {
   match ctx.state::<DB>()
     .update_one::<Domain>(
       "domain", 
-      &p_args.id, 
+      &p_args.account_id, 
       p_args.fields
     ).await {
     Ok(acc) => R::ok_data(acc.unwrap().first().cloned().unwrap()),
@@ -84,7 +96,7 @@ pub async fn update_record(ctx: AppHandle, args: Serde_Value) -> R<Record> {
   match ctx.state::<DB>()
     .update_one::<Record>(
       "record", 
-      &p_args.id, 
+      &p_args.account_id, 
       p_args.fields
     ).await {
     Ok(acc) => R::ok_data(acc.unwrap().first().cloned().unwrap()),

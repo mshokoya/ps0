@@ -37,7 +37,7 @@ impl<T> Response<T> {
     pub fn fail_none(msg: Option<&str>) -> Self {
         Response::<T> {
             ok: false,
-            message: msg.and(Some(msg.unwrap().to_string())),
+            message: if msg.is_some() { msg.and(Some(msg.unwrap().to_string())) } else { None },
             data: None,
         }
     }

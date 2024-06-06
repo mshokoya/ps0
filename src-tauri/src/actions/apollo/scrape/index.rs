@@ -166,52 +166,6 @@ pub async fn apollo_scrape(
     Ok(None)
 }
 
-async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metadata> {
-  match db.select_one::<Metadata>(
-    "metadata",
-    &args.meta_id
-  ).await? {
-    Some(meta) => Ok(meta),
-    None => {
-      let Some(meta) = db.insert_one::<Metadata>(
-        "metadata",
-        &args.meta_id,
-        to_value(
-          Metadata {
-            _id: args.meta_id.clone(),
-            url: args.url.clone(),
-            params: args.params.clone(),
-            name: args.name.clone(),
-            scrapes: vec![],
-            accounts: args.accounts.clone()
-          }
-        )?
-      ).await? else {
-        return  Err(anyhow!("Failed to scrape, could not register metadata"))
-      };
-
-      if meta.len() == 0 {
-        return  Err(anyhow!("Failed to scrape, could not register metadata"))
-      };
-
-      let Some(meta) = meta.first().cloned() else {
-        return  Err(anyhow!("Failed to scrape, could not register metadata"))
-      };
-
-      Ok(meta.clone())
-    }
-  }
-}
-
-// doc! {
-//   "_id": &args.meta_id,
-//   "url": &args.url,
-//   "params": to_bson(&args.params).unwrap(),
-//   "name": &args.name,
-//   "scrapes": to_bson(&scrapes).unwrap(),
-//   "accounts": to_bson(&args.accounts).unwrap(),
-// }
-
 async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, account: &mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
   metadata.scrapes.push(Scrapes {
     scrape_id: scrape_id.to_string(), 
@@ -588,7 +542,6 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
 }
 
 async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<(Account, Metadata)> {
-  
   let mut query = vec![
     "BEGIN TRANSACTION;".to_string(),
     format!("UPDATE account:{} SET $accountdata;", &account._id),
@@ -636,6 +589,42 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
     .await?;
 
   todo!()
+}
+
+async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metadata> {
+  match db.select_one::<Metadata>(
+    "metadata",
+    &args.meta_id
+  ).await {
+    Ok(meta) => {
+      if meta.is_none() {
+        return new_meta(db, args).await;
+      }
+      Ok(meta.unwrap())
+    },
+    Err(_) => return Err(anyhow!("Failed to scrape, could not find or create metadata"))
+  }
+}
+
+async fn new_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metadata> {
+  let Some(meta) = db.insert_one::<Metadata>(
+    "metadata",
+    &args.meta_id,
+    to_value(
+      Metadata {
+        _id: args.meta_id.clone(),
+        url: args.url.clone(),
+        params: args.params.clone(),
+        name: args.name.clone(),
+        scrapes: vec![],
+        accounts: args.accounts.clone()
+      }
+    )?
+  ).await? else {
+    return Err(anyhow!("Failed to scrape, could not register metadata"))
+  };
+
+  Ok(meta)
 }
 
 

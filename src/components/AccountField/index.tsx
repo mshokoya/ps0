@@ -33,6 +33,7 @@ export const AccountField = observer(() => {
       }}).then((data) => {
         if (data.ok) {
           console.log(data)
+          appState$.accounts.push(data.data)
           stateResStatusHelper.add('new', ['new', 'ok'])
         } else {
           console.log(data)
@@ -154,9 +155,11 @@ export const AccountField = observer(() => {
         fields: input
       }}).then((data) => {
         if (data.ok) {
+          console.log(data)
           stateResStatusHelper.add(account_id, ['update', 'ok'])
-          appState$.accounts.find((a) => a._id.peek() === account_id)?.set(data.data)
+          // appState$.accounts.find((a) => a._id.peek() === account_id)?.set(data.data)
         } else {
+          console.log(data)
           stateResStatusHelper.add(account_id, ['update', 'fail'])
         }
       })

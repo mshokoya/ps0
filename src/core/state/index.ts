@@ -32,9 +32,9 @@ export const appState$ = observable<AppState>({
 })
 
 Promise.all([
-  // invoke<R<IAccount[]>>(CHANNELS.get_accounts)
-  //   .then((data) => data.data)
-  //   .catch(() => []),
+  invoke<R<IAccount[]>>(CHANNELS.get_accounts)
+    .then((data) => data.data)
+    .catch(() => []),
   // invoke<R<IDomain[]>>(CHANNELS.get_domains)
   //   .then((data) => data.data)
   //   .catch(() => []),
@@ -50,7 +50,7 @@ Promise.all([
 ]).then((r) => {
   //  ORDER MATTERS
   appState$.set({
-    accounts: accountMockData,
+    accounts: r[0],
     domains: domainMockData,
     // domains: r[1],
     // proxies: r[2],
