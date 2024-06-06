@@ -1,7 +1,7 @@
 use anyhow::{Ok, Result};
 use async_std::{sync::Mutex, task::block_on};
 use serde::{de::DeserializeOwned, Serialize};
-use surrealdb::{engine::local::{Db, File}, sql::Value, Surreal};
+use surrealdb::{engine::local::{Db, File, Mem}, sql::Value, Surreal};
 use std::{fmt::Debug, sync::Arc};
 
 #[derive(Debug)]
@@ -10,8 +10,8 @@ pub struct DB(pub Arc<Mutex<Surreal<Db>>>);
 impl DB {
     pub fn new() -> Result<Self> {
         let db = block_on::<_,Result<Surreal<Db>>>(async {
-            let db  = Surreal::new::<File>("file://forwardscrape.db").await?;
-            db.use_ns("forward_ns").use_db("forward_db").await?;
+            let db  = Surreal::new::<File>("file://Applications/forwardscraper/forward.db").await?;
+            db.use_ns("forwardns").use_db("forwarddb").await?;
             Ok(db)
         })?;
         Ok(Self(Arc::new(Mutex::new(db))))
@@ -31,7 +31,7 @@ impl DB {
     }
 
     pub async fn select_one<T: DeserializeOwned + Debug>(&self, table: &str, id: &str) -> Result<Option<T>> {
-        let entity: Option<T> = self.0.lock().await.query(format!("SELECT * FROM {} WHERE id={}", table, id)).await?.take(0)?;
+        let entity: Option<T> = self.0.lock().await.query(format!("SELECT * FROM {} WHERE _id={}", table, id)).await?.take(0)?;
         println!("SELECT ONE");
         println!("{entity:?}");
         Ok(entity)

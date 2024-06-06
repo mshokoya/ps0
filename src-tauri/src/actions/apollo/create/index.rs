@@ -83,16 +83,15 @@ pub async fn apollo_create(
         }
     }
 
-    let account_id = Id::rand();
-    let account_id_str = account_id.to_string();
+    let account_id = Id::rand().to_string();
     let db = ctx.handle.state::<DB>();
 
     db.insert_one::<Account>(
         "account", 
-        &account_id_str,
+        &account_id,
             to_value(
                 Account {
-                id: account_id.to_string(),
+                _id: account_id.clone(),
                 domain: args.domain,
                 trial_time: None,
                 suspended: false,
@@ -189,7 +188,7 @@ pub async fn apollo_create(
             let _ = ctx.handle.state::<DB>()
             .update_one::<Account>(
                 "account", 
-                &account_id_str, 
+                &account_id, 
                 json(r#"{"verified": "yes"}"#)?
                 // to_value(json!({"verified": "yes"}))?
             ).await?;

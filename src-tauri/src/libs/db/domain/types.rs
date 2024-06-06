@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Id;
 
 // #[derive(TS)]
 // #[ts(export)]

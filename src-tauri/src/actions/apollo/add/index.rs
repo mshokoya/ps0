@@ -13,10 +13,9 @@ struct NewAccArg {
 
 #[tauri::command]
 pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
-
     let args: NewAccArg = match from_value(args) {
         Ok(acc) => acc,
-        Err(_) => { return R::fail_none(None)}
+        Err(_) => {return R::fail_none(None)}
     };
 
     let domain = args.email.split("@").collect::<Vec<&str>>()[1].to_string();
@@ -26,22 +25,12 @@ pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
         "default".to_string()
     };
 
-    let id = Id::rand();
+    let _id = Id::rand().to_string();
 
-
-
-    let db = ctx.state::<DB>();
-    let db_guard = db.0.lock().await;
-
-    
-    println!("WE ADDING ACCOUNT");
-    println!("{:#?}", db);
-    println!("{:#?}", db_guard);
-
-
-        match db_guard.create::<Option<Account>>(("account", id.clone()))
+    let db: Option<Account> = match ctx.state::<DB>().0.lock().await
+        .create(("account", _id.clone()))
         .content(Account {
-            id: id.to_string(), 
+            _id,
             email: args.email,
             password: args.password,
             domain,
@@ -59,41 +48,14 @@ pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
             history: vec![],
             total_scraped_recently: 0,
         }).await {
-            Ok(account) => {
-                println!("WE ADDING ACCOUNT");
-                println!("{:#?}", account);
-                account
-            },
-            Err(_) => return R::fail_none(Some("Failed to register account"))
+            Ok(account) => account,
+            Err(e) => {
+                return R::fail_none(Some("Failed to register account"))
+            }
         };
-
-    R::fail_none(None)
     
-    // match db {
-    //     Some(account) => {
-    //         println!("WE ADDING ACCOUNT");
-    //         println!("{:#?}", account);
-    //         R::ok_data(account)
-    //     },
-    //     None => R::fail_none(None)
-    // }
+    match db {
+        Some(account) => R::ok_data(account),
+        None => R::fail_none(None)
+    }
 }
-
-// pub _id: String,
-// pub domain: String, // enum Domain
-// pub trial_time: Option<u64>,
-// pub suspended: bool,
-// pub login_type: String, // enum
-// pub verified: String, // yes, no, confirm
-// pub email: String,
-// pub password: String,
-// pub proxy: Option<String>,
-// pub credits_used: Option<u16>,
-// pub credit_limit: Option<u16>,
-// pub renewal_date: Option<String>,
-// pub renewal_start_date: Option<String>,
-// pub renewal_end_date: Option<String>,
-// pub last_used: Option<u64>,
-// pub cookies: Option<Cookies>,
-// pub history: Vec<History>,
-// pub total_scraped_recently: u16

@@ -1,9 +1,10 @@
 use chromiumoxide::cdp::browser_protocol::network::CookieParam;
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Id;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Account {
-    pub id: String,
+    pub _id: String,
     pub domain: String, // enum Domain
     pub trial_time: Option<u64>,
     pub suspended: bool,
@@ -46,13 +47,13 @@ impl Into<Vec<CookieParam>> for Cookies {
 
 #[derive(Deserialize, Debug, Clone)]
 struct CookieParse {
-    key: String,
-    value: String,
+    pub key: String,
+    pub value: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct AccountArg {
-    pub id: Option<String>,
+    pub _id: Option<String>,
     pub domain: Option<String>, // enum Domain
     pub trial_time: Option<u64>,
     pub suspended: Option<bool>,

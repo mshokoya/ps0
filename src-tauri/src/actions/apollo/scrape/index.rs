@@ -178,7 +178,7 @@ async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Meta
         &args.meta_id,
         to_value(
           Metadata {
-            id: args.meta_id.clone(),
+            _id: args.meta_id.clone(),
             url: args.url.clone(),
             params: args.params.clone(),
             name: args.name.clone(),
@@ -236,9 +236,9 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
     UPDATE $accountfilter SET $accountdata;
     COMMIT TRANSACTION;
   ")
-  .bind(("metafilter", format!("metadata:{}", &metadata.id) ))
+  .bind(("metafilter", format!("metadata:{}", &metadata._id) ))
   .bind(("metadata", to_value(&metadata.scrapes)?))
-  .bind(("accountfilter", format!("account:{}", &account.id)))
+  .bind(("accountfilter", format!("account:{}", &account._id)))
   .bind(("accountdata", to_value(&account.history)?))
   .await?;
 
@@ -591,8 +591,8 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
   
   let mut query = vec![
     "BEGIN TRANSACTION;".to_string(),
-    format!("UPDATE account:{} SET $accountdata;", &account.id),
-    format!("UPDATE metadata:{} SET $metarecord;", &metadata.id),
+    format!("UPDATE account:{} SET $accountdata;", &account._id),
+    format!("UPDATE metadata:{} SET $metarecord;", &metadata._id),
   ];
   for d in data {
     query.push(

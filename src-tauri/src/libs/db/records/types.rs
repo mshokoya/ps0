@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Id;
 
 
 // https://serde.rs/field-attrs.html
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Record {
-    pub id: String,
+    pub _id: String,
     pub scrape_id: String,
     pub url: String,
     pub data: RecordData,
@@ -36,7 +37,7 @@ pub struct RecordData {
 }
 
 pub struct RecordArg {
-    pub id: Option<String>,
+    pub _id: Option<String>,
     pub scrape_id: Option<String>,
     pub protocol: Option<String>,
     pub url: Option<String>,
@@ -45,7 +46,7 @@ pub struct RecordArg {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RecordDataArg {
-    pub name: Option<String>,
+    pub name: Option<Id>,
     pub firstname: Option<String>,
     pub lastname: Option<String>,
     pub linkedin: Option<String>,
