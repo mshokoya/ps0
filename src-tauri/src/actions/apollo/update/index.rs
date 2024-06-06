@@ -38,7 +38,7 @@ pub async fn update_account(ctx: AppHandle, args: UpdateArg) -> R<Account> {
     Ok(acc) => {
       println!("UPDATE ONE 333");
       println!("{acc:#?}");
-      R::ok_data(acc.unwrap().first().cloned().unwrap())
+      R::ok_data(acc.unwrap())
     },
     Err(e) => {
       println!("UPDATE ONE 444");
@@ -61,7 +61,7 @@ pub async fn update_metadata(ctx: AppHandle, args: Serde_Value) -> R<Metadata> {
       &p_args.account_id, 
       p_args.fields
     ).await {
-    Ok(acc) => R::ok_data(acc.unwrap().first().cloned().unwrap()),
+    Ok(acc) => R::ok_data(acc.unwrap()),
     Err(_) => R::fail_none(None)
   }
 }
@@ -81,7 +81,7 @@ pub async fn update_domain(ctx: AppHandle, args: Serde_Value) -> R<Domain> {
       &p_args.account_id, 
       p_args.fields
     ).await {
-    Ok(acc) => R::ok_data(acc.unwrap().first().cloned().unwrap()),
+    Ok(acc) => R::ok_data(acc.unwrap()),
     Err(_) => R::fail_none(None)
   }
 }
@@ -99,7 +99,7 @@ pub async fn update_record(ctx: AppHandle, args: Serde_Value) -> R<Record> {
       &p_args.account_id, 
       p_args.fields
     ).await {
-    Ok(acc) => R::ok_data(acc.unwrap().first().cloned().unwrap()),
+    Ok(acc) => R::ok_data(acc.unwrap()),
     Err(_) => R::fail_none(None)
   }
 }

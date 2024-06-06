@@ -33,7 +33,7 @@ export const AccountField = observer(() => {
       }}).then((data) => {
         if (data.ok) {
           console.log(data)
-          appState$.accounts.push(data.data)
+          // appState$.accounts.push(data.data)
           stateResStatusHelper.add('new', ['new', 'ok'])
         } else {
           console.log(data)
