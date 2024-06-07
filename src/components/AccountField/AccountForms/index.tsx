@@ -122,14 +122,17 @@ type DomainProps = {
   isCreateReq: boolean
 }
 
+
+
 export const DomainForm = observer((p: DomainProps) => {
+  console.log(p.domains)
   return (
     <Flex direction="column" gap="1">
-      <Select.Root disabled={p.isCreateReq} onValueChange={p.selectedDomain.set}>
+      <Select.Root  onValueChange={p.selectedDomain.set}>
         <Select.Trigger placeholder="Select a domain" />
         <Select.Content>
           <Select.Group>
-            <Select.Label>Verified</Select.Label>
+            <Select.Label>Verified Domains</Select.Label>
             {p.domains
               .filter((d) => d.verified)
               .map((d, idx) => (
@@ -138,21 +141,6 @@ export const DomainForm = observer((p: DomainProps) => {
                   </Select.Item>
                 )
               )}
-          </Select.Group>
-
-          <Select.Separator />
-
-          <Select.Group>
-            <Select.Label>Unverified</Select.Label>
-            {p.domains
-              .filter((d) => !d.verified)
-              .map((d, idx) => {
-                return (
-                  <Select.Item key={idx} value={d.domain} disabled>
-                    {d.domain}
-                  </Select.Item>
-                )
-              })}
           </Select.Group>
         </Select.Content>
       </Select.Root>

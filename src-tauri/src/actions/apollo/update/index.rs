@@ -14,8 +14,8 @@ use crate::{
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateArg {
-    pub account_id: String,
-    pub fields: Value
+    pub id: String,
+    pub fields: Serde_Value
 }
 
 #[tauri::command]
@@ -32,7 +32,7 @@ pub async fn update_account(ctx: AppHandle, args: UpdateArg) -> R<Account> {
   match ctx.state::<DB>()
     .update_one::<Account>(
       "account", 
-      &args.account_id, 
+      &args.id, 
       args.fields
     ).await {
     Ok(acc) => {
@@ -58,7 +58,7 @@ pub async fn update_metadata(ctx: AppHandle, args: Serde_Value) -> R<Metadata> {
   match ctx.state::<DB>()
     .update_one::<Metadata>(
       "metadata", 
-      &p_args.account_id, 
+      &p_args.id, 
       p_args.fields
     ).await {
     Ok(acc) => R::ok_data(acc.unwrap()),
@@ -66,25 +66,6 @@ pub async fn update_metadata(ctx: AppHandle, args: Serde_Value) -> R<Metadata> {
   }
 }
 
-
-
-#[tauri::command]
-pub async fn update_domain(ctx: AppHandle, args: Serde_Value) -> R<Domain> {
-  let p_args = match from_value::<UpdateArg>(args) {
-    Ok(var) => var,
-    Err(_) => return R::fail_none(Some("Failed to update domain, could not get the data"))
-  };
-
-  match ctx.state::<DB>()
-    .update_one::<Domain>(
-      "domain", 
-      &p_args.account_id, 
-      p_args.fields
-    ).await {
-    Ok(acc) => R::ok_data(acc.unwrap()),
-    Err(_) => R::fail_none(None)
-  }
-}
 
 #[tauri::command]
 pub async fn update_record(ctx: AppHandle, args: Serde_Value) -> R<Record> {
@@ -96,7 +77,7 @@ pub async fn update_record(ctx: AppHandle, args: Serde_Value) -> R<Record> {
   match ctx.state::<DB>()
     .update_one::<Record>(
       "record", 
-      &p_args.account_id, 
+      &p_args.id, 
       p_args.fields
     ).await {
     Ok(acc) => R::ok_data(acc.unwrap()),

@@ -1,3 +1,5 @@
+use serde::Deserialize;
+use serde_json::{from_value, Value};
 use tauri::{AppHandle, Manager};
 use crate::{
     actions::controllers::Response as R,
@@ -6,17 +8,22 @@ use crate::{
         },
 };
 
-
+#[derive(Deserialize)]
+struct DeleteOneArg {
+  pub id: String
+}
 
 #[tauri::command]
-pub async fn delete_accounts(ctx: AppHandle, args: Vec<String>) -> R<()> {
-  for id in args.iter() {
-    match ctx.state::<DB>().delete_one::<Account>("account", id).await {
-      Ok(_) => {},
-      Err(_) => return R::fail_none(None)
-    }
+pub async fn delete_account(ctx: AppHandle, args: Value) -> R<()> {
+  let arg: DeleteOneArg = match from_value(args) {
+    Ok(args) => args,
+    Err(_) => return R::fail_none(Some("Failed to parse id"))
+  };
+
+  match ctx.state::<DB>().delete_one::<Account>("account", &arg.id).await {
+    Ok(_) => R::ok_none(),
+    Err(_) => R::fail_none(Some("Failed to remove domain"))
   }
-  R::ok_none()
 }
 
 #[tauri::command]
@@ -31,14 +38,16 @@ pub async fn delete_metadatas(ctx: AppHandle, args: Vec<String>) -> R<()> {
 }
 
 #[tauri::command]
-pub async fn delete_domains(ctx: AppHandle, args: Vec<String>) -> R<()> {
-  for id in args.iter() {
-    match ctx.state::<DB>().delete_one::<Domain>("domain", id).await {
-      Ok(_) => {},
-      Err(_) => return R::fail_none(None)
-    }
+pub async fn delete_domain(ctx: AppHandle, args: Value) -> R<()> {
+  let arg: DeleteOneArg = match from_value(args) {
+    Ok(args) => args,
+    Err(_) => return R::fail_none(Some("Failed to parse id"))
+  };
+
+  match ctx.state::<DB>().delete_one::<Domain>("domain", &arg.id).await {
+    Ok(_) => R::ok_none(),
+    Err(_) => R::fail_none(Some("Failed to remove domain"))
   }
-  R::ok_none()
 }
 
 #[tauri::command]

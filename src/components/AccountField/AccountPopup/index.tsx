@@ -3,6 +3,7 @@ import { AccountReqType } from '../../../core/state/account'
 import { UpdateFields } from './Update'
 import { AccountActionsComp } from './Actions'
 import { IAccount } from '../../..'
+import { ObservablePrimitiveBooleanFns, ObservablePrimitiveChildFns } from '@legendapp/state'
 
 export type AccountPopupProps = {
   login: () => Promise<void>
@@ -13,6 +14,7 @@ export type AccountPopupProps = {
   confirmAccount: () => Promise<void>
   account: IAccount
   req: string | null
+  isPopupOpen: ObservablePrimitiveChildFns<boolean> & ObservablePrimitiveBooleanFns<boolean>
 }
 
 export type AccountPopupPage = 'main' | 'update'
@@ -54,9 +56,9 @@ export const AccountPopup = observer((p: AccountPopupProps) => {
   return (
     <div>
       {obs.page.get() === 'update' ? (
-        <UpdateFields handleRequest={handleRequest} obs={obs} account={p.account} />
+        <UpdateFields isPopupOpen={p.isPopupOpen} handleRequest={handleRequest} obs={obs} account={p.account} />
       ) : (
-        <AccountActionsComp handleRequest={handleRequest} obs={obs} account={p.account} />
+        <AccountActionsComp isPopupOpen={p.isPopupOpen} handleRequest={handleRequest} obs={obs} account={p.account} />
       )}
     </div>
   )

@@ -1,4 +1,4 @@
-import { ObservableObject } from '@legendapp/state'
+import { ObservableObject, ObservablePrimitiveBooleanFns, ObservablePrimitiveChildFns } from '@legendapp/state'
 import { AccountPopupState } from '.'
 
 import { Button, Dialog, Flex, Spinner } from '@radix-ui/themes'
@@ -11,6 +11,7 @@ type MProps = {
   handleRequest: (a: AccountReqType) => Promise<void>
   obs: ObservableObject<AccountPopupState>
   account: IAccount
+  isPopupOpen: ObservablePrimitiveChildFns<boolean> & ObservablePrimitiveBooleanFns<boolean>
 }
 
 export const AccountActionsComp = observer((p: MProps) => {
@@ -99,13 +100,10 @@ export const AccountActionsComp = observer((p: MProps) => {
       </Flex>
 
       <Flex gap="3" mt="4" justify="end">
-        <Dialog.Close>
+        <Dialog.Close onClick={() => {p.isPopupOpen.set(false)}} >
           <Button variant="soft" color="gray">
-            Cancel
+            Close
           </Button>
-        </Dialog.Close>
-        <Dialog.Close>
-          <Button>Save</Button>
         </Dialog.Close>
       </Flex>
     </Flex>

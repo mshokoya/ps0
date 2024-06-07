@@ -151,20 +151,17 @@ export const AccountField = observer(() => {
       accountTaskHelper.add(account_id, { type: 'update', status: 'processing' })
 
       await invoke<R<IAccount>>(CHANNELS.update_account, {args: {
-        account_id,
+        id: account_id,
         fields: input
       }}).then((data) => {
         if (data.ok) {
-          console.log(data)
           stateResStatusHelper.add(account_id, ['update', 'ok'])
-          // appState$.accounts.find((a) => a._id.peek() === account_id)?.set(data.data)
+          appState$.accounts.find((a) => a._id.peek() === account_id)?.set(data.data)
         } else {
-          console.log(data)
           stateResStatusHelper.add(account_id, ['update', 'fail'])
         }
       })
     } catch (err) {
-      console.log(err)
       stateResStatusHelper.add(account_id, ['update', 'fail'])
     } finally {
       setTimeout(() => {
@@ -244,12 +241,17 @@ export const AccountField = observer(() => {
 
       accountTaskHelper.add(account_id, { type: 'delete', status: 'processing' })
 
-      await invoke<R<void>>(CHANNELS.delete_accounts, {args: { account_id }}).then((data) => {
+      await invoke<R<void>>(CHANNELS.delete_account, {args: { id: account_id }}).then((data) => {
+        console.log(data)
         batch(() => {
-          data.ok
-            ? stateResStatusHelper.add(account_id, ['delete', 'ok'])
-            : stateResStatusHelper.add(account_id, ['delete', 'fail'])
-          // appState$.accounts.set((a1) => a1.filter((a2) => a2._id !== account_id))
+          if (data.ok) {
+            stateResStatusHelper.add(account_id, ['delete', 'ok'])
+            state.isPopupOpen.set(false)
+            state.selectedAcc.set(null)
+            appState$.accounts.set((a1) => a1.filter((a2) => a2._id !== account_id))
+          } else {
+            stateResStatusHelper.add(account_id, ['delete', 'fail'])
+          }
         })
       })
     } catch (err) {

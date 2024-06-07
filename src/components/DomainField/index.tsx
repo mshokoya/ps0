@@ -8,10 +8,12 @@ import { IDomain, R } from '../..'
 import { invoke } from '@tauri-apps/api/tauri'
 import { CHANNELS } from '../../core/channels'
 import isValidDomain from '@tahul/is-valid-domain'
+import { batch } from '@legendapp/state'
 
 export const DomainField = observer(() => {
   console.log('DomainField')
   const domains = useSelector(appState$.domains) as IDomain[]
+  const compState = useObservable({isPopupOpen: false});
 
   const addDomain = async () => {
     domainTaskHelper.add('domain', { type: 'create', status: 'processing' })
@@ -22,13 +24,14 @@ export const DomainField = observer(() => {
         !isValidDomain(domain) // (FIX) check if it works
       ) throw Error("invalid domain")
 
-      await invoke<R<IDomain>>(CHANNELS.add_domain, {args: domain })
+      await invoke<R<IDomain>>(CHANNELS.add_domain, {args: {domain} })
         .then((d) => {
           console.log("wee in then")
           console.log(d)
           if (d.ok) {
             domainResStatusHelper.add('domain', ['create', 'ok'])
             appState$.domains.push(d.data)
+            domainState.input.domain.set("")
           } else {
             domainResStatusHelper.add('domain', ['create', 'fail'])
           }
@@ -69,49 +72,52 @@ export const DomainField = observer(() => {
   }
 
   const deleteDomain = async () => {
-    const domainID = domains[domainState.selectedDomain.peek()]._id
-    const domain = domains[domainState.selectedDomain.peek()].domain
-    domainTaskHelper.add(domainID, { type: 'delete', status: 'processing' })
-    await invoke<R<IDomain>>(CHANNELS.delete_domain, {args: { domain }})
+    const domain_id = domains[domainState.selectedDomain.peek()]._id
+    domainTaskHelper.add(domain_id, { type: 'delete', status: 'processing' })
+    await invoke<R<IDomain>>(CHANNELS.delete_domain, {args: { id: domain_id }})
       .then((res) => {
-        if (res.ok) {
-          domainResStatusHelper.add(domainID, ['delete', 'ok'])
-          appState$.domains.find((d) => d._id.peek() === domainID)?.delete()
-        } else {
-          domainResStatusHelper.add(domainID, ['delete', 'fail'])
-        }
+        batch(() => {
+          if (res.ok) {
+            domainResStatusHelper.add(domain_id, ['delete', 'ok'])
+            domainState.selectedDomain.set(null);
+            compState.isPopupOpen.set(false)
+            appState$.domains.set((d)=> d.filter((d0) => d0._id !== domain_id)) 
+          } else {
+            domainResStatusHelper.add(domain_id, ['delete', 'fail'])
+          }
+        })
       })
       .catch(() => {
-        domainResStatusHelper.add(domainID, ['delete', 'fail'])
+        domainResStatusHelper.add(domain_id, ['delete', 'fail'])
       })
       .finally(() => {
         setTimeout(() => {
-          domainTaskHelper.deleteTaskByReqType(domainID, 'delete')
-          domainResStatusHelper.delete(domainID, 'delete')
+          domainTaskHelper.deleteTaskByReqType(domain_id, 'delete')
+          domainResStatusHelper.delete(domain_id, 'delete')
         }, 1500)
       })
   }
 
   const verifyDomain = async () => {
-    const domainID = domains[domainState.selectedDomain.peek()]._id
+    const domain_id = domains[domainState.selectedDomain.peek()]._id
     const domain = domains[domainState.selectedDomain.peek()].domain
-    domainTaskHelper.add(domainID, { type: 'verify', status: 'processing' })
+    domainTaskHelper.add(domain_id, { type: 'verify', status: 'processing' })
     await invoke<R<IDomain>>(CHANNELS.verify_domain, {args: {domain}})
       .then((res) => {
         if (res.ok) {
-          domainResStatusHelper.add(domainID, ['verify', 'ok'])
-          appState$.domains.find((d) => d._id.peek() === domainID)?.set(res.data)
+          domainResStatusHelper.add(domain_id, ['verify', 'ok'])
+          appState$.domains.find((d) => d._id.peek() === domain_id)?.set(res.data)
         } else {
-          domainResStatusHelper.add(domainID, ['verify', 'fail'])
+          domainResStatusHelper.add(domain_id, ['verify', 'fail'])
         }
       })
       .catch(() => {
-        domainResStatusHelper.add(domainID, ['verify', 'fail'])
+        domainResStatusHelper.add(domain_id, ['verify', 'fail'])
       })
       .finally(() => {
         setTimeout(() => {
-          domainTaskHelper.deleteTaskByReqType(domainID, 'verify')
-          domainResStatusHelper.delete(domainID, 'verify')
+          domainTaskHelper.deleteTaskByReqType(domain_id, 'verify')
+          domainResStatusHelper.delete(domain_id, 'verify')
         }, 1500)
       })
   }
@@ -122,11 +128,11 @@ export const DomainField = observer(() => {
         <DomainForms addDomain={addDomain} input={domainState.input} />
 
         <DomainTable
+          isPopupOpen={compState.isPopupOpen}
           domains={domains}
           deleteDomain={deleteDomain}
           verifyDomain={verifyDomain}
           registerDomain={registerDomain}
-          // updateDomain={updateDomain}
         />
       </Flex>
     </Flex>

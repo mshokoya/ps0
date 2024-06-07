@@ -1,20 +1,21 @@
 import { observer, useObservable } from '@legendapp/state/react'
 import { DomainActionsComp } from './DomainActions'
-import { UpdateFields } from './UpdateDomain'
 import { IDomain } from '../../..'
 import { DomainReqType } from '../../../core/state/domain'
+import { ObservablePrimitiveBooleanFns, ObservablePrimitiveChildFns } from '@legendapp/state'
 
 type Props = {
+  isPopupOpen: ObservablePrimitiveChildFns<boolean> & ObservablePrimitiveBooleanFns<boolean>
   verifyDomain: () => Promise<void>
   deleteDomain: () => Promise<void>
   registerDomain: () => Promise<void>
   domain: IDomain
 }
 
-export type DomainPopupState = { input: { domain: string }; page: 'main' | 'update' }
+export type DomainPopupState = { input: { domain: string } }
 
 export const DomainPopup = observer((p: Props) => {
-  const obs = useObservable<DomainPopupState>({ input: { domain: p.domain.domain }, page: 'main' })
+  const obs = useObservable<DomainPopupState>({ input: { domain: p.domain.domain } })
 
   const handleRequest = async (h: DomainReqType) => {
     switch (h) {
@@ -32,11 +33,7 @@ export const DomainPopup = observer((p: Props) => {
 
   return (
     <div>
-      {obs.page.get() === 'update' ? (
-        <UpdateFields handleRequest={handleRequest} obs={obs} domain={p.domain} />
-      ) : (
-        <DomainActionsComp handleRequest={handleRequest} obs={obs} domain={p.domain} />
-      )}
+        <DomainActionsComp isPopupOpen={p.isPopupOpen} handleRequest={handleRequest} obs={obs} domain={p.domain} />
     </div>
   )
 })

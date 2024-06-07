@@ -1,4 +1,4 @@
-import { ObservableObject } from '@legendapp/state'
+import { ObservableObject, ObservablePrimitiveBooleanFns, ObservablePrimitiveChildFns } from '@legendapp/state'
 import { batch } from '@legendapp/state'
 import { AccountPopupState } from '.'
 import { Button, Dialog, Flex, Text, TextField } from '@radix-ui/themes'
@@ -12,9 +12,10 @@ type UFProps = {
   handleRequest: (input: AccountReqType) => Promise<void>
   obs: ObservableObject<AccountPopupState>
   account: IAccount
+  isPopupOpen: ObservablePrimitiveChildFns<boolean> & ObservablePrimitiveBooleanFns<boolean>
 }
 
-export const UpdateFields = observer(({ obs, handleRequest, account }: UFProps) => {
+export const UpdateFields = observer(({ obs, handleRequest, account, isPopupOpen}: UFProps) => {
   const isUpdateReq = !!accountTaskHelper.findTaskByReqType(account._id, 'update')
 
   const backToMain = () => {
@@ -85,7 +86,7 @@ export const UpdateFields = observer(({ obs, handleRequest, account }: UFProps) 
         </Flex>
 
         <Flex>
-          <Dialog.Close>
+          <Dialog.Close onClick={() => {isPopupOpen.set(false)}}>
             <Button variant="soft" color="gray">
               Close
             </Button>

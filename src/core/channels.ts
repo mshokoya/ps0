@@ -4,7 +4,7 @@ export const CHANNELS = {
   get_domains: "get_domains",
   get_metadatas: "get_metadatas",
   get_records: "get_records",
-  delete_accounts: "delete_accounts",
+  delete_account: "delete_account",
   delete_domains: "delete_domains",
   delete_metadatas: "delete_metadatas",
   delete_records: "delete_records",

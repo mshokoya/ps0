@@ -32,16 +32,16 @@ export const appState$ = observable<AppState>({
 })
 
 Promise.all([
-  invoke<R<IAccount[]>>(CHANNELS.get_accounts)
+  await invoke<R<IAccount[]>>(CHANNELS.get_accounts)
     .then((data) => data.data)
     .catch(() => []),
-  invoke<R<IDomain[]>>(CHANNELS.get_domains)
+  await invoke<R<IDomain[]>>(CHANNELS.get_domains)
     .then((data) => data.data)
     .catch(() => []),
-  invoke<R<IMetaData[]>>(CHANNELS.get_metadatas)
+  await invoke<R<IMetaData[]>>(CHANNELS.get_metadatas)
     .then((data) => data.data)
     .catch(() => []),
-  invoke<R<IRecords[]>>(CHANNELS.get_records)
+  await invoke<R<IRecords[]>>(CHANNELS.get_records)
     .then((data) => data.data)
     .catch(() => [])
 ]).then((r) => {
@@ -108,3 +108,21 @@ export const initialEdges = [
   { id: 'tqp', source: 'tq', target: 'p', type: edgeType, animated: true },
   { id: 'tqt', source: 'tq', target: 't', type: edgeType, animated: true }
 ]
+
+// Object
+
+// _id: "mg7ys06lylwkr0zxf8yv"
+// domain: "letsgoo.com"
+// message: null
+// mx_records: false
+// txt_records: false
+// verified: false
+
+// Object
+
+// _id: "dasdsaas1"
+// domain: "dasdsaas12"
+// message: "dsafsas"
+// mx_records: true
+// txt_records: true
+// verified: true

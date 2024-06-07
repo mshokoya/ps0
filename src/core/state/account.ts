@@ -12,7 +12,8 @@ export const accountState = observable<State>({
   reqType: null,
   resStatus: {},
   addType: 'email',
-  selectedDomain: null
+  selectedDomain: null,
+  isPopupOpen: false
 })
 
 export const accountTaskHelper = TaskHelpers(accountState.reqInProcess)
@@ -84,6 +85,7 @@ export type State = {
   resStatus: ResStatus<AccountReqType>
   addType: 'domain' | 'email'
   selectedDomain: string | null
+  isPopupOpen: boolean;
 }
 
 export type AccountReqType =

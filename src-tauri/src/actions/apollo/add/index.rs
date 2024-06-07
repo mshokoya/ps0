@@ -73,9 +73,10 @@ struct NewDomainArg {
 
 #[tauri::command]
 pub async fn add_domain(ctx: AppHandle, args: Value) -> R<Domain> {
+    println!("{args:?}");
     let args: NewDomainArg = match from_value(args) {
         Ok(acc) => acc,
-        Err(_) => {return R::fail_none(None)}
+        Err(_) => {return R::fail_none(Some("failed to parse arg"))}
     };
 
     let _id = Id::rand().to_string();

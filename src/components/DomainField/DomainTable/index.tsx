@@ -8,8 +8,10 @@ import { DomainPopup } from '../DomainPopup'
 import { IDomain } from '../../..'
 import { domainResStatusHelper, domainState, domainTaskHelper } from '../../../core/state/domain'
 import { appState$ } from '../../../core/state'
+import { ObservablePrimitiveBooleanFns, ObservablePrimitiveChildFns } from '@legendapp/state'
 
 type Props = {
+  isPopupOpen: ObservablePrimitiveChildFns<boolean> & ObservablePrimitiveBooleanFns<boolean>
   domains: IDomain[]
   deleteDomain: () => Promise<void>
   verifyDomain: () => Promise<void>
@@ -39,7 +41,7 @@ export const DomainTable = observer((p: Props) => {
   }
 
   return (
-    <Dialog.Root>
+    <Dialog.Root open={p.isPopupOpen.get()}>
       <div className="border-[#2f3135] border rounded grow overflow-auto">
         <ScrollArea type="scroll">
           <table className=" w-[150%] table-fixed overflow-auto">
@@ -81,7 +83,7 @@ export const DomainTable = observer((p: Props) => {
                       {domain.txt_records ? 'yes' : 'no'}
                     </td>
                     <td className="overflow-scroll sticky bg-[#111111] right-0" data-type="opt">
-                      <Dialog.Trigger>
+                      <Dialog.Trigger onClick={() => {p.isPopupOpen.set(true)}}>
                         <Button color="gray" variant="outline" size="1">
                           <SlOptionsVertical className="inline" />
                         </Button>
@@ -103,9 +105,10 @@ export const DomainTable = observer((p: Props) => {
     */}
 
       <Dialog.Content maxWidth="450px">
-        {domainState.selectedDomain && (
+        {domainState.selectedDomain.get() && (
           <DomainPopup 
-            {...p} 
+            {...p}
+            isPopupOpen={p.isPopupOpen}
             domain={p.domains[domainState.selectedDomain.get()]} 
             registerDomain={p.registerDomain}
           />

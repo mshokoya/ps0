@@ -27,7 +27,7 @@ pub async fn verify_domain(ctx: AppHandle, args: Domain) -> R<VerifyDomain> {
 }
 
 #[tauri::command]
-pub async fn delete_domain(ctx: AppHandle, args: Domain) -> R<()> {
+pub async fn remove_domain(ctx: AppHandle, args: Domain) -> R<()> {
   match ctx.state::<Forwarder>().delete_domain(&args.domain).await {
     Ok(_) => R::ok_none(),
     Err(_) => R::fail_none(None)
