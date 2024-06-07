@@ -1,8 +1,8 @@
 use anyhow::{Ok, Result};
 use async_std::{sync::Mutex, task::block_on};
 use serde::{de::DeserializeOwned, Serialize};
-use surrealdb::{engine::local::{Db, File}, sql::Value, Surreal};
-use std::{fmt::Debug, future::IntoFuture, sync::Arc};
+use surrealdb::{engine::local::{Db, File}, Surreal};
+use std::{fmt::Debug, sync::Arc};
 
 #[derive(Debug)]
 pub struct DB(pub Arc<Mutex<Surreal<Db>>>);
@@ -20,13 +20,10 @@ impl DB {
     pub async fn insert_one<T: Serialize + DeserializeOwned + Debug>(&self, table: &str, id:&str, content: impl Serialize) -> Result<Option<T>> {
         let entity: Option<T> = self.0.lock()
             .await
-            .query("CREATE $th SET $data")
-            .bind(("th", format!("{table}:{id}")))
+            .query(format!(r#"CREATE {table}:{id} CONTENT $data"#))
             .bind(("data", content))
             .await?
             .take(0)?;
-        println!("INSERT ONE");
-        println!("{entity:?}");
         Ok(entity)
     }
 
@@ -40,27 +37,13 @@ impl DB {
         Ok(entity)
     }
 
-    // pub async fn update_one<T: DeserializeOwned + Debug + Serialize>(&self, table: &str, id: &str, update: impl Serialize) -> Result<Option<T>> {
-    //     let db = self.0.lock().await;
-    //     let _ = db.update::<Option<T>>((table, id)).merge(update).;
-    //     drop(db);
-    //     let result: Option<T> = self.select_one(table, id).await?; 
-
-    //     Ok(result)
-    // }
-
     pub async fn update_one<T: DeserializeOwned + Debug>(&self, table: &str, id: &str, update: impl Serialize) -> Result<Option<T>> {
-        let query = format!(r#"UPDATE {table}:{id} MERGE $data RETURN AFTER"#);
-        
         let entity: Option<T> = self.0.lock().await
-            .query(query)
+            .query(format!(r#"UPDATE {table}:{id} MERGE $data RETURN AFTER"#))
             .bind(("data", update))
             .await?
             .take(0)?;
 
-        println!("UPDATE ONE");
-        println!("{entity:?}");
-        
         Ok(entity)
     }
 
