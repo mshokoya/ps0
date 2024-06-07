@@ -1,11 +1,11 @@
-import { ObservablePrimitiveBaseFns } from '@legendapp/state'
+import { ObservableObject} from '@legendapp/state'
 import { Box, Button, Flex, Tabs, Text, TextField } from '@radix-ui/themes'
 import { domainTaskHelper } from '../../../core/state/domain'
 import { observer } from '@legendapp/state/react'
 
 type Props = {
   addDomain: () => Promise<void>
-  input: ObservablePrimitiveBaseFns<string>
+  input: ObservableObject<{domain: string}>
 }
 
 export const DomainForms = observer(({ addDomain, input }: Props) => {
@@ -38,7 +38,7 @@ export const DomainForms = observer(({ addDomain, input }: Props) => {
 })
 
 type DomainProps = {
-  input: ObservablePrimitiveBaseFns<string>
+  input: ObservableObject<{domain: string}>
   isCreateReq: boolean
 }
 
@@ -56,9 +56,9 @@ export const DomainForm = observer(({ input, isCreateReq }: DomainProps) => {
           className="w-[12rem]"
           size="1"
           placeholder="Enter your email"
-          value={input.get()}
+          value={input.domain.get()}
           onChange={(e) => {
-            input.set(e.target.value)
+            input.domain.set(e.target.value)
           }}
         />
       </Flex>

@@ -7,36 +7,41 @@ import { DomainForms } from './DomainForm'
 import { IDomain, R } from '../..'
 import { invoke } from '@tauri-apps/api/tauri'
 import { CHANNELS } from '../../core/channels'
+import isValidDomain from '@tahul/is-valid-domain'
 
 export const DomainField = observer(() => {
   console.log('DomainField')
   const domains = useSelector(appState$.domains) as IDomain[]
-  const input = useObservable<string>()
 
   const addDomain = async () => {
     domainTaskHelper.add('domain', { type: 'create', status: 'processing' })
-    await invoke<R<IDomain>>(CHANNELS.add_domain, {args: domainState.input.peek()})
-      .then((d) => {
-        console.log("wee in then")
-        console.log(d)
-        if (d.ok) {
-          domainResStatusHelper.add('domain', ['create', 'ok'])
-          appState$.domains.push(d.data)
-        } else {
-          domainResStatusHelper.add('domain', ['create', 'fail'])
-        }
-      })
-      .catch((e) => {
-        console.log("wee in then")
-        console.log(e)
+    const domain = domainState.input.domain.peek();
+    try {
+      if (
+        !domain ||
+        !isValidDomain(domain) // (FIX) check if it works
+      ) throw Error("invalid domain")
+
+      await invoke<R<IDomain>>(CHANNELS.add_domain, {args: domain })
+        .then((d) => {
+          console.log("wee in then")
+          console.log(d)
+          if (d.ok) {
+            domainResStatusHelper.add('domain', ['create', 'ok'])
+            appState$.domains.push(d.data)
+          } else {
+            domainResStatusHelper.add('domain', ['create', 'fail'])
+          }
+        })
+    } catch(err) {
+        console.log(err)
         domainResStatusHelper.add('domain', ['create', 'fail'])
-      })
-      .finally(() => {
+    } finally {
         setTimeout(() => {
           domainTaskHelper.deleteTaskByReqType('domain', 'create')
           domainResStatusHelper.delete('domain', 'create')
         }, 1500)
-      })
+    }
   }
 
   //  (FIX) add to register
@@ -114,7 +119,7 @@ export const DomainField = observer(() => {
   return (
     <Flex className="relative grow text-xs">
       <Flex direction="column" flexGrow="1" className="absolute inset-x-0 inset-y-0">
-        <DomainForms addDomain={addDomain} input={input} />
+        <DomainForms addDomain={addDomain} input={domainState.input} />
 
         <DomainTable
           domains={domains}

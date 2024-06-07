@@ -80,6 +80,8 @@ pub async fn add_domain(ctx: AppHandle, args: Value) -> R<Domain> {
 
     let _id = Id::rand().to_string();
 
+    println!("{args:?}");
+
     match ctx.state::<DB>().insert_one::<Domain>(
         "domain", 
         &_id, 
