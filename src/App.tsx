@@ -42,7 +42,7 @@ const App = observer(() => {
 
   return (
     <Theme accentColor="gray" grayColor="mauve" radius="small" scaling="90%" appearance="dark">
-      <button onClick={() => handleGet()}>Get</button>
+      {/* <button onClick={() => handleGet()}>Get</button> */}
       <a className="ugly-download hidden" />
       <div className="flex relative">
         <Flex direction="column" className=" center h-screen z-0 w-full p-2" gap="3">

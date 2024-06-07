@@ -17,20 +17,48 @@ export const DomainField = observer(() => {
     domainTaskHelper.add('domain', { type: 'create', status: 'processing' })
     await invoke<R<IDomain>>(CHANNELS.add_domain, {args: domainState.input.peek()})
       .then((d) => {
+        console.log("wee in then")
+        console.log(d)
         if (d.ok) {
           domainResStatusHelper.add('domain', ['create', 'ok'])
-          domains.push(d.data)
+          appState$.domains.push(d.data)
         } else {
           domainResStatusHelper.add('domain', ['create', 'fail'])
         }
       })
-      .catch(() => {
+      .catch((e) => {
+        console.log("wee in then")
+        console.log(e)
         domainResStatusHelper.add('domain', ['create', 'fail'])
       })
       .finally(() => {
         setTimeout(() => {
           domainTaskHelper.deleteTaskByReqType('domain', 'create')
           domainResStatusHelper.delete('domain', 'create')
+        }, 1500)
+      })
+  }
+
+  //  (FIX) add to register
+  const registerDomain = async () => {
+    const domain_id = domains[domainState.selectedDomain.peek()]._id
+    domainTaskHelper.add('domain', { type: 'register', status: 'processing' })
+    await invoke<R<IDomain>>(CHANNELS.register_domain, {args: {domain_id} })
+      .then((d) => {
+        if (d.ok) {
+          domainResStatusHelper.add(domain_id, ['register', 'ok'])
+          domains.push(d.data)
+        } else {
+          domainResStatusHelper.add(domain_id, ['register', 'fail'])
+        }
+      })
+      .catch(() => {
+        domainResStatusHelper.add(domain_id, ['register', 'fail'])
+      })
+      .finally(() => {
+        setTimeout(() => {
+          domainTaskHelper.deleteTaskByReqType(domain_id, 'register')
+          domainResStatusHelper.delete(domain_id, 'register')
         }, 1500)
       })
   }
@@ -92,6 +120,7 @@ export const DomainField = observer(() => {
           domains={domains}
           deleteDomain={deleteDomain}
           verifyDomain={verifyDomain}
+          registerDomain={registerDomain}
           // updateDomain={updateDomain}
         />
       </Flex>

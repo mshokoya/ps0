@@ -10,7 +10,7 @@ pub struct Domain {
     pub verified: bool,
     pub mx_records: bool,
     pub txt_records: bool,
-    pub message: String,
+    pub message: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

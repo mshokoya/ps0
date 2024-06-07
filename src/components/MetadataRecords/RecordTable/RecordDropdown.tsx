@@ -1,7 +1,8 @@
+import { observer } from "@legendapp/state/react"
 import { IRecord } from "../../.."
 
 
-export const RecordDropdown = ({ record }: { record: IRecord }) => {
+export const RecordDropdown = observer(({ record }: { record: IRecord }) => {
   return (
     <tr className="hidden text-[0.9rem]">
       <table className="hidden">
@@ -64,4 +65,4 @@ export const RecordDropdown = ({ record }: { record: IRecord }) => {
       </table>
     </tr>
   )
-}
+})

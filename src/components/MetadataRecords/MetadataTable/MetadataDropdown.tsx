@@ -1,8 +1,9 @@
+import { observer } from "@legendapp/state/react"
 import { IMetaData } from "../../.."
 import { appState$ } from "../../../core/state"
 
 
-export const MetadataDropdown = ({ meta }: { meta: IMetaData }) => {
+export const MetadataDropdown = observer(({ meta }: { meta: IMetaData }) => {
   return (
     <tr className="hidden text-left">
       <table className="border-cyan-600 border-y text-[0.9rem]">
@@ -88,4 +89,4 @@ export const MetadataDropdown = ({ meta }: { meta: IMetaData }) => {
       </table>
     </tr>
   )
-}
+})

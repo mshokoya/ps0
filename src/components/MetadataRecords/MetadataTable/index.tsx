@@ -23,6 +23,8 @@ export const MetadataTable = observer(
     // const selectedMeta = useObservable<number>(-1)
       console.log("Metadata table")
 
+      console.log(metas)
+
     const handleExtendRow = (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {
       e.stopPropagation()
       //@ts-ignore

@@ -4,6 +4,7 @@ import { Button, Dialog, Flex, Spinner } from '@radix-ui/themes'
 import { DomainReqType, domainTaskHelper } from '../../../core/state/domain'
 import { IDomain } from '../../..'
 import { blinkCSS } from '../../../core/util'
+import { observer } from '@legendapp/state/react'
 
 type MProps = {
   handleRequest: (a: DomainReqType) => Promise<void>
@@ -11,10 +12,11 @@ type MProps = {
   domain: IDomain
 }
 
-export const DomainActionsComp = ({ handleRequest, domain, obs }: MProps) => {
+export const DomainActionsComp = observer(({ handleRequest, domain, obs }: MProps) => {
   const isVerifyReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'verify')
   const isDeleteReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'delete')
   const isUpdateReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'update')
+  const isRegisterReq = !!domainTaskHelper.findTaskByReqType(domain._id, 'register')
 
   return (
     <Flex direction="column">
@@ -53,8 +55,20 @@ export const DomainActionsComp = ({ handleRequest, domain, obs }: MProps) => {
           }}
           variant="outline"
         >
-          <Spinner loading={isDeleteReq} />
+          <Spinner loading={isUpdateReq} />
           Update domain
+        </Button>
+
+        <Button
+          disabled={isRegisterReq}
+          className={blinkCSS(isRegisterReq)}
+          onClick={() => {
+            handleRequest('register')
+          }}
+          variant="outline"
+        >
+          <Spinner loading={isRegisterReq} />
+          Register domain
         </Button>
       </Flex>
 
@@ -70,4 +84,4 @@ export const DomainActionsComp = ({ handleRequest, domain, obs }: MProps) => {
       </Flex>
     </Flex>
   )
-}
+})

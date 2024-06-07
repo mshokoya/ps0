@@ -35,7 +35,7 @@ pub async fn delete_domain(ctx: AppHandle, args: Domain) -> R<()> {
 }
 
 #[tauri::command]
-pub async fn add_domain(ctx: AppHandle, args: Domain) -> R<CreateDomain> {
+pub async fn register_domain(ctx: AppHandle, args: Domain) -> R<CreateDomain> {
   match ctx.state::<Forwarder>().add_domain(&args.domain).await {
     Ok(res) => R::ok_data(res),
     Err(_) => R::fail_none(None)

@@ -1,4 +1,4 @@
-import { useObservable } from '@legendapp/state/react'
+import { observer, useObservable } from '@legendapp/state/react'
 import { MetadataActions } from './Actions'
 import { UpdateFields } from './Update'
 import { IMetaData } from '../../..'
@@ -14,7 +14,7 @@ export type MetadataPopupProps = {
 
 export type MetadataPopupState = { input: IMetaData; page: 'main' | 'update' }
 
-export const MetadataPopup = (p: MetadataPopupProps) => {
+export const MetadataPopup = observer((p: MetadataPopupProps) => {
   const obs = useObservable<MetadataPopupState>({ input: cloneObject(p.meta), page: 'main' })
 
   const handleRequest = (h: MetadataReqType) => {
@@ -40,4 +40,4 @@ export const MetadataPopup = (p: MetadataPopupProps) => {
       )}
     </div>
   )
-}
+})

@@ -3,7 +3,7 @@ import { ResStatusHelpers, TaskHelpers, TaskInProcess } from '../util'
 import { ResStatus } from '.'
 
 export const domainState = observable<State>({
-  input: { email: '', domain: '' },
+  input: { domain: '' },
   selectedDomain: null,
   reqInProcess: {},
   reqType: null,
@@ -14,11 +14,11 @@ export const domainTaskHelper = TaskHelpers(domainState.reqInProcess)
 export const domainResStatusHelper = ResStatusHelpers(domainState.resStatus)
 
 export type State = {
-  input: { email: string; domain: string }
+  input: { domain: string }
   selectedDomain: number | null
   reqInProcess: TaskInProcess<DomainReqType>
   reqType: DomainReqType | null
   resStatus: ResStatus<DomainReqType>
 }
 
-export type DomainReqType = 'create' | 'verify' | 'delete' | 'update'
+export type DomainReqType = 'create' | 'verify' | 'delete' | 'update' | 'register'

@@ -10,14 +10,14 @@ use actions::apollo::{
     update::index::{update_account, update_domain, update_metadata, update_record},
     delete::index::{delete_accounts, delete_domains, delete_metadatas, delete_records},
     get::index::{get_accounts, get_domains, get_metadatas, get_records},
-    domain::index::{add_domain, verify_domain, delete_domain},
+    domain::index::{register_domain, verify_domain, delete_domain},
     check::index::check_task,
     demine::index::demine_task,
     login::index::login_task,
     create::index::create_task,
     scrape::index::scrape_task,
     cache::accounts_in_use,
-    add::index::add_account
+    add::index::{add_account, add_domain}
 };
 use libs::{cache::ApolloCache, forwarder::index::Forwarder, taskqueue::index::TaskQueue};
 use libs::{db::index::DB, scraper::Scraper};
@@ -84,11 +84,12 @@ async fn main() {
             create_task,
             confirm_task,
             scrape_task,
-            add_domain, 
+            register_domain, 
             verify_domain, 
             delete_domain,
             accounts_in_use,
-            add_account
+            add_account,
+            add_domain
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

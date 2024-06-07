@@ -1,4 +1,4 @@
-import { useObservable } from '@legendapp/state/react'
+import { observer, useObservable } from '@legendapp/state/react'
 import { DomainActionsComp } from './DomainActions'
 import { UpdateFields } from './UpdateDomain'
 import { IDomain } from '../../..'
@@ -7,12 +7,13 @@ import { DomainReqType } from '../../../core/state/domain'
 type Props = {
   verifyDomain: () => Promise<void>
   deleteDomain: () => Promise<void>
+  registerDomain: () => Promise<void>
   domain: IDomain
 }
 
 export type DomainPopupState = { input: { domain: string }; page: 'main' | 'update' }
 
-export const DomainPopup = (p: Props) => {
+export const DomainPopup = observer((p: Props) => {
   const obs = useObservable<DomainPopupState>({ input: { domain: p.domain.domain }, page: 'main' })
 
   const handleRequest = async (h: DomainReqType) => {
@@ -22,6 +23,9 @@ export const DomainPopup = (p: Props) => {
         break
       case 'verify':
         await p.verifyDomain()
+        break
+      case 'register':
+        await p.registerDomain()
         break
     }
   }
@@ -35,4 +39,4 @@ export const DomainPopup = (p: Props) => {
       )}
     </div>
   )
-}
+})

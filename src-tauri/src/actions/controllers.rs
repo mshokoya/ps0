@@ -6,9 +6,9 @@ use crate::libs::{
     db::accounts::types::AccountArg, taskqueue::types::{TQTimeout, TaskActionCTX}
 };
 
-// use super::apollo::{
-//     check::index::apollo_check, confirm::index::apollo_confirm, create::index::apollo_create, demine::index::apollo_demine, login::index::apollo_login, scrape::index::apollo_scrape
-// };
+use super::apollo::{
+    check::index::apollo_check, confirm::index::apollo_confirm, create::index::apollo_create, demine::index::apollo_demine, login::index::apollo_login, scrape::index::apollo_scrape
+};
 
 #[derive(Serialize, Debug)]
 pub struct Response<T> {
@@ -101,12 +101,12 @@ impl TaskType {
         args: Option<Value>,
     ) -> anyhow::Result<Option<Value>> {
         match self {
-            // TaskType::ApolloCheck => apollo_check(ctx, args).await,
-            // TaskType::ApolloDemine => apollo_demine(ctx, args).await,
-            // TaskType::ApolloLogin => apollo_login(ctx, args).await,
-            // TaskType::ApolloCreate => apollo_create(ctx, args).await,
-            // TaskType::ApolloConfirm => apollo_confirm(ctx, args).await,
-            // TaskType::ApolloScrape => apollo_scrape(ctx, args).await,
+            TaskType::ApolloCheck => apollo_check(ctx, args).await,
+            TaskType::ApolloDemine => apollo_demine(ctx, args).await,
+            TaskType::ApolloLogin => apollo_login(ctx, args).await,
+            TaskType::ApolloCreate => apollo_create(ctx, args).await,
+            TaskType::ApolloConfirm => apollo_confirm(ctx, args).await,
+            TaskType::ApolloScrape => apollo_scrape(ctx, args).await,
             _ => Ok(None),
         }
     }

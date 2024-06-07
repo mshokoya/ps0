@@ -1,6 +1,6 @@
 import { RiGhostLine } from 'react-icons/ri'
 import { BiSolidGhost } from 'react-icons/bi'
-import { useObservable, useSelector } from '@legendapp/state/react'
+import { observer, useObservable, useSelector } from '@legendapp/state/react'
 import { Tooltip } from 'react-tooltip'
 import { TaskViewPopup } from './TaskViewPopup'
 import { taskQueue } from '../../core/state/taskQueue'
@@ -13,7 +13,7 @@ type TaskViewState = {
   popup: boolean
 }
 
-export const TaskView = () => {
+export const TaskView = observer(() => {
   const tq = useSelector(taskQueue)
   const s = useObservable<TaskViewState>({
     selectedTask: null,
@@ -84,4 +84,4 @@ export const TaskView = () => {
       </div>
     </>
   )
-}
+})

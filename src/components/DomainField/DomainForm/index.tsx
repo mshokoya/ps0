@@ -1,23 +1,20 @@
 import { ObservablePrimitiveBaseFns } from '@legendapp/state'
 import { Box, Button, Flex, Tabs, Text, TextField } from '@radix-ui/themes'
 import { domainTaskHelper } from '../../../core/state/domain'
+import { observer } from '@legendapp/state/react'
 
 type Props = {
   addDomain: () => Promise<void>
   input: ObservablePrimitiveBaseFns<string>
 }
 
-export const DomainForms = ({ addDomain, input }: Props) => {
+export const DomainForms = observer(({ addDomain, input }: Props) => {
   const isCreateReq = !!domainTaskHelper.findTaskByReqType('domain', 'create')
 
   return (
     <Flex direction="column" gap="3" width="260px">
       <Tabs.Root defaultValue="domain">
-        <Tabs.List
-          onChange={() => {
-            console.log('changed')
-          }}
-        >
+        <Tabs.List>
           <Tabs.Trigger value="domain">Domain</Tabs.Trigger>
         </Tabs.List>
 
@@ -29,9 +26,7 @@ export const DomainForms = ({ addDomain, input }: Props) => {
       </Tabs.Root>
       <Box width="100px" mb="3">
         <Button
-          onChange={() => {
-            addDomain()
-          }}
+          onClick={() => {addDomain()}}
           size="1"
           disabled={isCreateReq}
         >
@@ -40,14 +35,14 @@ export const DomainForms = ({ addDomain, input }: Props) => {
       </Box>
     </Flex>
   )
-}
+})
 
 type DomainProps = {
   input: ObservablePrimitiveBaseFns<string>
   isCreateReq: boolean
 }
 
-export const DomainForm = ({ input, isCreateReq }: DomainProps) => {
+export const DomainForm = observer(({ input, isCreateReq }: DomainProps) => {
   return (
     <Flex direction="column" gap="1">
       <Flex align="center" gap="3">
@@ -69,4 +64,4 @@ export const DomainForm = ({ input, isCreateReq }: DomainProps) => {
       </Flex>
     </Flex>
   )
-}
+})

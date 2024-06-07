@@ -3,8 +3,9 @@ import { useState } from 'react'
 import { AccountField } from './AccountField'
 import { DomainField } from './DomainField'
 import { Separator } from '@radix-ui/themes'
+import { observer } from '@legendapp/state/react'
 
-export const Sidebar = () => {
+export const Sidebar = observer(() => {
   const [toggle, setToggle] = useState(true)
 
   return (
@@ -42,4 +43,4 @@ export const Sidebar = () => {
       <div className="h-full w-5 bg-cyan-500 z-3000" onClick={() => setToggle(!toggle)} />
     </div>
   )
-}
+})

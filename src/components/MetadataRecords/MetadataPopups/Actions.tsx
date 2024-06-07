@@ -4,6 +4,7 @@ import { MetadataPopupState } from '.'
 import { IMetaData } from '../../..'
 import { MetadataReqType, metadataTaskHelper } from '../../../core/state/metadata'
 import { blinkCSS } from '../../../core/util'
+import { observer } from '@legendapp/state/react'
 
 export type MetadataPopupProps = {
   meta: IMetaData
@@ -11,7 +12,7 @@ export type MetadataPopupProps = {
   obs: ObservableObject<MetadataPopupState>
 }
 
-export const MetadataActions = (p: MetadataPopupProps) => {
+export const MetadataActions = observer((p: MetadataPopupProps) => {
   const isContinueReq = !!metadataTaskHelper.findTaskByReqType(p.meta._id, 'continue')
   const isUpdateReq = !!metadataTaskHelper.findTaskByReqType(p.meta._id, 'update')
   const isDeleteReq = !!metadataTaskHelper.findTaskByReqType(p.meta._id, 'delete')
@@ -67,4 +68,4 @@ export const MetadataActions = (p: MetadataPopupProps) => {
       </Flex>
     </Flex>
   )
-}
+})

@@ -5,12 +5,13 @@ import { FaFacebookF, FaLinkedinIn, FaTwitter } from 'react-icons/fa'
 import { RecordDropdown } from './RecordDropdown'
 import { ScrollArea } from '@radix-ui/themes'
 import { IRecords } from '../../..'
+import { observer } from '@legendapp/state/react'
 
 type RecordsSubCompArgs = {
   filteredRecords: ObservableComputed<IRecords[]>
 }
 
-export const RecordTable = ({ filteredRecords }: RecordsSubCompArgs) => {
+export const RecordTable = observer(({ filteredRecords }: RecordsSubCompArgs) => {
   const handleExtendRow = (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {
     e.stopPropagation()
     //@ts-ignore
@@ -133,4 +134,4 @@ export const RecordTable = ({ filteredRecords }: RecordsSubCompArgs) => {
       </ScrollArea>
     </div>
   )
-}
+})

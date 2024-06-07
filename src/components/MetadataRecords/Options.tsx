@@ -2,8 +2,9 @@ import { ObservableComputed } from '@legendapp/state'
 import { Button, DropdownMenu } from '@radix-ui/themes'
 import { IRecords } from '../..'
 import { downloadData } from '../../core/util'
+import { observer } from '@legendapp/state/react'
 
-export const Options = ({
+export const Options = observer(({
   filteredRecords,
   deleteMeta
 }: {
@@ -53,4 +54,4 @@ export const Options = ({
       </DropdownMenu.Root>
     </div>
   )
-}
+})

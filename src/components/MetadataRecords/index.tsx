@@ -118,7 +118,7 @@ export const MetadataAndRecordField = observer(() => {
   }
 
   return (
-    <Flex className="overflow-scroll" direction="column">
+    <Flex className="overflow-scroll grow" direction="column">
       <Options deleteMeta={deleteMeta} filteredRecords={filteredRecords} />
       <Flex className="overflow-scroll grow" gap="2">
         <MetadataTable

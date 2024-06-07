@@ -1,7 +1,8 @@
 import { IDomain } from "../../.."
+import { observer } from "@legendapp/state/react"
 
 
-export const DomainDropdownTable = ({ domain }: { domain: IDomain }) => {
+export const DomainDropdownTable = observer(({ domain }: { domain: IDomain }) => {
   return (
     <tr className="hidden text-left">
       <table
@@ -29,4 +30,4 @@ export const DomainDropdownTable = ({ domain }: { domain: IDomain }) => {
       </table>
     </tr>
   )
-}
+})

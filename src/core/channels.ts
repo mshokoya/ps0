@@ -21,5 +21,6 @@ export const CHANNELS = {
   add_account: "add_account",
   verify_domain: "verify_domain", 
   delete_domain: "delete_domain",
+  register_domain: "register_domain",
   accounts_in_use: "accounts_in_use",
 }

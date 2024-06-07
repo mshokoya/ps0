@@ -1,5 +1,6 @@
 import { IoMdClose } from 'react-icons/io'
 import { TQTask } from '../..'
+import { observer } from '@legendapp/state/react'
 
 type Props = {
   setPopup: () => void
@@ -9,7 +10,7 @@ type Props = {
 
 type TaskViewReqType = 'delete'
 
-export const TaskViewPopup = (p: Props) => {
+export const TaskViewPopup = observer((p: Props) => {
   const handleClose = () => p.setPopup()
   const handleRequest = async (h: TaskViewReqType) => {
     switch (h) {
@@ -74,4 +75,4 @@ export const TaskViewPopup = (p: Props) => {
       </div>
     </div>
   )
-}
+})

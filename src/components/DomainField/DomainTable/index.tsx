@@ -13,6 +13,7 @@ type Props = {
   domains: IDomain[]
   deleteDomain: () => Promise<void>
   verifyDomain: () => Promise<void>
+  registerDomain: () => Promise<void>
 }
 
 export const DomainTable = observer((p: Props) => {
@@ -103,7 +104,11 @@ export const DomainTable = observer((p: Props) => {
 
       <Dialog.Content maxWidth="450px">
         {domainState.selectedDomain && (
-          <DomainPopup {...p} domain={p.domains[domainState.selectedDomain.get()]} />
+          <DomainPopup 
+            {...p} 
+            domain={p.domains[domainState.selectedDomain.get()]} 
+            registerDomain={p.registerDomain}
+          />
         )}
       </Dialog.Content>
     </Dialog.Root>

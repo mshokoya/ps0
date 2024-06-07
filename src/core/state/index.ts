@@ -35,27 +35,22 @@ Promise.all([
   invoke<R<IAccount[]>>(CHANNELS.get_accounts)
     .then((data) => data.data)
     .catch(() => []),
-  // invoke<R<IDomain[]>>(CHANNELS.get_domains)
-  //   .then((data) => data.data)
-  //   .catch(() => []),
-  // // invoke<IProxy[]>('proxy', CHANNELS.a_proxyGetAll)
-  // //   .then((data) => data.data)
-  // //   .catch(() => []),
-  // invoke<R<IMetaData[]>>(CHANNELS.get_metadatas)
-  //   .then((data) => data.data)
-  //   .catch(() => []),
-  // invoke<R<IRecords[]>>(CHANNELS.get_records)
-  //   .then((data) => data.data)
-  //   .catch(() => [])
+  invoke<R<IDomain[]>>(CHANNELS.get_domains)
+    .then((data) => data.data)
+    .catch(() => []),
+  invoke<R<IMetaData[]>>(CHANNELS.get_metadatas)
+    .then((data) => data.data)
+    .catch(() => []),
+  invoke<R<IRecords[]>>(CHANNELS.get_records)
+    .then((data) => data.data)
+    .catch(() => [])
 ]).then((r) => {
   //  ORDER MATTERS
   appState$.set({
     accounts: r[0],
-    domains: domainMockData,
-    // domains: r[1],
-    // proxies: r[2],
-    metas: metaMockData,
-    records: recordMockData
+    domains: r[1],
+    metas: r[2],
+    records: r[3]
   })
 })
 
