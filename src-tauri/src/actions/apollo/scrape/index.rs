@@ -57,7 +57,7 @@ pub async fn scrape_task(ctx: AppHandle, args: Value) -> R<()> {
       cache.add_accounts(meta_id.as_ref().unwrap().as_str().unwrap(), &mut vec![account_id.clone()]).await;
 
       ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Id::uuid(),
+        task_id: Id::uuid().to_string(),
         task_type: TaskType::ApolloScrape,
         task_group: TaskGroup::Apollo,
         message: "Scraping",

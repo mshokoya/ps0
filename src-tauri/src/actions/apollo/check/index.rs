@@ -33,7 +33,7 @@ pub fn check_task(ctx: AppHandle, mut args: Value) -> R<()> {
     };
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Id::uuid(),
+        task_id: Id::uuid().to_string(),
         task_type: TaskType::ApolloCheck,
         task_group: TaskGroup::Apollo,
         message: "Getting credits",

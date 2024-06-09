@@ -33,7 +33,7 @@ pub fn create_task(ctx: AppHandle, args: Value) -> R<()> {
     };
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Id::uuid(),
+        task_id: Id::uuid().to_string(),
         task_type: TaskType::ApolloCreate,
         task_group: TaskGroup::Apollo,
         message: "Creating account",

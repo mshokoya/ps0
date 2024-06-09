@@ -183,10 +183,10 @@ export const AccountField = observer(() => {
 
       await invoke<R<void>>(CHANNELS.demine_task, {args: {
         account_id,
-        timeout: {
-          time: 10000,
-          rounds: 2
-        }
+        // timeout: {
+        //   time: 10000,
+        //   rounds: 2
+        // }
       }}).then((data) => {
         data.ok
           ? stateResStatusHelper.add(account_id, ['mines', 'ok'])

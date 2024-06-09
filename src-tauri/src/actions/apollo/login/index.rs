@@ -26,7 +26,7 @@ pub fn login_task(ctx: AppHandle, args: Value) -> R<()> {
     };
 
     ctx.state::<TaskQueue>().w_enqueue(Task {
-        task_id: Id::uuid(),
+        task_id: Id::uuid().to_string(),
         task_type: TaskType::ApolloLogin,
         task_group: TaskGroup::Apollo,
         message: "Demine account popups",

@@ -34,6 +34,10 @@ mailparse = "0.15.0"
 url-build-parse = "12.1.0"
 reqwest = { version="0.12.4", features = ["json"] }
 surrealdb = {version = "1.5.1", features = ["kv-rocksdb"] }
+dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
+get-port = "4.0.0"
+async-http-proxy = { version="1.2.5", features = ["runtime-async-std", "basic-auth"] }
 
 
 [features]

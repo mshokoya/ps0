@@ -11,3 +11,5 @@ test-polo.db.wal
 file.txt
 file2.txt
 todo.txt
+
+.env

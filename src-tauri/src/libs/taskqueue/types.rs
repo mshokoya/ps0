@@ -2,7 +2,6 @@ use async_std::task::{spawn, JoinHandle};
 use chromiumoxide::Page;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use surrealdb::sql::Id;
 use tauri::AppHandle;
 
 use crate::actions::controllers::TaskType;
@@ -16,7 +15,7 @@ pub struct TQTimeout {
 
 #[derive(Clone, Debug)]
 pub struct Task {
-    pub task_id: Id,
+    pub task_id: String,
     pub task_group: TaskGroup,
     pub task_type: TaskType,
     pub message: &'static str,
@@ -33,7 +32,7 @@ pub struct Process {
 
 #[derive(Clone, Serialize, Debug)]
 pub struct TaskEvent<'a> {
-    pub task_id: &'a Id,
+    pub task_id: &'a String,
     pub message: String,
     pub ok: Option<bool>,
     pub task_type: TaskType,
@@ -70,7 +69,7 @@ impl Into<&str> for TaskGroup {
 pub struct TaskActionCTX {
     pub handle: AppHandle,
     pub page: Option<Page>,
-    pub task_id: Id,
+    pub task_id: String,
 }
 
 impl Drop for TaskActionCTX {

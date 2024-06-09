@@ -1,7 +1,6 @@
-use crate::actions::controllers::TaskType;
+use crate::{actions::controllers::TaskType, libs::taskqueue::types::TaskActionCTX};
 use async_std::task::{sleep, spawn};
 use serde_json::to_value;
-use surrealdb::sql::Id;
 use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -106,7 +105,7 @@ impl TaskQueue {
         self.exec();
     }
 
-    pub fn p_dequeue(&self, task_id: &Id) {
+    pub fn p_dequeue(&self, task_id: &String) {
         let ps = remove_process(&self.process_queue, task_id).unwrap();
         let mut task = ps.task.clone();
 
@@ -231,35 +230,35 @@ impl TaskQueue {
         let tsk_cln = task.clone();
 
         let ps = spawn(async move {
-            // let mut ok: bool = false;
-            // let mut message = "removed completed task from queue".to_string();
-            // let metadata = match tsk_cln
-            //     .task_type
-            //     .exec(
-            //         TaskActionCTX {
-            //             handle: handle.clone(),
-            //             task_id: tsk_cln.task_id,
-            //             page: None,
-            //         },
-            //         tsk_cln.args,
-            //     )
-            //     .await
-            // {
-            //     Ok(val) => {
-            //         ok = true;
-            //         val
-            //     }
-            //     Err(err) => {
-            //         message = err.to_string();
-            //         ok = false;
-            //         None
-            //     }
-            // };
+            let mut ok: bool = false;
+            let mut message = "removed completed task from queue".to_string();
+            let metadata = match tsk_cln
+                .task_type
+                .exec(
+                    TaskActionCTX {
+                        handle: handle.clone(),
+                        task_id: tsk_cln.task_id.clone(),
+                        page: None,
+                    },
+                    tsk_cln.args,
+                )
+                .await
+            {
+                Ok(val) => {
+                    ok = true;
+                    val
+                }
+                Err(err) => {
+                    message = err.to_string();
+                    ok = false;
+                    None
+                }
+            };
 
-            sleep(Duration::from_secs(5)).await;
-            let ok = true;
-            let message = "removed completed task from queue".to_string();
-            let metadata = to_value("fkldjnswkdsfoasld").ok();
+            // sleep(Duration::from_secs(5)).await;
+            // let ok = true;
+            // let message = "removed completed task from queue".to_string();
+            // let metadata = to_value("fkldjnswkdsfoasld").ok();
 
 
             handle
@@ -287,13 +286,13 @@ impl TaskQueue {
     }
 }
 
-// fn remove_task(queue: &Mutex<VecDeque<Task>>, task_id: &Id) -> Option<Task> {
+// fn remove_task(queue: &Mutex<VecDeque<Task>>, task_id: &String) -> Option<Task> {
 //     let mut tq = queue.lock().unwrap();
 //     let idx = tq.iter().position(|t| t.task_id == *task_id).unwrap_or(225);
 //     tq.swap_remove_back(idx)
 // }
 
-fn remove_process(queue: &Mutex<VecDeque<Process>>, task_id: &Id) -> Option<Process> {
+fn remove_process(queue: &Mutex<VecDeque<Process>>, task_id: &String) -> Option<Process> {
     let mut pq = queue.lock().unwrap();
     let idx = pq
         .iter()
