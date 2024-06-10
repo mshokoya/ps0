@@ -1,15 +1,17 @@
 use std::{convert::Infallible, net::SocketAddr};
-use headers::{authorization::Basic, Authorization};
 use async_std::task::{block_on, spawn, JoinHandle};
-use chromiumoxide::{error::CdpError, Browser, BrowserConfig, Page};
+use chromiumoxide::{cdp::browser_protocol::network::{EventRequestWillBeSent, Headers, SetExtraHttpHeadersParams}, error::CdpError, Browser, BrowserConfig, Page};
 use futures::StreamExt;
-use hyper::{client::HttpConnector, service::{make_service_fn, service_fn}, Body, Client, Request, Response, Server, StatusCode};
-use hyper_proxy::{Intercept, Proxy, ProxyConnector};
 use dotenv_codegen::dotenv;
+use serde_json::json;
 
 pub struct Scraper {
     pub browser: Option<Browser>,
-    // handler: Option<Handler>,
+}
+
+pub struct Pagee {
+    page: Page,
+    listener: JoinHandle<()>
 }
 
 unsafe impl Send for Scraper {}
@@ -48,5 +50,36 @@ impl Scraper {
             .await
             .unwrap();
         ctx.new_page("about:blank").await
+    }
+
+    pub async fn incog2(&mut self) -> Result<Pagee, CdpError> {
+        // page.disable_log().await?.disable_debugger().await?;
+        //     page.enable_stealth_mode().await?;
+        let ctx = self
+            .browser
+            .as_mut()
+            .unwrap()
+            .start_incognito_context()
+            .await?;
+
+        let page = ctx.new_page("about:blank").await?;
+        let mut request_will_be_sent = page.event_listener::<EventRequestWillBeSent>().await?.fuse();
+        let page_clone = page.clone();
+        let listener = async_std::task::spawn(async move {
+            while let Some(_) = request_will_be_sent.next().await {
+                let _ = page_clone.execute(
+                    SetExtraHttpHeadersParams::new(Headers::new(json!({
+                        "Proxy-Authorization": dotenv!("FS_B")
+                    })))
+                    ).await;
+            }
+        });
+
+        Ok(
+            Pagee {
+                page,
+                listener
+            }
+        )
     }
 }

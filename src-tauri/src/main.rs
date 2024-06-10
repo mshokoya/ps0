@@ -31,26 +31,26 @@ static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 #[async_std::main]
 async fn main() {
 
-    let (mut rx, mut child) = Command::new_sidecar("node")
-        .expect("failed to create `my-sidecar` binary command")
-        .args(vec!["resources/proxy-server.js", dotenv_codegen::dotenv!("FS_PXY_HTTP")])
-        .spawn()
-        .expect("Failed to spawn sidecar");
+    // let (mut rx, mut child) = Command::new_sidecar("node")
+    //     .expect("failed to create `my-sidecar` binary command")
+    //     .args(vec!["resources/proxy-server.js", dotenv_codegen::dotenv!("FS_PXY_HTTP")])
+    //     .spawn()
+    //     .expect("Failed to spawn sidecar");
 
-        tauri::async_runtime::spawn(async move {
-            #[cfg(debug_assertions)]
-            while let Some(event) = rx.recv().await {
-                match event {
-                    CommandEvent::Stdout(line) => {
-                        println!("[server] {:?}", line);
-                    }
-                    CommandEvent::Stderr(line) => {
-                        println!("[server] {:?}", line);
-                    }
-                    _ => {}
-                }
-            }
-        });
+    //     tauri::async_runtime::spawn(async move {
+    //         #[cfg(debug_assertions)]
+    //         while let Some(event) = rx.recv().await {
+    //             match event {
+    //                 CommandEvent::Stdout(line) => {
+    //                     println!("[server] {:?}", line);
+    //                 }
+    //                 CommandEvent::Stderr(line) => {
+    //                     println!("[server] {:?}", line);
+    //                 }
+    //                 _ => {}
+    //             }
+    //         }
+    //     });
 
         // match app.app_handle().shell().sidecar("server") {
         //     Ok(server) => match server.spawn() {
