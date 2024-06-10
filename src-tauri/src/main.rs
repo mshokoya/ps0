@@ -24,13 +24,57 @@ use libs::{db::index::DB, scraper::Scraper};
 use libs::imap::IMAP;
 use once_cell::sync::Lazy;
 use std::env;
-use tauri::Manager;
+use tauri::{api::process::{Command, CommandEvent}, window, Manager};
 
 static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
 
 #[async_std::main]
-// https://stackoverflow.com/questions/73551266/tauri-is-there-some-way-to-access-apphandler-or-window-in-regular-struct-or-sta
 async fn main() {
+
+    let (mut rx, mut child) = Command::new_sidecar("node")
+        .expect("failed to create `my-sidecar` binary command")
+        .args(vec!["resources/proxy-server.js", dotenv_codegen::dotenv!("FS_PXY_HTTP")])
+        .spawn()
+        .expect("Failed to spawn sidecar");
+
+        tauri::async_runtime::spawn(async move {
+            #[cfg(debug_assertions)]
+            while let Some(event) = rx.recv().await {
+                match event {
+                    CommandEvent::Stdout(line) => {
+                        println!("[server] {:?}", line);
+                    }
+                    CommandEvent::Stderr(line) => {
+                        println!("[server] {:?}", line);
+                    }
+                    _ => {}
+                }
+            }
+        });
+
+        // match app.app_handle().shell().sidecar("server") {
+        //     Ok(server) => match server.spawn() {
+        //         Ok((mut rx, _)) => {
+        //             tauri::async_runtime::spawn(async move {
+        //                 #[cfg(debug_assertions)]
+        //                 while let Some(event) = rx.recv().await {
+        //                     match event {
+        //                         CommandEvent::Stdout(line) => {
+        //                             println!("[server] {:?}", String::from_utf8(line));
+        //                         }
+        //                         CommandEvent::Stderr(line) => {
+        //                             println!("[server] {:?}", String::from_utf8(line));
+        //                         }
+        //                         _ => {}
+        //                     }
+        //                 }
+        //             });
+        //         }
+        //         Err(err) => panic!("{err}"),
+        //     },
+        //     Err(err) => panic!("Server failed to start {}", err),
+        // };
+
 
     tauri::Builder::default()
     .setup(|app| {
@@ -50,7 +94,7 @@ async fn main() {
 
         // scraper
         async_std::task::block_on(async {
-            unsafe { SCRAPER.init().await.unwrap() };
+            unsafe { SCRAPER.init().await };
         });
         
         let app_handle = app.app_handle().clone();

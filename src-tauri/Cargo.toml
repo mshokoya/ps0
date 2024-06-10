@@ -11,7 +11,7 @@ edition = "2021"
 tauri-build = { version = "1", features = [] }
 
 [dependencies]
-tauri = { version = "1", features = ["shell-open"] }
+tauri = { version = "1", features = [ "shell-sidecar", "shell-open", "process-command-api"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chromiumoxide = { version = "0.5.7", default-features = false, features = [
@@ -36,9 +36,6 @@ reqwest = { version="0.12.4", features = ["json"] }
 surrealdb = {version = "1.5.1", features = ["kv-rocksdb"] }
 dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
-get-port = "4.0.0"
-async-http-proxy = { version="1.2.5", features = ["runtime-async-std", "basic-auth"] }
-
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

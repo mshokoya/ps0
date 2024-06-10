@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 # /**/mockdata.ts
+
+binaries
+resources
