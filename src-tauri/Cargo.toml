@@ -36,6 +36,11 @@ reqwest = { version="0.12.4", features = ["json"] }
 surrealdb = {version = "1.5.1", features = ["kv-rocksdb"] }
 dotenv = "0.15.0"
 dotenv_codegen = "0.15.0"
+get-port = "4.0.0"
+hyper = { version = "0.14", features = ["client", "http1"] }
+hyper-proxy = "0.9.1"
+headers = "0.3.9"
+
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!

@@ -55,9 +55,14 @@ pub async fn apollo_demine(
             return Err(anyhow!("Failed to find registered account"))
         };
 
+    // =============
     ctx.page = Some(unsafe { SCRAPER.incog().await? });
+    // // =============
+    //     let t = unsafe { SCRAPER.incog2().await? };
+    //     ctx.page = Some(t.page);
+    // // =============
 
-    log_into_apollo(&ctx, &account).await?;
+    // log_into_apollo(&ctx, &account).await?;
 
     loop {
         sleep(Duration::from_secs(5)).await;

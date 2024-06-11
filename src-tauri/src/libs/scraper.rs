@@ -1,17 +1,17 @@
 use std::{convert::Infallible, net::SocketAddr};
+use headers::{authorization::Basic, Authorization};
 use async_std::task::{block_on, spawn, JoinHandle};
-use chromiumoxide::{cdp::browser_protocol::network::{EventRequestWillBeSent, Headers, SetExtraHttpHeadersParams}, error::CdpError, Browser, BrowserConfig, Page};
+use chromiumoxide::{error::CdpError, Browser, BrowserConfig, Page};
 use futures::StreamExt;
+use hyper::{client::HttpConnector, service::{make_service_fn, service_fn}, Body, Client, Request, Response, StatusCode};
+use hyper_proxy::{Intercept, Proxy, ProxyConnector};
 use dotenv_codegen::dotenv;
-use serde_json::json;
+
+use crate::PS_ADDR;
 
 pub struct Scraper {
     pub browser: Option<Browser>,
-}
-
-pub struct Pagee {
-    page: Page,
-    listener: JoinHandle<()>
+    // handler: Option<Handler>,
 }
 
 unsafe impl Send for Scraper {}
@@ -23,8 +23,16 @@ impl Scraper {
     }
 
     pub async fn init(&mut self) {
+        let ps_addr =  unsafe { PS_ADDR.get().unwrap() };
+        println!("THIS IS THE ADDR");
+        println!("{ps_addr}");
+        println!("{ps_addr}");
         let (browser, mut handler) = block_on(async {
-            Browser::launch(BrowserConfig::builder().with_head().build().unwrap())
+            Browser::launch(BrowserConfig::builder()
+                .with_head()
+                .arg(format!("--proxy-server={}", ps_addr))
+                .build()
+                .unwrap())
                 .await
                 .unwrap()
         });
@@ -49,37 +57,77 @@ impl Scraper {
             .start_incognito_context()
             .await
             .unwrap();
-        ctx.new_page("about:blank").await
-    }
-
-    pub async fn incog2(&mut self) -> Result<Pagee, CdpError> {
-        // page.disable_log().await?.disable_debugger().await?;
-        //     page.enable_stealth_mode().await?;
-        let ctx = self
-            .browser
-            .as_mut()
-            .unwrap()
-            .start_incognito_context()
-            .await?;
-
-        let page = ctx.new_page("about:blank").await?;
-        let mut request_will_be_sent = page.event_listener::<EventRequestWillBeSent>().await?.fuse();
-        let page_clone = page.clone();
-        let listener = async_std::task::spawn(async move {
-            while let Some(_) = request_will_be_sent.next().await {
-                let _ = page_clone.execute(
-                    SetExtraHttpHeadersParams::new(Headers::new(json!({
-                        "Proxy-Authorization": dotenv!("FS_B")
-                    })))
-                    ).await;
-            }
-        });
-
-        Ok(
-            Pagee {
-                page,
-                listener
-            }
-        )
+        ctx.new_page("https://www.google.com").await
     }
 }
+
+
+// struct ProxyServer(pub JoinHandle<()>);
+
+// impl ProxyServer {
+
+//     pub async fn new() -> Self {
+//         ProxyServer(
+//             spawn(async {
+//                 let addr = SocketAddr::from(([127, 0, 0, 1], 8100));
+
+//                 let client = Client::builder()
+//                     .http1_title_case_headers(true)
+//                     .http1_preserve_header_case(true)
+//                     .build_http();
+
+//                 let make_service = make_service_fn(move |_| {
+//                     let client = client.clone();
+//                     async move { Ok::<_, Infallible>(service_fn(move |req| Self::proxy(client.clone(), req))) }
+//                 });
+
+//                 let server = Server::bind(&addr)
+//                     .http1_preserve_header_case(true)
+//                     .http1_title_case_headers(true)
+//                     .serve(make_service);
+
+//                 println!("Listening on http://{}", addr);
+
+//                 if let Err(e) = server.await {
+//                     eprintln!("server error: {}", e);
+//                 };
+//             })
+//         )
+//     }
+
+//     async fn proxy_client() {
+//         let mut proxy = Proxy::new(Intercept::All, dotenv!("FS_PXY").parse().unwrap());
+//         proxy.set_authorization(Authorization::basic(dotenv!("FS_UN"), dotenv!("FS_PW")));
+//         let connector = HttpConnector::new();
+//         let proxy_connector = ProxyConnector::from_proxy(connector, proxy).unwrap();
+        
+//         Client::builder()
+//             .build(proxy);
+//     }
+
+//     // async fn proxy(_client: Client<HttpConnector>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+//     //     let headers = req.headers().clone();
+//     //     println!("headers: {:?}", headers);
+//     //     let path = req.uri().path().to_string();
+//     //     let resp = Self::get_response(_client, req).await?;
+//     //     Ok(resp)
+//     // }
+
+//     async fn get_response(client: Client<HttpConnector>, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+//         let headers = req.headers().clone();
+//         let mut request_builder = Request::builder()
+//             .method(req.method())
+//             .uri(req.uri())
+//             .body(req.into_body())
+//             .unwrap();
+    
+//         *request_builder.headers_mut() = headers;
+//         let response = client.request(request_builder).await?;
+//         let body = hyper::body::to_bytes(response.into_body()).await?;
+//         let body = String::from_utf8(body.to_vec()).unwrap();
+    
+//         let mut resp = Response::new(Body::from(body));
+//         *resp.status_mut() = StatusCode::OK;
+//         Ok(resp)
+//     }
+// }
