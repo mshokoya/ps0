@@ -64,12 +64,10 @@ async fn main() {
                         println!("[server] {:?}", line);
                         match address_regex.captures(&line) {
                             Some(cpt) => {
-                                
                                 unsafe { 
                                     if PS_ADDR.0.is_none() {
                                         PS_ADDR.set(cpt["address"].to_string()) 
                                     }
-                                    
                                 };
                                 return 
                             },
@@ -84,30 +82,6 @@ async fn main() {
                 }
             }
         });
-
-        // match app.app_handle().shell().sidecar("server") {
-        //     Ok(server) => match server.spawn() {
-        //         Ok((mut rx, _)) => {
-        //             tauri::async_runtime::spawn(async move {
-        //                 #[cfg(debug_assertions)]
-        //                 while let Some(event) = rx.recv().await {
-        //                     match event {
-        //                         CommandEvent::Stdout(line) => {
-        //                             println!("[server] {:?}", String::from_utf8(line));
-        //                         }
-        //                         CommandEvent::Stderr(line) => {
-        //                             println!("[server] {:?}", String::from_utf8(line));
-        //                         }
-        //                         _ => {}
-        //                     }
-        //                 }
-        //             });
-        //         }
-        //         Err(err) => panic!("{err}"),
-        //     },
-        //     Err(err) => panic!("Server failed to start {}", err),
-        // };
-
 
     tauri::Builder::default()
     .setup(|app| {
