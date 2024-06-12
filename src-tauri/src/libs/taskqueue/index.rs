@@ -1,6 +1,6 @@
 use crate::{actions::controllers::TaskType, libs::taskqueue::types::TaskActionCTX};
 use async_std::task::{sleep, spawn};
-use serde_json::to_value;
+use serde_json::{json, to_value};
 use std::collections::VecDeque;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -34,7 +34,8 @@ impl TaskQueue {
         }
     }
 
-    pub fn w_enqueue(&self, task: Task) {
+    pub fn w_enqueue(&self, mut task: Task) {
+        update_metadata(&mut task, "waiting");
         let task_cln = task.clone();
         self.wait_queue.lock().unwrap().push_back(task_cln);
         self.app_handle
@@ -82,7 +83,8 @@ impl TaskQueue {
         Some(task)
     }
 
-    fn p_enqueue(&self, process: Process) {
+    fn p_enqueue(&self, mut process: Process) {
+        update_metadata(&mut process.task, "processing");
         let task = process.task.clone();
         self.process_queue.lock().unwrap().push_back(process);
         self.app_handle
@@ -138,7 +140,8 @@ impl TaskQueue {
             .unwrap();
     }
 
-    fn t_enqueue(&self, task: Task) {
+    fn t_enqueue(&self, mut task: Task) {
+        update_metadata(&mut task, "timeout");
         let task_cln = task.clone();
         if let Some(timeout) = task_cln.timeout {
             let app_handle = self.app_handle.clone();
@@ -299,4 +302,10 @@ fn remove_process(queue: &Mutex<VecDeque<Process>>, task_id: &String) -> Option<
         .position(|t| t.task.task_id == *task_id)
         .unwrap_or(225);
     pq.swap_remove_back(idx)
+}
+
+fn update_metadata(task: &mut Task, val: &str) {
+    let mut md = task.metadata.clone().unwrap();
+    *md.get_mut("queue").unwrap() = json!(val);
+    task.metadata = Some(md);
 }

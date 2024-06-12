@@ -3,7 +3,7 @@ import { TaskQueueHelper } from '../util'
 import { TaskQueue, TQTask } from '../..'
 
 export const taskQueue = observable<TaskQueue>({
-  queue: [],
+  waiting: [],
   processing: [],
   timeout: []
 })

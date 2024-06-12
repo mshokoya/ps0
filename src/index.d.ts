@@ -26,7 +26,7 @@ type TQTask<TM = Record<string, any> & {queue: keyof TaskQueue},  AM = Record<st
 }
 
 type TaskQueue = {
-  queue: TQTask[]
+  waiting: TQTask[]
   processing: TQTask[]
   timeout: TQTask[]
 }

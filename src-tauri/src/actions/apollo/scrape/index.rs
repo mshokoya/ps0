@@ -104,7 +104,7 @@ pub async fn apollo_scrape(
     let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
-      let credits_left = old_credits.credits_limit - old_credits.credits_used;
+      let credits_left = old_credits.credit_limit - old_credits.credits_used;
       if credits_left <= 0 { return Ok(None) }
 
       let mut num_leads_to_scrape = cmp::min(args.max_leads_limit, credits_left.into());
@@ -572,7 +572,7 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
         "last_used": time_ms().to_string(),
         "history": &account.history,
         "credits_used": credits.credits_used.to_string(),
-        "credits_limit": credits.credits_limit.to_string(),
+        "credit_limit": credits.credit_limit.to_string(),
         "renewal_date": credits.renewal_date.to_string(),
         "renewal_start_date": credits.renewal_start_date.to_string(),
         "renewal_end_date": credits.renewal_end_date.to_string(),

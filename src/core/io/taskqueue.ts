@@ -3,6 +3,7 @@ import { taskQueueHelper } from '../state/taskQueue'
 import { handleApolloTaskQueueEvents } from './apollo'
 
 export function handleTaskQueueEvent(res: TQTask) {
+  console.log(res)
   switch (res.task_type) {
     case 'Enqueue':
       taskQueueHelper.addToQueue(res.metadata.queue, res)

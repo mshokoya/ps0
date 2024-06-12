@@ -166,7 +166,7 @@ pub async fn apollo_login_credits_info(
 
     let credits_info: Vec<&str> = credits_evaluate.email_credits_info.split(' ').collect();
     let credits_used = credits_info[0].parse::<u16>()?;
-    let credits_limit = credits_info[2].replace(",", "").parse::<u16>()?;
+    let credit_limit = credits_info[2].replace(",", "").parse::<u16>()?;
     let renewal_date = credits_evaluate
         .renewal_date
         .split(':')
@@ -183,7 +183,7 @@ pub async fn apollo_login_credits_info(
 
     Ok(CreditsInfo {
         credits_used,
-        credits_limit,
+        credit_limit,
         renewal_date,
         renewal_start_date,
         renewal_end_date,

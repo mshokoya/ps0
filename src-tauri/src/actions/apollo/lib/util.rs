@@ -45,7 +45,7 @@ pub struct CreditsEval {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreditsInfo {
     pub credits_used: u16,
-    pub credits_limit: u16,
+    pub credit_limit: u16,
     pub renewal_date: String,
     pub renewal_start_date: String,
     pub renewal_end_date: String,
