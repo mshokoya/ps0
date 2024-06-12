@@ -565,7 +565,7 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
   
   let db_state = ctx.handle.state::<DB>();
   let db_guard = db_state.0.lock().await;
-  let query = db_guard
+  let _ = db_guard
     .query(query.join(" "))
     .bind(("accountdata", to_value(json!({
         "cookies": cookies,

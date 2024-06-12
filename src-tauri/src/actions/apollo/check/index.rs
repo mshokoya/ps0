@@ -23,7 +23,7 @@ pub fn check_task(ctx: AppHandle, mut args: Value) -> R<()> {
     };
 
     let metadata = match args.get("account_id") {
-        Some(val) => Some(val.to_owned()),
+        Some(val) => Some(json!({"account_id": val}) ),
         None => return R::fail_none(Some("account not found")),
     };
 

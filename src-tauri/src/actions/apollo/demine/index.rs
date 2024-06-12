@@ -1,5 +1,4 @@
 use std::time::Duration;
-
 use anyhow::{anyhow, Result};
 use async_std::task::sleep;
 use serde_json::{json, Value};
@@ -23,7 +22,7 @@ use super::types::ApolloDemineArgs;
 #[tauri::command]
 pub fn demine_task(ctx: AppHandle, args: Value) -> R<()> {
     let metadata = match args.get("account_id") {
-        Some(val) => Some(val.clone()),
+        Some(val) => Some( json!({ "account_id": val}) ),
         None => None,
     };
 
@@ -55,14 +54,9 @@ pub async fn apollo_demine(
             return Err(anyhow!("Failed to find registered account"))
         };
 
-    // =============
     ctx.page = Some(unsafe { SCRAPER.incog().await? });
-    // // =============
-    //     let t = unsafe { SCRAPER.incog2().await? };
-    //     ctx.page = Some(t.page);
-    // // =============
 
-    // log_into_apollo(&ctx, &account).await?;
+    log_into_apollo(&ctx, &account).await?;
 
     loop {
         sleep(Duration::from_secs(5)).await;

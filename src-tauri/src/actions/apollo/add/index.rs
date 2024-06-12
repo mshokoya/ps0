@@ -60,7 +60,7 @@ pub async fn add_account(ctx: AppHandle, args: Value) -> R<Account> {
         }
     ).await {
         Ok(account) => R::ok_data(account.unwrap()),
-        Err(e) => {
+        Err(_) => {
             return R::fail_none(Some("Failed to register account"))
         }
     }
@@ -73,15 +73,12 @@ struct NewDomainArg {
 
 #[tauri::command]
 pub async fn add_domain(ctx: AppHandle, args: Value) -> R<Domain> {
-    println!("{args:?}");
     let args: NewDomainArg = match from_value(args) {
         Ok(acc) => acc,
         Err(_) => {return R::fail_none(Some("failed to parse arg"))}
     };
 
     let _id = Id::rand().to_string();
-
-    println!("{args:?}");
 
     match ctx.state::<DB>().insert_one::<Domain>(
         "domain", 
@@ -96,7 +93,7 @@ pub async fn add_domain(ctx: AppHandle, args: Value) -> R<Domain> {
         }
     ).await {
         Ok(domain) => R::ok_data(domain.unwrap()),
-        Err(e) => {
+        Err(_) => {
             return R::fail_none(Some("Failed to register domain"))
         }
     }

@@ -5,7 +5,7 @@ use serde::Deserialize;
 use simple_password_generator::PasswordGenerator;
 use anyhow::{anyhow, Result};
 use async_std::task::sleep;
-use serde_json::{from_value, Value};
+use serde_json::{from_value, json, Value};
 use surrealdb::sql::{Id, json};
 use tauri::{AppHandle, Manager};
 use fake::Fake;
@@ -31,7 +31,7 @@ struct ApolloConfirmArgs {
 #[tauri::command]
 pub fn confirm_task(ctx: AppHandle, args: Value) -> R<()> {
     let metadata = match args.get("account_id") {
-        Some(val) => Some(val.clone()),
+        Some(val) => Some( json!({"account_id": val}) ),
         None => None,
     };
 

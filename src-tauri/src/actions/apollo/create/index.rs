@@ -86,7 +86,7 @@ pub async fn apollo_create(
     let account_id = Id::rand().to_string();
     let db = ctx.handle.state::<DB>();
 
-    db.insert_one::<Account>(
+    let _ = db.insert_one::<Account>(
         "account", 
         &account_id,
             to_value(

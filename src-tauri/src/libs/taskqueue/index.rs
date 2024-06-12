@@ -305,7 +305,5 @@ fn remove_process(queue: &Mutex<VecDeque<Process>>, task_id: &String) -> Option<
 }
 
 fn update_metadata(task: &mut Task, val: &str) {
-    let mut md = task.metadata.clone().unwrap();
-    *md.get_mut("queue").unwrap() = json!(val);
-    task.metadata = Some(md);
+    task.metadata.as_mut().unwrap()["queue"] = json!(val);
 }
