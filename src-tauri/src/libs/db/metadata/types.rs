@@ -40,7 +40,7 @@ pub struct Scrapes {
     pub scrape_id: String,
     pub list_name: String,
     pub length: u8,
-    pub date: u128,
+    pub date: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

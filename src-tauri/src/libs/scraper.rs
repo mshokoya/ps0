@@ -28,7 +28,26 @@ impl Scraper {
         let (browser, mut handler) = block_on(async {
             Browser::launch(BrowserConfig::builder()
                 .with_head()
-                .arg(format!("--proxy-server={}", ps_addr))
+                .args(vec![
+                    format!("
+                    --proxy-server={}", ps_addr).as_str(),
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-accelerated-2d-canvas",
+                    "--no-first-run",
+                    "--no-zygote",
+                    // "--single-process", // not working in head browser... try headless
+                    "--disable-gpu",
+                    "--deterministic-fetch",
+                    "--disable-features=IsolateOrigins",
+                    "--disable-site-isolation-trials",
+                    "--disable-features=site-per-process"
+                ])
+                // .disable_cache()
+                .viewport(None)
+                .disable_request_intercept()
+                // .incognito()
                 .build()
                 .unwrap())
                 .await
@@ -55,7 +74,16 @@ impl Scraper {
             .start_incognito_context()
             .await
             .unwrap();
-        ctx.new_page("https://www.google.com").await
+
+        let page = ctx.new_page("https://www.google.com").await?;
+        page.enable_stealth_mode().await?;
+        page
+            .disable_css().await?
+            .disable_debugger().await?
+            .disable_log().await?;
+            // .disable_runtime().await?;
+        
+        Ok(page)
     }
 }
 

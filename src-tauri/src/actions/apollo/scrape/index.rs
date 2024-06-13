@@ -1,11 +1,14 @@
 use std::cmp::{self, min};
 use std::iter;
 use std::time::Duration;
+use async_std::prelude::FutureExt;
 use async_std::task::sleep;
+use chromiumoxide::cdp::browser_protocol::page::{NavigateParams, NavigateParamsBuilder, TransitionType};
 use chromiumoxide::Page;
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use anyhow::{anyhow, Context, Result};
+use futures::TryFutureExt;
 use serde_json::{from_value, json, Value};
 use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager, State};
@@ -106,7 +109,7 @@ pub async fn apollo_scrape(
       "https://app.apollo.io/#/settings/credits/current",
     )
     .await?;
-    println!("WE ARE HERE");
+    println!("WE ARE HERE visit");
     let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
@@ -228,7 +231,7 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
     scrape_id: scrape_id.to_string(), 
     list_name: list_name.to_string(), 
     length: 0, 
-    date: time_ms()
+    date: time_ms().to_string()
   });
 
   account.history.push(History {
@@ -260,14 +263,23 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
 }
 
 async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
-  page.goto(url).await?;
+  let _ = page.goto(
+    url
+    // NavigateParams::builder()
+    //   .transition_type(TransitionType::Reload)
+    //   .url(url)
+    //   .build().unwrap()
+  ).timeout(Duration::from_secs(5)).await;
+
+  // page.goto(url).await?;
+  println!("WE IN go_to_search_url");
   wait_for_selector(page, r#"[class="zp_RFed0"]"#, 10, 2).await?;
   Ok(())
 }
 
 async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: &u64, list_name: &str, prev_lead: &mut PreviousLead) -> Result<Vec<RecordDataArg>> {
   let table_rows_selector = r#"[class="zp_RFed0"]"#;
-  // let checkbox_selector = r#"[class="zp_fwjCX"]"#;
+  let checkbox_selector = r#"[class="zp_fwjCX"]"#;
   let add_to_list_input_selector = r#"[class="Select-input "]"#;
   let save_list_button_selector = r#"[class="zp-button zp_zUY3r"][type="submit"]"#;
   // let sl_popup_selector = r#"[class="zp_lMRYw zp_yHIi8"]"#;
@@ -276,36 +288,62 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
 
   let page = ctx.page.as_ref().unwrap();
 
+  println!("add_leads_to_list_and_scrape 1");
   wait_for_selector(&page, pagination_info_selector, 10, 2).await?;
-
+  println!("add_leads_to_list_and_scrape 2");
   let mut name = "".to_string();
   let mut should_continue = false;
   let mut counter: u8 = 0;
   while !should_continue && counter <= 15 {
+    println!("add_leads_to_list_and_scrape loop");
     if counter == 15 { return Err(anyhow!("failed to find to get first table row element")) }
-    name = get_first_table_row_name(&page).await?.unwrap();
+    // name = get_first_table_row_name(&page).await?.unwrap();
+    name = match get_first_table_row_name(&page).await {
+      Ok(el_txt) => {
+        println!("add_leads_to_list_and_scrape loop OK");
+        match el_txt {
+          Some(txt) => txt,
+          None => name
+        }
+      },
+      Err(e) => {
+        println!("add_leads_to_list_and_scrape loop {e:#?}");
+        name
+      }
+    };
     if name != prev_lead.get() { should_continue = true; }
     sleep(Duration::from_secs(2)).await;
     counter += 1;
   }
 
+  println!("add_leads_to_list_and_scrape 3");
+
   prev_lead.set(name);
 
+  println!("add_leads_to_list_and_scrape 4");
+
   let rows = page.find_elements(table_rows_selector).await?;
+
+  println!("add_leads_to_list_and_scrape 5");
   let max_leads = min(*num_leads_to_scrape, rows.len() as u64);
 
-  for row_idx in 0..max_leads {
+  for row_idx in 0..1 {
     if let Some(el) = rows.get(row_idx as usize) {
-      el.focus().await?.click().await?;
+      el.find_element(checkbox_selector).await?.focus().await?.click().await?;
     }
   }
 
+  println!("add_leads_to_list_and_scrape 6");
+
   let list_button = page.find_elements(r#"[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_ML2Jn"]"#).await?;
+  println!("add_leads_to_list_and_scrape 7");
   if list_button.len() == 0 { return Err(anyhow!("failed to find list button")) }
+  println!("add_leads_to_list_and_scrape 8");
   list_button[1].focus().await?.click().await?;
+  println!("add_leads_to_list_and_scrape 9");
 
   let _list_button_2 = wait_for_selector(&page, r#"[class="zp-menu-item zp_fZtsJ zp_pEvFx"]"#, 10, 2).await?.focus().await?.click().await?;
-
+  println!("add_leads_to_list_and_scrape 10");
   
   let mut counter = 0;
   while counter <= 5 {
@@ -324,15 +362,32 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   // wait_for_selector(&page, &sl_popup_selector, 10, 2).await;
   sleep(Duration::from_secs(5)).await;
 
-  page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").await?;
+  println!("add_leads_to_list_and_scrape _save_list_btn START");
+  let _ = page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").await?;
+  println!("add_leads_to_list_and_scrape _save_list_btn END");
   let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
-
+  println!("add_leads_to_list_and_scrape _saved_list_table SELECT");
   let mut counter = 0;
   let mut list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
+  println!("add_leads_to_list_and_scrape   list_name_in_table {list_name_in_table:#?}");
   while list_name_in_table != list_name && counter <= 10 {
+    println!("add_leads_to_list_and_scrape   list_name_in_table LOOPY");
     if counter == 10 { return Err(anyhow!("failed to find save list item")) }
     page.reload().await?;
-    list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
+    list_name_in_table = match page.find_element(saved_list_table_row_selector).await {
+      Ok(el) => match el.find_element(r#"[class="zp_aBhrx"]"#).await {
+        Ok(el) => el.inner_text().await?.unwrap(),
+        Err(e) => {
+          println!("LOOP 2 {e:#?}");
+          list_name_in_table
+        } 
+      },
+      Err(e) => {
+        println!("LOOP 1 {e:#?}");
+        list_name_in_table
+      }
+    };
+
     sleep(Duration::from_secs(3)).await;
     counter += 1;
   }
@@ -596,21 +651,21 @@ async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {
 
 
 async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
-  let mut row = page.find_element(r#"[class="zp_BC5Bd"]"#).await?;
-  row = row.find_element(r#"[class="zp_BC5Bd"]"#).await?;
+  let row = page.find_element(r#"[class="zp_BC5Bd"]"#).await?;
+  // row = row.find_element(r#"[class="zp_BC5Bd"]"#).await?;
   Ok(row.inner_text().await?)
 }
 
 async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<(Account, Metadata)> {
   let mut query = vec![
     "BEGIN TRANSACTION;".to_string(),
-    format!("UPDATE account:{} SET $accountdata;", &account._id),
-    format!("UPDATE metadata:{} SET $metarecord;", &metadata._id),
+    format!("UPDATE account:{} MERGE $accountdata;", &account._id),
+    format!("UPDATE metadata:{} MERGE $metarecord;", &metadata._id),
   ];
   for d in data {
     query.push(
         format!(
-          "CREATE record:{} SET {};", 
+          "CREATE record:{} MERGE {};", 
           Id::rand(),
           to_value(json!({
             "scrape_id": &scrape_id,

@@ -32,21 +32,16 @@ pub async fn log_into_apollo_then_visit(
     // == seprate func
     inject_cookies(&page, &account.cookies).await?;
 
-    println!("made it 0");
-    let _ = page.goto(url).await?.wait_for_navigation().await?;
-    println!("made it");
+    page.goto(url).await?.wait_for_navigation().await?;
 
     // (FIX) Should remove
-    sleep(Duration::from_secs(5)).await;
-    println!("made it 2");
+    sleep(Duration::from_secs(3)).await;
 
     let url = page.url().await?.unwrap();
-    println!("made it 3");
 
     if url.contains("#/login") {
         log_into_apollo(ctx, account).await?;
     }
-    println!("made it 4");
 
     ctx.handle
         .emit_all(
