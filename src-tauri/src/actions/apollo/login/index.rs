@@ -1,7 +1,7 @@
 use std::time::Duration;
 use anyhow::{anyhow, Result};
 use async_std::task::sleep;
-use serde_json::{ from_value, to_value as to_serde_value, Value};
+use serde_json::{ from_value, json, to_value as to_serde_value, Value};
 use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager};
 use crate::actions::apollo::lib::index::apollo_login_credits_info;
@@ -21,7 +21,7 @@ use super::types::ApolloLoginArgs;
 #[tauri::command]
 pub fn login_task(ctx: AppHandle, args: Value) -> R<()> {
     let metadata = match args.get("account_id") {
-        Some(val) => Some(val.clone()),
+        Some(val) => Some( json!({"account_id": val}) ),
         None => None,
     };
 

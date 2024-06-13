@@ -32,7 +32,7 @@ export const selectAccForScrapingFILO = async (
 
   let allAccounts = appState$.accounts
     .get()
-    .filter((a) => a.verified === 'yes' && !allAccInUse.includes(a._id))
+   
     .map((a) => ({ ...a, totalScrapedInLast30Mins: 0 })) as (IAccount & {
     totalScrapedInLast30Mins: number
   })[]

@@ -28,11 +28,9 @@ pub struct ScrapeTaskArgs {
   pub accounts: Vec<Accounts>,
   pub timeout: TQTimeout,
   pub max_leads_limit: u64,
-  pub task_id: String,
-  pub params: HashMap<String, String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct ScrapeActionArgs {
   pub url: String,
   pub chunk: [u64; 2],

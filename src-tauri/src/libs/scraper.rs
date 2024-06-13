@@ -24,9 +24,7 @@ impl Scraper {
 
     pub async fn init(&mut self) {
         let ps_addr =  unsafe { PS_ADDR.get().unwrap() };
-        println!("THIS IS THE ADDR");
-        println!("{ps_addr}");
-        println!("{ps_addr}");
+        
         let (browser, mut handler) = block_on(async {
             Browser::launch(BrowserConfig::builder()
                 .with_head()

@@ -19,7 +19,7 @@ use surrealdb::sql::Id;
 pub struct Metadata {
     pub _id: String,
     pub url: String,
-    pub params: HashMap<String, String>,
+    // pub params: HashMap<String, String>,
     pub name: String,
     pub scrapes: Vec<Scrapes>,
     pub accounts: Vec<Accounts>,

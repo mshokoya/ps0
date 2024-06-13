@@ -12,7 +12,7 @@ export const MetadataDropdown = observer(({ meta }: { meta: IMetaData }) => {
           <td className="px-2">{meta.url}</td>
         </tr>
 
-        <tr className="hover:border-cyan-600 hover:border-y">
+        {/* <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Params:</th>
           <td className="px-2">
             {Object.keys(meta.params).length && (
@@ -28,7 +28,7 @@ export const MetadataDropdown = observer(({ meta }: { meta: IMetaData }) => {
               </tr>
             )}
           </td>
-        </tr>
+        </tr> */}
 
         <tr className="hover:border-cyan-600 hover:border-y">
           <th className="whitespace-nowrap px-2 w-4">Name:</th>
@@ -53,8 +53,8 @@ export const MetadataDropdown = observer(({ meta }: { meta: IMetaData }) => {
                       <td className="overflow-scroll truncate">
                         {appState$.accounts.peek().find((a1) => a1._id === a0.account_id)?.email}
                       </td>
-                      <td className="overflow-scroll truncate">{a0.range[0]}</td>
-                      <td className="overflow-scroll truncate">{a0.range[1]}</td>
+                      <td className="overflow-scroll truncate">{a0.range && a0.range[0]}</td>
+                      <td className="overflow-scroll truncate">{a0.range && a0.range[1]}</td>
                     </tr>
                   ))}
               </tbody>

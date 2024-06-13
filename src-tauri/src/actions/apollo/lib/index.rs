@@ -32,15 +32,21 @@ pub async fn log_into_apollo_then_visit(
     // == seprate func
     inject_cookies(&page, &account.cookies).await?;
 
-    page.goto(url).await?.wait_for_navigation_response().await?;
+    println!("made it 0");
+    let _ = page.goto(url).await?.wait_for_navigation().await?;
+    println!("made it");
 
+    // (FIX) Should remove
     sleep(Duration::from_secs(5)).await;
+    println!("made it 2");
 
     let url = page.url().await?.unwrap();
+    println!("made it 3");
 
     if url.contains("#/login") {
         log_into_apollo(ctx, account).await?;
     }
+    println!("made it 4");
 
     ctx.handle
         .emit_all(
@@ -64,7 +70,7 @@ pub async fn apollo_default_login(ctx: &TaskActionCTX, account: &Account) -> Res
 
     let url = page.url().await?.unwrap();
     if !url.contains("#/login") {
-        page.goto("https://app.apollo.io/#/login").await?;
+        page.goto("https://app.apollo.io/#/login").await?.wait_for_navigation().await?;
     }
 
     let submit_button = wait_for_selector(&page, login_button_selector.as_str(), 5, 5)

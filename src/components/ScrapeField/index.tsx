@@ -10,6 +10,7 @@ import { selectAccForScrapingFILO } from '../../core/state/account'
 import { appState$ } from '../../core/state'
 import { invoke } from '@tauri-apps/api/tauri'
 import { CHANNELS } from '../../core/channels'
+import { nanoid } from 'nanoid'
 
 type State = {
   name: string
@@ -71,16 +72,15 @@ export const ScrapeField = observer(() => {
     if (s.aar.chunk.length !== s.aar.accounts.length) return
 
     await invoke(CHANNELS.scrape_task, {args: {
+      meta_id: nanoid(),
       name: state.name,
       url: state.url,
-      chunk: state.aar.chunk,
-      accounts: state.aar.accounts.map((a) => a.id),
-      usingProxy: false,
+      accounts: state.aar.accounts.map( (a, idx) => ({account_id: a.id, chunk: state.aar.chunk[idx]}) ),
       timeout: {
         time: toMs(hh, mm, ss),
         rounds: 1
       },
-      maxLeads: 53
+      max_leads_limit: 53  // (FIX) ??? why 53 ?
     }})
       .then((d) => {
         console.log(d)

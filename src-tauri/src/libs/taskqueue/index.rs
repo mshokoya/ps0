@@ -217,7 +217,6 @@ impl TaskQueue {
     // }
 
     fn exec(&self) {
-        println!("WE IN DA TASK");
         let pq = self.process_queue.lock().unwrap();
         let pq_len = pq.len();
         if pq_len >= self.max_processes.into() {
@@ -262,7 +261,9 @@ impl TaskQueue {
             // let ok = true;
             // let message = "removed completed task from queue".to_string();
             // let metadata = to_value("fkldjnswkdsfoasld").ok();
-
+            println!("{ok:#?}");
+            println!("{message:#?}");
+            println!("{metadata:#?}");
 
             handle
                 .emit_all(

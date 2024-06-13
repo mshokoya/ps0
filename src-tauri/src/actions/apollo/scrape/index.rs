@@ -1,4 +1,5 @@
 use std::cmp::{self, min};
+use std::iter;
 use std::time::Duration;
 use async_std::task::sleep;
 use chromiumoxide::Page;
@@ -8,12 +9,12 @@ use anyhow::{anyhow, Context, Result};
 use serde_json::{from_value, json, Value};
 use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager, State};
-use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo};
+use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo, log_into_apollo_then_visit};
 use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
 use crate::actions::controllers::TaskType;
 use crate::libs::cache::ApolloCache;
 use crate::libs::db::accounts::types::{Account, History};
-use crate::libs::db::metadata::types::{Metadata, Scrapes};
+use crate::libs::db::metadata::types::{Accounts, Metadata, Scrapes};
 use crate::libs::db::records::types::RecordDataArg;
 use crate::libs::taskqueue::index::TaskQueue;
 use crate::{
@@ -44,28 +45,28 @@ pub async fn scrape_task(ctx: AppHandle, args: Value) -> R<()> {
 
     let cache = ctx.state::<ApolloCache>();
 
-    for acc in args.get("accounts").iter().copied() {
-      let account_id = acc.get("account_id").unwrap().to_string();
-      let argss = json!({
+    for acc in from_value::<Vec<Accounts>>(args.get("accounts").unwrap().to_owned()).unwrap().iter() {
+      let args = json!({
         "url": &fmt_args.url,
-        "range": acc.get("range").as_ref().unwrap(),
-        "account_id": &account_id,
+        "chunk": acc.chunk,
+        "account_id": &acc.account_id,
         "metadata": &metadata,
         "max_leads_limit": &fmt_args.max_leads_limit
       });
 
-      cache.add_accounts(meta_id.as_ref().unwrap().as_str().unwrap(), &mut vec![account_id.clone()]).await;
+      cache.add_accounts(meta_id.as_ref().unwrap().as_str().unwrap(), &mut vec![acc.account_id.clone()]).await;
 
       ctx.state::<TaskQueue>().w_enqueue(Task {
         task_id: Id::uuid().to_string(),
         task_type: TaskType::ApolloScrape,
         task_group: TaskGroup::Apollo,
         message: "Scraping",
-        metadata: meta_id.clone(),
+        metadata: Some(json!({ "meta_id": &meta_id })),
         timeout: args.get("timeout").and_then(|v| from_value(v.clone()).ok()),
-        args: Some(argss),
+        args: Some(args),
       });
-    };
+    }
+
 
     R::ok_none()
 }
@@ -88,8 +89,6 @@ pub async fn apollo_scrape(
       return Err(anyhow!("Failed to scrape, could not find registered account"))
     };
 
-    log_into_apollo(&ctx, &account).await?;
-
     let mut url = set_range_in_url(&args.url, args.chunk);
     url = set_page_in_url(&args.url, 1);
 
@@ -101,29 +100,55 @@ pub async fn apollo_scrape(
       name: "".to_string(),
     };
 
+    log_into_apollo_then_visit(
+      &ctx,
+      &account,
+      "https://app.apollo.io/#/settings/credits/current",
+    )
+    .await?;
+    println!("WE ARE HERE");
     let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
+      println!("IN DA SCRAPE LOOP");
       let credits_left = old_credits.credit_limit - old_credits.credits_used;
       if credits_left <= 0 { return Ok(None) }
 
       let mut num_leads_to_scrape = cmp::min(args.max_leads_limit, credits_left.into());
       num_leads_to_scrape = cmp::min(num_leads_to_scrape, MAX_LEADS_ON_PAGE.into());
+      println!("num_leads_to_scrape");
+      println!("{num_leads_to_scrape:#?}
+      
+      ");
       if num_leads_to_scrape <= 0 { return Ok(None) }
 
       let scrape_id = Id::uuid().to_string();
       let list_name = Username().fake::<String>();
+      println!("BEFORE update_db_for_new_scrape");
+      let _p = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
+      println!("AFTER update_db_for_new_scrape");
+      println!("{_p:?}
+      
+      ");
   
-      let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
-  
-      let _ = go_to_search_url(page, &url).await?;
+      println!("BEFORE go_to_search_url");
+      let _p = go_to_search_url(page, &url).await?;
+      println!("AFTER go_to_search_url");
+      println!("{_p:?}
+      
+      ");
 
+      println!("BEFORE add_leads_to_list_and_scrape");
       let data = add_leads_to_list_and_scrape(
         &ctx, 
         &num_leads_to_scrape, 
         &list_name,
         &mut prev_lead
       ).await?;
+      println!("AFTER add_leads_to_list_and_scrape");
+      println!("{data:#?}
+      
+      ");
 
       if data.len() == 0 {
         return Ok(None)
@@ -131,11 +156,38 @@ pub async fn apollo_scrape(
 
       sleep(Duration::from_secs(3)).await;
 
+      println!("BEFORE log_into_apollo_then_visit");
+      log_into_apollo_then_visit(
+          &ctx,
+          &account,
+          "https://app.apollo.io/#/settings/credits/current",
+      ).await?;
       let new_credits = apollo_login_credits_info(&ctx).await?;
-      let cookies = get_browser_cookies(&page).await?;
-      let total_page_scrape = data.len() as u16;
+      println!("AFTER log_into_apollo_then_visit");
+      println!("{new_credits:?}
+      
+      ");
 
+      println!("BEFORE get_browser_cookies");
+      let cookies = get_browser_cookies(&page).await?;
+      println!("AFTER get_browser_cookies");
+      println!("{cookies:?}
+      
+      ");
+
+      println!("BEFORE total_page_scrape");
+      let total_page_scrape = data.len() as u16;
+      println!("AFTER total_page_scrape");
+      println!("{total_page_scrape:#?}
+      
+      ");
+
+      println!("BEFORE md");
       let md = args.metadata.scrapes.last_mut().unwrap();
+      println!("AFTER md");
+      println!("{md:#?}
+      
+      ");
       md.length = total_page_scrape as u8;
 
       account.total_scraped_recently = account.total_scraped_recently + total_page_scrape;
@@ -143,6 +195,7 @@ pub async fn apollo_scrape(
       acc_his.total_page_scrape = total_page_scrape.clone();
 
 
+      println!("BEFORE save_scrape_to_db");
       let save = save_scrape_to_db(
         &ctx,
         &account,
@@ -152,6 +205,10 @@ pub async fn apollo_scrape(
         data,
         &scrape_id
       ).await?;
+      println!("AFTER save_scrape_to_db");
+      println!("{save:#?}
+      
+      ");
 
       let mut next_page: u8 = get_page_in_url(&url).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
@@ -184,17 +241,20 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
   let db_state = ctx.handle.state::<DB>();
   db_state.0.lock()
   .await
-  .query("
+  .query(format!("
     BEGIN TRANSACTION;
-    UPDATE $metafilter SET $metadata;
-    UPDATE $accountfilter SET $accountdata;
+    UPDATE metadata SET scrapes = {} WHERE _id=\"{}\";
+    UPDATE account SET accounts = {} WHERE _id=\"{}\";
     COMMIT TRANSACTION;
-  ")
-  .bind(("metafilter", format!("metadata:{}", &metadata._id) ))
-  .bind(("metadata", to_value(&metadata.scrapes)?))
-  .bind(("accountfilter", format!("account:{}", &account._id)))
-  .bind(("accountdata", to_value(&account.history)?))
+  ", 
+    to_value(&metadata.scrapes)?, 
+    &metadata._id, 
+    to_value(&account.history)?,
+    &account._id, 
+  ))
   .await?;
+
+
 
   Ok(())
 }
@@ -602,7 +662,9 @@ async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Meta
       }
       Ok(meta.unwrap())
     },
-    Err(_) => return Err(anyhow!("Failed to scrape, could not find or create metadata"))
+    Err(_) => {
+      return Err(anyhow!("Failed to scrape, could not find or create metadata"))
+    }
   }
 }
 
@@ -614,7 +676,7 @@ async fn new_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metad
       Metadata {
         _id: args.meta_id.clone(),
         url: args.url.clone(),
-        params: args.params.clone(),
+        // params: args.params.clone(),
         name: args.name.clone(),
         scrapes: vec![],
         accounts: args.accounts.clone()
