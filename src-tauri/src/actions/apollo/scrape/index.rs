@@ -363,7 +363,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   sleep(Duration::from_secs(5)).await;
 
   println!("add_leads_to_list_and_scrape _save_list_btn START");
-  let _ = page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").await?;
+  let _ = page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").timeout(Duration::from_secs(5)).await;
   println!("add_leads_to_list_and_scrape _save_list_btn END");
   let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
   println!("add_leads_to_list_and_scrape _saved_list_table SELECT");
@@ -400,7 +400,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
 }
 
 async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {
-  ctx.page.as_ref().unwrap().evaluate_function(
+  let eval = ctx.page.as_ref().unwrap().evaluate_function(
   r#"
     async () => {
       window.na = "N/A";
@@ -645,8 +645,13 @@ async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {
     }
   "#,
   )
-  .await?
-  .into_value::<Vec<RecordDataArg>>().context("Failed To collect and parce leads")
+  .await?;
+
+  println!("SCRAPE DATA");
+  println!("{eval:#?}");
+  
+
+  eval.into_value::<Vec<RecordDataArg>>().context("Failed To collect and parce leads")
 }
 
 

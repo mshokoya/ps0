@@ -31,7 +31,7 @@ pub struct RecordData {
     pub is_verified: bool,
     pub company_location: String,
     pub employees: String,
-    pub phone: String,
+    pub phone: Option<String>,
     pub industry: String,
     pub keywords: Vec<String>,
 }
@@ -46,7 +46,7 @@ pub struct RecordArg {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RecordDataArg {
-    pub name: Option<Id>,
+    pub name: Option<String>,
     pub firstname: Option<String>,
     pub lastname: Option<String>,
     pub linkedin: Option<String>,
