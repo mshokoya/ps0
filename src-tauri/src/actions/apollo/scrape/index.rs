@@ -70,7 +70,6 @@ pub async fn scrape_task(ctx: AppHandle, args: Value) -> R<()> {
       });
     }
 
-
     R::ok_none()
 }
 
@@ -109,49 +108,30 @@ pub async fn apollo_scrape(
       "https://app.apollo.io/#/settings/credits/current",
     )
     .await?;
-    println!("WE ARE HERE visit");
+
     let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
-      println!("IN DA SCRAPE LOOP");
       let credits_left = old_credits.credit_limit - old_credits.credits_used;
       if credits_left <= 0 { return Ok(None) }
 
       let mut num_leads_to_scrape = cmp::min(args.max_leads_limit, credits_left.into());
       num_leads_to_scrape = cmp::min(num_leads_to_scrape, MAX_LEADS_ON_PAGE.into());
-      println!("num_leads_to_scrape");
-      println!("{num_leads_to_scrape:#?}
-      
-      ");
+
       if num_leads_to_scrape <= 0 { return Ok(None) }
 
       let scrape_id = Id::uuid().to_string();
       let list_name = Username().fake::<String>();
-      println!("BEFORE update_db_for_new_scrape");
-      let _p = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
-      println!("AFTER update_db_for_new_scrape");
-      println!("{_p:?}
-      
-      ");
-  
-      println!("BEFORE go_to_search_url");
-      let _p = go_to_search_url(page, &url).await?;
-      println!("AFTER go_to_search_url");
-      println!("{_p:?}
-      
-      ");
 
-      println!("BEFORE add_leads_to_list_and_scrape");
+      let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
+      let _ = go_to_search_url(page, &url).await?;
+
       let data = add_leads_to_list_and_scrape(
         &ctx, 
         &num_leads_to_scrape, 
         &list_name,
         &mut prev_lead
       ).await?;
-      println!("AFTER add_leads_to_list_and_scrape");
-      println!("{data:#?}
-      
-      ");
 
       if data.len() == 0 {
         return Ok(None)
@@ -159,46 +139,21 @@ pub async fn apollo_scrape(
 
       sleep(Duration::from_secs(3)).await;
 
-      println!("BEFORE log_into_apollo_then_visit");
-      log_into_apollo_then_visit(
-          &ctx,
-          &account,
-          "https://app.apollo.io/#/settings/credits/current",
-      ).await?;
+      let _ = page.goto("https://app.apollo.io/#/settings/credits/current").timeout(Duration::from_secs(5)).await;
       let new_credits = apollo_login_credits_info(&ctx).await?;
-      println!("AFTER log_into_apollo_then_visit");
-      println!("{new_credits:?}
-      
-      ");
 
-      println!("BEFORE get_browser_cookies");
       let cookies = get_browser_cookies(&page).await?;
-      println!("AFTER get_browser_cookies");
-      println!("{cookies:?}
-      
-      ");
+      println!("{cookies:?}");
 
-      println!("BEFORE total_page_scrape");
       let total_page_scrape = data.len() as u16;
-      println!("AFTER total_page_scrape");
-      println!("{total_page_scrape:#?}
-      
-      ");
-
-      println!("BEFORE md");
       let md = args.metadata.scrapes.last_mut().unwrap();
-      println!("AFTER md");
-      println!("{md:#?}
-      
-      ");
+
       md.length = total_page_scrape as u8;
 
       account.total_scraped_recently = account.total_scraped_recently + total_page_scrape;
       let acc_his = account.history.last_mut().unwrap();
       acc_his.total_page_scrape = total_page_scrape.clone();
 
-
-      println!("BEFORE save_scrape_to_db");
       let save = save_scrape_to_db(
         &ctx,
         &account,
@@ -208,16 +163,12 @@ pub async fn apollo_scrape(
         data,
         &scrape_id
       ).await?;
-      println!("AFTER save_scrape_to_db");
-      println!("{save:#?}
-      
-      ");
 
       let mut next_page: u8 = get_page_in_url(&url).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
       url = set_page_in_url(&url, next_page);
-      account = save.0;
-      args.metadata = save.1;
+      // account = save.0;
+      // args.metadata = save.1;
       
       args.max_leads_limit = args.max_leads_limit - total_page_scrape as u64;
       old_credits = new_credits;
@@ -257,8 +208,6 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
   ))
   .await?;
 
-
-
   Ok(())
 }
 
@@ -285,65 +234,48 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   // let sl_popup_selector = r#"[class="zp_lMRYw zp_yHIi8"]"#;
   let saved_list_table_row_selector = r#"[class="zp_cWbgJ"]"#;
   let pagination_info_selector = r#"[class="zp_VVYZh"]"#;
-
   let page = ctx.page.as_ref().unwrap();
 
-  println!("add_leads_to_list_and_scrape 1");
   wait_for_selector(&page, pagination_info_selector, 10, 2).await?;
-  println!("add_leads_to_list_and_scrape 2");
+
   let mut name = "".to_string();
   let mut should_continue = false;
   let mut counter: u8 = 0;
   while !should_continue && counter <= 15 {
-    println!("add_leads_to_list_and_scrape loop");
     if counter == 15 { return Err(anyhow!("failed to find to get first table row element")) }
-    // name = get_first_table_row_name(&page).await?.unwrap();
     name = match get_first_table_row_name(&page).await {
       Ok(el_txt) => {
-        println!("add_leads_to_list_and_scrape loop OK");
         match el_txt {
           Some(txt) => txt,
           None => name
         }
       },
-      Err(e) => {
-        println!("add_leads_to_list_and_scrape loop {e:#?}");
-        name
-      }
+      Err(e) => name
     };
     if name != prev_lead.get() { should_continue = true; }
     sleep(Duration::from_secs(2)).await;
     counter += 1;
   }
 
-  println!("add_leads_to_list_and_scrape 3");
-
   prev_lead.set(name);
-
-  println!("add_leads_to_list_and_scrape 4");
 
   let rows = page.find_elements(table_rows_selector).await?;
 
-  println!("add_leads_to_list_and_scrape 5");
   let max_leads = min(*num_leads_to_scrape, rows.len() as u64);
 
-  for row_idx in 0..1 {
+  for row_idx in 0..3 {
     if let Some(el) = rows.get(row_idx as usize) {
       el.find_element(checkbox_selector).await?.focus().await?.click().await?;
     }
   }
 
-  println!("add_leads_to_list_and_scrape 6");
-
   let list_button = page.find_elements(r#"[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_ML2Jn"]"#).await?;
-  println!("add_leads_to_list_and_scrape 7");
+
   if list_button.len() == 0 { return Err(anyhow!("failed to find list button")) }
-  println!("add_leads_to_list_and_scrape 8");
+
   list_button[1].focus().await?.click().await?;
-  println!("add_leads_to_list_and_scrape 9");
 
   let _list_button_2 = wait_for_selector(&page, r#"[class="zp-menu-item zp_fZtsJ zp_pEvFx"]"#, 10, 2).await?.focus().await?.click().await?;
-  println!("add_leads_to_list_and_scrape 10");
   
   let mut counter = 0;
   while counter <= 5 {
@@ -362,14 +294,15 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   // wait_for_selector(&page, &sl_popup_selector, 10, 2).await;
   sleep(Duration::from_secs(5)).await;
 
-  println!("add_leads_to_list_and_scrape _save_list_btn START");
+
   let _ = page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").timeout(Duration::from_secs(5)).await;
-  println!("add_leads_to_list_and_scrape _save_list_btn END");
+
   let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
-  println!("add_leads_to_list_and_scrape _saved_list_table SELECT");
+
   let mut counter = 0;
   let mut list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
-  println!("add_leads_to_list_and_scrape   list_name_in_table {list_name_in_table:#?}");
+
+
   while list_name_in_table != list_name && counter <= 10 {
     println!("add_leads_to_list_and_scrape   list_name_in_table LOOPY");
     if counter == 10 { return Err(anyhow!("failed to find save list item")) }
@@ -400,7 +333,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
 }
 
 async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {
-  let eval = ctx.page.as_ref().unwrap().evaluate_function(
+  ctx.page.as_ref().unwrap().evaluate_function(
   r#"
     async () => {
       window.na = "N/A";
@@ -645,13 +578,7 @@ async fn scrape_leads(ctx: &TaskActionCTX) -> Result<Vec<RecordDataArg>> {
     }
   "#,
   )
-  .await?;
-
-  println!("SCRAPE DATA");
-  println!("{eval:#?}");
-  
-
-  eval.into_value::<Vec<RecordDataArg>>().context("Failed To collect and parce leads")
+  .await?.into_value::<Vec<RecordDataArg>>().context("Failed To collect and parce leads")
 }
 
 
@@ -661,7 +588,7 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   Ok(row.inner_text().await?)
 }
 
-async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<(Account, Metadata)> {
+async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<()> {
   let mut query = vec![
     "BEGIN TRANSACTION;".to_string(),
     format!("UPDATE account:{} MERGE $accountdata;", &account._id),
@@ -670,7 +597,7 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
   for d in data {
     query.push(
         format!(
-          "CREATE record:{} MERGE {};", 
+          "CREATE record:{} CONTENT {};", 
           Id::rand(),
           to_value(json!({
             "scrape_id": &scrape_id,
@@ -691,11 +618,11 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
         "cookies": cookies,
         "last_used": time_ms().to_string(),
         "history": &account.history,
-        "credits_used": credits.credits_used.to_string(),
-        "credit_limit": credits.credit_limit.to_string(),
-        "renewal_date": credits.renewal_date.to_string(),
-        "renewal_start_date": credits.renewal_start_date.to_string(),
-        "renewal_end_date": credits.renewal_end_date.to_string(),
+        "credits_used": credits.credits_used,
+        "credit_limit": credits.credit_limit,
+        "renewal_date": credits.renewal_date,
+        "renewal_start_date": credits.renewal_start_date,
+        "renewal_end_date": credits.renewal_end_date,
         "trial_days_left": credits.trial_days_left.as_ref().or(None)
         })
       )?)
@@ -708,7 +635,9 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
     )
     .await?;
 
-  todo!()
+    Ok(())
+    // -> Result<(Account, Metadata)>
+
 }
 
 async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metadata> {

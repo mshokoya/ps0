@@ -24,7 +24,7 @@ pub struct RecordData {
     pub email_3: Option<String>,
     pub company_name: String,
     pub company_website: String,
-    pub comapny_linkedin: String,
+    pub company_linkedin: String,
     pub company_twitter: String,
     pub company_facebook: String,
     pub email: String,
@@ -33,9 +33,10 @@ pub struct RecordData {
     pub employees: String,
     pub phone: Option<String>,
     pub industry: String,
-    pub keywords: Vec<String>,
+    pub keywords: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecordArg {
     pub _id: Option<String>,
     pub scrape_id: Option<String>,
@@ -44,7 +45,8 @@ pub struct RecordArg {
     pub data: RecordDataArg,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecordDataArg {
     pub name: Option<String>,
     pub firstname: Option<String>,
@@ -53,7 +55,7 @@ pub struct RecordDataArg {
     pub title: Option<String>,
     pub company_name: Option<String>,
     pub company_website: Option<String>,
-    pub comapny_linkedin: Option<String>,
+    pub company_linkedin: Option<String>,
     pub company_twitter: Option<String>,
     pub company_facebook: Option<String>,
     pub email_1: Option<String>,
@@ -64,5 +66,5 @@ pub struct RecordDataArg {
     pub employees: Option<String>,
     pub phone: Option<String>,
     pub industry: Option<String>,
-    pub keywords: Option<Vec<String>>,
+    pub keywords: String, //should be vec<string>
 }

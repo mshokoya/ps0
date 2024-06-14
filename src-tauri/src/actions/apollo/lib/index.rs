@@ -1,6 +1,6 @@
 use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
-use async_std::task::sleep;
+use async_std::{prelude::FutureExt, task::sleep};
 use serde_json::json;
 use tauri::Manager;
 
@@ -29,12 +29,14 @@ pub async fn log_into_apollo_then_visit(
 ) -> Result<()> {
     let page = ctx.page.as_ref().unwrap();
 
-    // == seprate func
     inject_cookies(&page, &account.cookies).await?;
 
-    page.goto(url).await?.wait_for_navigation().await?;
+    let _ = page.goto(url)
+        .await?
+        .wait_for_navigation()
+        .timeout(Duration::from_secs(15))
+        .await;
 
-    // (FIX) Should remove
     sleep(Duration::from_secs(3)).await;
 
     let url = page.url().await?.unwrap();
@@ -132,7 +134,7 @@ pub async fn apollo_login_credits_info(
 ) -> Result<CreditsInfo> {
     let page = ctx.page.as_ref().unwrap();
 
-    if wait_for_selector(page, r#"div[class="zp_ajv0U"]"#, 5, 2)
+    if wait_for_selector(page, r#"div[class="zp_ajv0U"]"#, 10, 3)
         .await
         .is_err()
     {
