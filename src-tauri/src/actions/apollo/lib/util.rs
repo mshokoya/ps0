@@ -122,7 +122,7 @@ pub fn time_ms() -> u128 {
         .as_millis()
 }
 
-pub fn set_range_in_url(url: &str, chunk: [u64; 2]) -> String {
+pub fn set_range_in_url(url: &str, chunk: [u32; 2]) -> String {
     let mut p_url = parse_url(url);
     let p2_url = p_url.as_mut().unwrap();
     p2_url.query.as_mut().unwrap().insert("organizationNumEmployeesRanges[]".to_string(), format!("{}%2C{}", chunk[0], chunk[1]));

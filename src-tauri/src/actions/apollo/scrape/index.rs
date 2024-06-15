@@ -78,8 +78,6 @@ pub async fn apollo_scrape(
     args: Option<Value>,
 ) -> Result<Option<Value>> {
     let mut args: ScrapeActionArgs = from_value(args.unwrap())?;
-    ctx.page =  Some(unsafe { SCRAPER.incog().await? });
-    let page = ctx.page.as_ref().unwrap();
     let db = ctx.handle.state::<DB>();
     
     let Some(mut account) = db.select_one::<Account>(
@@ -123,6 +121,19 @@ pub async fn apollo_scrape(
       let list_name = Username().fake::<String>();
 
       let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
+      
+      add_account_to_metadata(
+        &ctx, 
+        &args.metadata._id,
+        Accounts {
+          account_id: account._id.clone(),
+          chunk: args.chunk
+        }
+      ).await?;
+
+      ctx.page =  Some(unsafe { SCRAPER.incog().await? });
+      let page = ctx.page.as_ref().unwrap();
+      
       let _ = go_to_search_url(page, &url).await?;
 
       let data = add_leads_to_list_and_scrape(
@@ -132,9 +143,7 @@ pub async fn apollo_scrape(
         &mut prev_lead
       ).await?;
 
-      if data.len() == 0 {
-        return Ok(None)
-      }
+      if data.len() == 0 { return Ok(None) };
 
       sleep(Duration::from_secs(3)).await;
 
@@ -142,32 +151,41 @@ pub async fn apollo_scrape(
       let new_credits = apollo_login_credits_info(&ctx).await?;
 
       let cookies = get_browser_cookies(&page).await?;
-      println!("{cookies:?}");
 
+      let mut scrape = args.metadata.scrapes.iter()
+        .find(|v| v.scrape_id == scrape_id)
+        .ok_or("Failed to find scrape data").unwrap()
+        .to_owned();
+        
+    
       let total_page_scrape = data.len() as u16;
-      let md = args.metadata.scrapes.last_mut().unwrap();
+      scrape.length = total_page_scrape as u8;
 
-      md.length = total_page_scrape as u8;
+      let mut history = account.history.iter_mut()
+        .find(|v| v.scrape_id == scrape_id)
+        .ok_or("Failed to find history data").unwrap()
+        .to_owned();
 
       account.total_scraped_recently = account.total_scraped_recently + total_page_scrape;
-      let acc_his = account.history.last_mut().unwrap();
-      acc_his.total_page_scrape = total_page_scrape.clone();
+      history.total_page_scrape = total_page_scrape.clone();
 
-      let save = save_scrape_to_db(
+      let (acc, metadata) = save_scrape_to_db(
         &ctx,
-        &account,
+        &account._id,
         &args.metadata,
         &new_credits,
         &cookies,
         data,
-        &scrape_id
+        &scrape_id,
+        scrape,
+        history
       ).await?;
 
       let mut next_page: u8 = get_page_in_url(&url).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
       url = set_page_in_url(&url, next_page);
-      // account = save.0;
-      // args.metadata = save.1;
+      account = acc;
+      args.metadata = metadata;
       
       args.max_leads_limit = args.max_leads_limit - total_page_scrape as u64;
       old_credits = new_credits;
@@ -176,7 +194,7 @@ pub async fn apollo_scrape(
     Ok(None)
 }
 
-async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, account: &mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
+async fn update_db_for_new_scrape<'a, 'b>(ctx: &TaskActionCTX, metadata: &'a mut Metadata, account: &'b mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
   let scrapes = Scrapes {
     scrape_id: scrape_id.to_string(), 
     list_name: list_name.to_string(), 
@@ -196,14 +214,14 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
   .await
   .query(format!("
     BEGIN TRANSACTION;
-    UPDATE metadata SET scrapes += {} WHERE _id=\"{}\";
-    UPDATE account SET accounts += {} WHERE _id=\"{}\";
+    UPDATE metadata:{} SET scrapes += {};
+    UPDATE account:{} SET accounts += {};
     COMMIT TRANSACTION;
   ",
-    to_value(&scrapes)?, 
-    metadata._id, 
+    metadata._id,
+    to_value(&scrapes)?,
+    account._id,
     to_value(history)?,
-    account._id, 
   ))
   .await?;
 
@@ -220,39 +238,6 @@ async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, 
   Ok(())
 }
 
-// async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, account: &mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
-//   metadata.scrapes.push(Scrapes {
-//     scrape_id: scrape_id.to_string(), 
-//     list_name: list_name.to_string(), 
-//     length: 0, 
-//     date: time_ms().to_string()
-//   });
-
-//   account.history.push(History {
-//     total_page_scrape: 0, 
-//     scrape_time: time_ms(), 
-//     list_name: list_name.to_string(),
-//     scrape_id: scrape_id.to_string()
-//   });
-  
-//   let db_state = ctx.handle.state::<DB>();
-//   db_state.0.lock()
-//   .await
-//   .query(format!("
-//     BEGIN TRANSACTION;
-//     UPDATE metadata SET scrapes = {} WHERE _id=\"{}\";
-//     UPDATE account SET accounts = {} WHERE _id=\"{}\";
-//     COMMIT TRANSACTION;
-//   ", 
-//     to_value(&metadata.scrapes)?, 
-//     &metadata._id, 
-//     to_value(&account.history)?,
-//     &account._id, 
-//   ))
-//   .await?;
-
-//   Ok(())
-// }
 
 async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
   let _ = page.goto(
@@ -637,11 +622,32 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   Ok(row.inner_text().await?)
 }
 
-async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<()> {
+async fn add_account_to_metadata(ctx: &TaskActionCTX, meta_id: &str, data: Accounts) -> Result<()> {
+  let db_state = ctx.handle.state::<DB>();
+  let db_guard = db_state.0.lock().await;
+  let _ = db_guard
+    .query(format!("UPDATE metadata:{} SET accounts += {};", meta_id, to_value(&data).unwrap()))
+    .await;
+
+  todo!()
+}
+
+async fn save_scrape_to_db(
+  ctx: &TaskActionCTX, 
+  account_id: &str, 
+  metadata: &Metadata, 
+  credits: &CreditsInfo, 
+  cookies: &str, 
+  data: Vec<RecordDataArg>, 
+  scrape_id: &str, 
+  scrape: Scrapes,
+  history: History
+) -> Result<(Account, Metadata)> {
   let mut query = vec![
     "BEGIN TRANSACTION;".to_string(),
-    format!("UPDATE account:{} MERGE $accountdata;", &account._id),
-    format!("UPDATE metadata:{} MERGE $metarecord;", &metadata._id),
+    format!("UPDATE account:{} MERGE $accountdata;", account_id),
+    format!("UPDATE account:{} SET history[WHERE scrape_id=\"{}\"] = {};", account_id, scrape_id, to_value(history).unwrap()),
+    format!("UPDATE metadata:{} SET scrapes[WHERE scrape_id=\"{}\"] = {};", &metadata._id, scrape_id, to_value(scrape).unwrap())
   ];
   for d in data {
     query.push(
@@ -649,7 +655,7 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
           "CREATE record:{} CONTENT {};", 
           Id::rand(),
           to_value(json!({
-            "scrape_id": &scrape_id,
+            "scrape_id": scrape_id,
             "url": &metadata.url,
             "data": &d
           }))?
@@ -666,7 +672,6 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
     .bind(("accountdata", to_value(json!({
         "cookies": cookies,
         "last_used": time_ms().to_string(),
-        "history": &account.history,
         "credits_used": credits.credits_used,
         "credit_limit": credits.credit_limit,
         "renewal_date": credits.renewal_date,
@@ -675,18 +680,20 @@ async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Me
         "trial_days_left": credits.trial_days_left.as_ref().or(None)
         })
       )?)
-    )
-    .bind(("metarecord", to_value(json!({
-        "scrapes": &metadata.scrapes,
-        "accounts": &metadata.accounts
-      })
-      )?)
-    )
-    .await?;
+    ).await?;
 
-    Ok(())
+    let metadata = match db_state.select_one::<Metadata>("metadata", &metadata._id).await? {
+      Some(meta) => meta,
+      None => { return Err(anyhow!("Failed to get metadata")) }
+    };
+  
+    let account = match db_state.select_one::<Account>("account", account_id).await? {
+      Some(acc) => acc,
+      None => { return Err(anyhow!("Failed to get account")) }
+    };
+
+    Ok((account, metadata))
     // -> Result<(Account, Metadata)>
-
 }
 
 async fn init_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metadata> {

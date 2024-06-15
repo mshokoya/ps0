@@ -33,7 +33,7 @@ pub struct ScrapeTaskArgs {
 #[derive(Debug, Deserialize)]
 pub struct ScrapeActionArgs {
   pub url: String,
-  pub chunk: [u64; 2],
+  pub chunk: [u32; 2],
   pub account_id: String,
   pub metadata: Metadata,
   pub max_leads_limit: u64,
