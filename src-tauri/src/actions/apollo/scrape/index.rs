@@ -13,7 +13,7 @@ use serde_json::{from_value, json, Value};
 use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo, log_into_apollo_then_visit};
-use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
+use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, goto_wait_for_selector, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
 use crate::actions::controllers::TaskType;
 use crate::libs::cache::ApolloCache;
 use crate::libs::db::accounts::types::{Account, History};
@@ -108,7 +108,6 @@ pub async fn apollo_scrape(
       "https://app.apollo.io/#/settings/credits/current",
     )
     .await?;
-
     let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
@@ -294,15 +293,21 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   // wait_for_selector(&page, &sl_popup_selector, 10, 2).await;
   sleep(Duration::from_secs(5)).await;
 
-
-  let _ = page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").timeout(Duration::from_secs(5)).await;
-
-  let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
+  // =================================================================================================
+  let _ = goto_wait_for_selector(
+    page, 
+    "https://app.apollo.io/#/people/tags?teamListsOnly[]=no", 
+    &saved_list_table_row_selector, 
+    15, 
+    3
+  ).await?;
+  // ===================================================================================
+  // let _ = page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").timeout(Duration::from_secs(5)).await;
+  // let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
+  // ==================================================================================================
 
   let mut counter = 0;
   let mut list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
-
-
   while list_name_in_table != list_name && counter <= 10 {
     println!("add_leads_to_list_and_scrape   list_name_in_table LOOPY");
     if counter == 10 { return Err(anyhow!("failed to find save list item")) }

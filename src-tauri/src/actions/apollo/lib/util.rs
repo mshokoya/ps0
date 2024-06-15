@@ -1,6 +1,6 @@
 use std::time::Duration;
 use anyhow::{anyhow, Context, Result};
-use async_std::task;
+use async_std::{prelude::FutureExt, task};
 use chromiumoxide::{Element, Page};
 use serde::{Deserialize, Serialize};
 use serde_json::to_string;
@@ -65,6 +65,11 @@ pub async fn inject_cookies(page: &Page, cookies: &Option<Cookies>) -> Result<()
 
 pub async fn get_browser_cookies(page: &Page) -> Result<String> {
     to_string(&page.get_cookies().await?).context("failed to serialize cookies")
+}
+
+pub async fn goto_wait_for_selector(page: &Page, url: &str, selector: &str, interval: u8, delay_secs: u64) -> Result<Element> {
+    let _ = page.goto(url).timeout(Duration::from_secs(5)).await;
+    wait_for_selector(page, selector, interval, delay_secs).await
 }
 
 pub async fn wait_for_selectors(
