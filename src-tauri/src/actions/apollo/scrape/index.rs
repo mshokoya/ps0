@@ -177,38 +177,82 @@ pub async fn apollo_scrape(
 }
 
 async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, account: &mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
-  metadata.scrapes.push(Scrapes {
+  let scrapes = Scrapes {
     scrape_id: scrape_id.to_string(), 
     list_name: list_name.to_string(), 
     length: 0, 
     date: time_ms().to_string()
-  });
+  };
 
-  account.history.push(History {
+  let history = History {
     total_page_scrape: 0, 
     scrape_time: time_ms(), 
     list_name: list_name.to_string(),
     scrape_id: scrape_id.to_string()
-  });
+  };
   
   let db_state = ctx.handle.state::<DB>();
   db_state.0.lock()
   .await
   .query(format!("
     BEGIN TRANSACTION;
-    UPDATE metadata SET scrapes = {} WHERE _id=\"{}\";
-    UPDATE account SET accounts = {} WHERE _id=\"{}\";
+    UPDATE metadata SET scrapes += {} WHERE _id=\"{}\";
+    UPDATE account SET accounts += {} WHERE _id=\"{}\";
     COMMIT TRANSACTION;
-  ", 
-    to_value(&metadata.scrapes)?, 
-    &metadata._id, 
-    to_value(&account.history)?,
-    &account._id, 
+  ",
+    to_value(&scrapes)?, 
+    metadata._id, 
+    to_value(history)?,
+    account._id, 
   ))
   .await?;
 
+  match db_state.select_one::<Metadata>("metadata", &metadata._id).await? {
+    Some(meta) => { *metadata = meta; },
+    None => { return Err(anyhow!("Failed to get metadata")) }
+  };
+
+  match db_state.select_one::<Account>("account", &account._id).await? {
+    Some(acc) => { *account = acc; },
+    None => { return Err(anyhow!("Failed to get account")) }
+  };
+
   Ok(())
 }
+
+// async fn update_db_for_new_scrape(ctx: &TaskActionCTX, metadata: &mut Metadata, account: &mut Account, list_name: &str, scrape_id: &str) -> Result<()> {
+//   metadata.scrapes.push(Scrapes {
+//     scrape_id: scrape_id.to_string(), 
+//     list_name: list_name.to_string(), 
+//     length: 0, 
+//     date: time_ms().to_string()
+//   });
+
+//   account.history.push(History {
+//     total_page_scrape: 0, 
+//     scrape_time: time_ms(), 
+//     list_name: list_name.to_string(),
+//     scrape_id: scrape_id.to_string()
+//   });
+  
+//   let db_state = ctx.handle.state::<DB>();
+//   db_state.0.lock()
+//   .await
+//   .query(format!("
+//     BEGIN TRANSACTION;
+//     UPDATE metadata SET scrapes = {} WHERE _id=\"{}\";
+//     UPDATE account SET accounts = {} WHERE _id=\"{}\";
+//     COMMIT TRANSACTION;
+//   ", 
+//     to_value(&metadata.scrapes)?, 
+//     &metadata._id, 
+//     to_value(&account.history)?,
+//     &account._id, 
+//   ))
+//   .await?;
+
+//   Ok(())
+// }
 
 async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
   let _ = page.goto(
