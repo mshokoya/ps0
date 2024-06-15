@@ -27,3 +27,5 @@ dist-ssr
 
 binaries
 resources
+
+tauri.conf copy.json
