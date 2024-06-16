@@ -37,9 +37,12 @@ pub async fn log_into_apollo_then_visit(
         .timeout(Duration::from_secs(30))
         .await;
 
+    sleep(Duration::from_secs(5)).await;
+
     let url = page.url().await?.unwrap();
 
     if url.contains("#/login") {
+        println!("it contains login");
         log_into_apollo(ctx, account).await?;
     }
 

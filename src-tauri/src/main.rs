@@ -17,7 +17,7 @@ use actions::apollo::{
     create::index::create_task,
     scrape::index::scrape_task,
     cache::accounts_in_use,
-    add::index::{add_account, add_domain}
+    add::index::{add_account, add_domain, dummy_fn1, dummy_fn2, dummy_fn3}
 };
 use libs::{cache::ApolloCache, forwarder::index::Forwarder, taskqueue::index::TaskQueue};
 use libs::{db::index::DB, scraper::Scraper};
@@ -142,7 +142,10 @@ async fn main() {
             remove_domain,
             accounts_in_use,
             add_account,
-            add_domain
+            add_domain,
+            dummy_fn1,
+            dummy_fn2,
+            dummy_fn3
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

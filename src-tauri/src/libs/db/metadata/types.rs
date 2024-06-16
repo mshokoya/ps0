@@ -40,12 +40,12 @@ pub struct Scrapes {
     pub scrape_id: String,
     pub list_name: String,
     pub length: u8,
-    pub date: String,
+    pub date: u128,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MetadataArg {
-    pub _id: Option<Id>,
+    pub _id: Option<String>,
     pub url: Option<String>,
     pub params: Option<HashMap<String, Value>>,
     pub name: Option<String>,

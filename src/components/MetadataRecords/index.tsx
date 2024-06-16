@@ -12,7 +12,7 @@ import { CHANNELS } from '../../core/channels'
 
 export const MetadataAndRecordField = observer(() => {
   const metaChecked = useObservable<number[]>([])
-  const metas = useSelector(() => appState$.metas.reverse()) as IMetaData[]
+  const metas = useSelector(appState$.metas) as IMetaData[]
   const records = useSelector(appState$.records) as IRecords[]
   const reqInProcess = useObservable({
     update: false,
@@ -51,7 +51,7 @@ export const MetadataAndRecordField = observer(() => {
           batch(() => {
             metadataTaskHelper.deleteTaskByReqType(metaID, 'update')
             metadataResStatusHelper.delete(metaID, 'update')
-            reqInProcess.update.set(true)
+            reqInProcess.update.set(false)
           })
         }, 1500)
       })
@@ -68,51 +68,54 @@ export const MetadataAndRecordField = observer(() => {
     if (type === 'checklist' && !metaChecked.length) return
     reqInProcess.del.set(true)
 
-    const metaIDs =
-      type === 'single'
-        ? [metas[metadataState.selectedMeta.peek()]._id]
-        : metaChecked.get().map((idx) => metas[idx]._id)
+    const args = metaChecked.get().map((idx) => ({
+      meta_id: metas[idx]._id,
+      scrape_ids: metas[idx].scrapes.map((s) => s.scrape_id)
+    })) //tauri format
 
     batch(() => {
-      for (const id of metaIDs) {
-        metadataTaskHelper.add(id, { type: 'delete', status: 'processing' })
+      for (const metaArg of args) {
+        metadataTaskHelper.add(metaArg.meta_id, { type: 'delete', status: 'processing' })
       }
     })
 
-    await invoke<R<{ ok: string[]; fail: string[] }>>(CHANNELS.delete_metadatas, {args: {
-      id: metaIDs
-    }})
+    await invoke<R<void>>(CHANNELS.delete_metadatas, { args })
       .then((res) => {
-        batch(() => {
-          if (res.ok) {
-            for (const id of res.data.ok) {
-              appState$.metas.set((m1) => m1.filter((m2) => m2._id !== id))
-              metadataResStatusHelper.add(id, ['delete', 'ok'])
-            }
-            for (const id of res.data.fail) {
-              metadataResStatusHelper.add(id, ['delete', 'fail'])
-            }
-          } else {
-            for (const id of metaIDs) {
-              metadataResStatusHelper.add(id, ['delete', 'fail'])
-            }
-          }
-        })
+        if (res.ok) {
+          let deletedMetas = args.map((a) => a.meta_id);
+          batch(() => {
+            appState$.metas.set((m1) => m1.filter((m2) => !deletedMetas.includes(m2._id) ))
+            metaChecked.set([]);
+          })
+          // for (const metaArg of args) {
+           
+            // metadataResStatusHelper.add(id, ['delete', 'ok'])
+          // }
+          // for (const id of res.data.fail) {
+            // metadataResStatusHelper.add(id, ['delete', 'fail'])
+          // }
+        } else {
+          // for (const metaArg of args) {
+            // metadataResStatusHelper.add(id, ['delete', 'fail'])
+          // }
+        }
       })
       .catch(() => {
-        for (const id of metaIDs) {
-          metadataResStatusHelper.add(id, ['delete', 'fail'])
-        }
+        // for (const metaArg of args) {
+          // metadataResStatusHelper.add(id, ['delete', 'fail'])
+        // }
       })
       .finally(() => {
         setTimeout(() => {
           batch(() => {
-            for (const id of metaIDs) {
-              metadataTaskHelper.deleteTaskByReqType(id, 'delete')
-              metadataResStatusHelper.delete(id, 'delete')
+            for (const metaArg of args) {
+              metadataTaskHelper.deleteTaskByReqType(metaArg.meta_id, 'delete')
+              // metadataResStatusHelper.delete(metaArg.meta_id, 'delete')
             }
             reqInProcess.del.set(false)
           })
+          console.log("I DELETED")
+          console.log(appState$.metas.peek())
         }, 1500)
       })
   }

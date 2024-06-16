@@ -98,3 +98,16 @@ pub async fn add_domain(ctx: AppHandle, args: Value) -> R<Domain> {
         }
     }
 }
+
+#[tauri::command]
+pub async fn dummy_fn1(ctx: AppHandle, args: Value) {
+
+}
+#[tauri::command]
+pub async fn dummy_fn2(ctx: AppHandle, args: Value) {
+
+}
+#[tauri::command]
+pub async fn dummy_fn3(ctx: AppHandle, args: Value) {
+
+}

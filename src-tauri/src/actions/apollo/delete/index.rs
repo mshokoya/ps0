@@ -26,14 +26,29 @@ pub async fn delete_account(ctx: AppHandle, args: Value) -> R<()> {
   }
 }
 
+#[derive(Deserialize, Debug)]
+pub struct SDD {
+  pub meta_id: String,
+  pub scrape_ids: Vec<String>
+} 
+
 #[tauri::command]
-pub async fn delete_metadatas(ctx: AppHandle, args: Vec<String>) -> R<()> {
-  for id in args.iter() {
-    match ctx.state::<DB>().delete_one::<Metadata>("metadata", id).await {
-      Ok(_) => {},
-      Err(_) => return R::fail_none(None)
-    }
-  }
+pub async fn delete_metadatas(ctx: AppHandle, args: Vec<SDD>) -> R<()> {
+  let db_state = ctx.state::<DB>();
+  let db_guard = db_state.0.lock().await;
+
+  for meta in args.iter() {
+    let mut query = vec![
+      "BEGIN TRANSACTION;".to_string(),
+      format!("DELETE metadata:{};", meta.meta_id),
+    ];
+    for scrape_id in meta.scrape_ids.iter() {
+      query.push(format!("DELETE record WHERE scrape_id = '{scrape_id}';").to_string());
+    };
+    query.push("COMMIT TRANSACTION;".to_string());
+
+    let _ = db_guard.query(query.join(" ")).await;
+  };
   R::ok_none()
 }
 

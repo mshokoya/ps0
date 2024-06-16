@@ -78,6 +78,8 @@ pub async fn apollo_scrape(
     args: Option<Value>,
 ) -> Result<Option<Value>> {
     let mut args: ScrapeActionArgs = from_value(args.unwrap())?;
+    ctx.page =  Some(unsafe { SCRAPER.incog().await? });
+    let page = ctx.page.as_ref().unwrap();
     let db = ctx.handle.state::<DB>();
     
     let Some(mut account) = db.select_one::<Account>(
@@ -122,18 +124,6 @@ pub async fn apollo_scrape(
 
       let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
       
-      add_account_to_metadata(
-        &ctx, 
-        &args.metadata._id,
-        Accounts {
-          account_id: account._id.clone(),
-          chunk: args.chunk
-        }
-      ).await?;
-
-      ctx.page =  Some(unsafe { SCRAPER.incog().await? });
-      let page = ctx.page.as_ref().unwrap();
-      
       let _ = go_to_search_url(page, &url).await?;
 
       let data = add_leads_to_list_and_scrape(
@@ -145,7 +135,7 @@ pub async fn apollo_scrape(
 
       if data.len() == 0 { return Ok(None) };
 
-      sleep(Duration::from_secs(3)).await;
+      sleep(Duration::from_secs(5)).await;
 
       let _ = page.goto("https://app.apollo.io/#/settings/credits/current").timeout(Duration::from_secs(5)).await;
       let new_credits = apollo_login_credits_info(&ctx).await?;
@@ -160,6 +150,9 @@ pub async fn apollo_scrape(
     
       let total_page_scrape = data.len() as u16;
       scrape.length = total_page_scrape as u8;
+
+      println!("HISTORY");
+      println!("{account:#?}");
 
       let mut history = account.history.iter_mut()
         .find(|v| v.scrape_id == scrape_id)
@@ -199,7 +192,7 @@ async fn update_db_for_new_scrape<'a, 'b>(ctx: &TaskActionCTX, metadata: &'a mut
     scrape_id: scrape_id.to_string(), 
     list_name: list_name.to_string(), 
     length: 0, 
-    date: time_ms().to_string()
+    date: 0
   };
 
   let history = History {
@@ -215,7 +208,7 @@ async fn update_db_for_new_scrape<'a, 'b>(ctx: &TaskActionCTX, metadata: &'a mut
   .query(format!("
     BEGIN TRANSACTION;
     UPDATE metadata:{} SET scrapes += {};
-    UPDATE account:{} SET accounts += {};
+    UPDATE account:{} SET history += {};
     COMMIT TRANSACTION;
   ",
     metadata._id,
@@ -341,6 +334,8 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
     println!("add_leads_to_list_and_scrape   list_name_in_table LOOPY");
     if counter == 10 { return Err(anyhow!("failed to find save list item")) }
     page.reload().await?;
+    sleep(Duration::from_secs(3)).await;
+    println!("{page:#?}");
     list_name_in_table = match page.find_element(saved_list_table_row_selector).await {
       Ok(el) => match el.find_element(r#"[class="zp_aBhrx"]"#).await {
         Ok(el) => el.inner_text().await?.unwrap(),
@@ -355,7 +350,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
       }
     };
 
-    sleep(Duration::from_secs(3)).await;
+    sleep(Duration::from_secs(5)).await;
     counter += 1;
   }
 
@@ -629,7 +624,7 @@ async fn add_account_to_metadata(ctx: &TaskActionCTX, meta_id: &str, data: Accou
     .query(format!("UPDATE metadata:{} SET accounts += {};", meta_id, to_value(&data).unwrap()))
     .await;
 
-  todo!()
+  Ok(())
 }
 
 async fn save_scrape_to_db(
@@ -733,126 +728,3 @@ async fn new_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metad
 
   Ok(meta)
 }
-
-
-// ============1 ref=============
-
-
-// async fn save_scrape_to_db(ctx: &TaskActionCTX, account: &Account, metadata: &Metadata, credits: &CreditsInfo, cookies: &str, data: Vec<RecordDataArg>, scrape_id: &str) -> Result<(Account, Metadata)> {
-  
-//   let mut query = vec![
-//     "BEGIN TRANSACTION;".to_string(),
-//     format!("UPDATE account:{} SET $accountdata;", &account.id),
-//     format!("UPDATE metadata:{} SET $metarecord;", &metadata.id),
-//   ];
-//   for idx in 0..data.len() {
-//     query.push(format!("CREATE record:{} SET $recorddata{};", Id::rand(), idx));
-//   }
-//   query.push("COMMIT TRANSACTION;".to_string());
-  
-//   let db_state = ctx.handle.state::<DB>();
-//   let db_guard = db_state.0.lock().await;
-//   let mut query = db_guard
-//     .query(query.join(" "))
-//     .bind(("accountdata", to_value(json!({
-//         "cookies": cookies,
-//         "last_used": time_ms().to_string(),
-//         "history": &account.history,
-//         "credits_used": credits.credits_used.to_string(),
-//         "credits_limit": credits.credits_limit.to_string(),
-//         "renewal_date": credits.renewal_date.to_string(),
-//         "renewal_start_date": credits.renewal_start_date.to_string(),
-//         "renewal_end_date": credits.renewal_end_date.to_string(),
-//         "trial_days_left": credits.trial_days_left.as_ref().or(None)
-//         })
-//       )?)
-//     )
-//     .bind(("metarecord", to_value(json!({
-//         "scrapes": &metadata.scrapes,
-//         "accounts": &metadata.accounts
-//       })
-//       )?)
-//     );
-
-//   let mut query_res = &query;
-
-//   for (idx, r) in data.iter().enumerate()  {
-//     add_bind(query_res, (
-//       format!("recorddata{idx}"), 
-//       to_value(json!({
-//         "scrape_id": &scrape_id,
-//         "url": &metadata.url,
-//         "data": r
-//       }))
-//     ))
-
-//   }
-
-//   // query.borrow_mut().await?;
-  
-//   todo!()
-// }
-
-// fn add_bind(mut query: surrealdb::method::Query<'_, surrealdb::engine::local::Db>, val: (impl Serialize, impl Serialize)) {
-//   query.bind(val);
-// }
-
-
-// ===============================
-
-// ==================polodb=====================
-
-// let db_state = ctx.handle.state::<DB>();
-  // let db = db_state.db.lock().unwrap();
-
-  // let mut session = db.start_session()?;
-  // session.start_transaction(None)?;
-
-  // let account_collection = db.collection::<Account>(&Entity::Account.name());
-  // let _ = account_collection.update_one_with_session(
-  //   doc! {"_id": &account._id}, 
-  //   doc! {
-  //     "$set": {
-  //       "cookies": cookies,
-  //       "last_used": time_ms().to_string(),
-  //       "history": to_bson(&account.history).unwrap(),
-  //       "proxy": proxy,
-  //       "credits_used": credits.credits_used.to_string(),
-  //       "credits_limit": credits.credits_limit.to_string(),
-  //       "renewal_date": credits.renewal_date.to_string(),
-  //       "renewal_start_date": credits.renewal_start_date.to_string(),
-  //       "renewal_end_date": credits.renewal_end_date.to_string(),
-  //       "trial_days_left": credits.trial_days_left.as_ref().or(None)
-  //     }
-  //   },
-  //   &mut session
-  // );
-
-  // let metadata_collection = db.collection::<Metadata>(&Entity::Metadata.name());
-  // let _ = metadata_collection.update_one_with_session(
-  //   doc! {"_id": &account._id},
-  //   doc! {
-  //     "$set": {
-  //       "scrapes": to_bson(&metadata.scrapes).unwrap(),
-  //       "accounts": to_bson(&metadata.accounts).unwrap()
-  //     }
-  //   },
-  //   &mut session
-  // );
-
-  // let records = data.iter().map(|r| doc! {
-  //   "_id": ObjectId::new().to_hex(),
-  //   "scrape_id": &scrape_id,
-  //   "url": &metadata.url,
-  //   "data": to_bson(r).unwrap()
-  // }).collect::<Vec<Document>>();
-  
-  // let record_collection = db.collection::<Document>(&Entity::Record.name());
-  // record_collection.insert_many_with_session(records, &mut session).unwrap();
-
-  // session.commit_transaction().unwrap();
-
-  // let account = db_state.find_one::<Account>(Entity::Account, Some(doc! {"_id": &account._id})).unwrap();
-  // let metadata = db_state.find_one::<Metadata>(Entity::Metadata, Some(doc! {"_id": &metadata._id})).unwrap();
-
-  // Ok((account, metadata))

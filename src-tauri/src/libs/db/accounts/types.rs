@@ -6,7 +6,7 @@ use surrealdb::sql::Id;
 pub struct Account {
     pub _id: String,
     pub domain: String, // enum Domain
-    pub trial_time: Option<u64>,
+    pub trial_time: Option<u128>,
     pub suspended: bool,
     pub login_type: String, // enum
     pub verified: String, // yes, no, confirm
@@ -14,10 +14,10 @@ pub struct Account {
     pub password: String,
     pub credits_used: Option<u16>,
     pub credit_limit: Option<u16>,
-    pub renewal_date: Option<String>,
-    pub renewal_start_date: Option<String>,
-    pub renewal_end_date: Option<String>,
-    pub last_used: Option<u64>,
+    pub renewal_date: Option<u128>,
+    pub renewal_start_date: Option<u128>,
+    pub renewal_end_date: Option<u128>,
+    pub last_used: Option<u128>,
     pub cookies: Option<Cookies>,
     pub history: Vec<History>,
     pub total_scraped_recently: u16
