@@ -101,7 +101,7 @@ pub async fn add_domain(ctx: AppHandle, args: Value) -> R<Domain> {
 
 #[tauri::command]
 pub async fn dummy_fn1(ctx: AppHandle, args: Value) {
-
+    ctx.state::<DB>().0.lock().await.delete("record")
 }
 #[tauri::command]
 pub async fn dummy_fn2(ctx: AppHandle, args: Value) {

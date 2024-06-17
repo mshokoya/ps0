@@ -362,22 +362,6 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
         println!("LOOP 1 {e:#?}");
       }
     }
-    
-    
-
-    // list_name_in_table = match page.find_element(saved_list_table_row_selector).await {
-    //   Ok(el) => match el.find_element(r#"[class="zp_aBhrx"]"#).await {
-    //     Ok(el) => el.inner_text().await?.unwrap(),
-    //     Err(e) => {
-    //       println!("LOOP 2 {e:#?}");
-    //       list_name_in_table
-    //     } 
-    //   },
-    //   Err(e) => {
-    //     println!("LOOP 1 {e:#?}");
-    //     list_name_in_table
-    //   }
-    // };
 
     page.reload().await?;
     sleep(Duration::from_secs(5)).await;
