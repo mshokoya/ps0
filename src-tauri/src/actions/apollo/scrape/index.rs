@@ -1,14 +1,14 @@
 use std::cmp::{self, min};
 use std::iter;
 use std::time::Duration;
+use async_std::io::timeout;
 use async_std::prelude::FutureExt;
 use async_std::task::sleep;
-use chromiumoxide::cdp::browser_protocol::page::{NavigateParams, NavigateParamsBuilder, TransitionType};
+use chromiumoxide::cdp::browser_protocol::page::{NavigateParams, TransitionType};
 use chromiumoxide::Page;
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use anyhow::{anyhow, Context, Result};
-use futures::TryFutureExt;
 use serde_json::{from_value, json, Value};
 use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager, State};
@@ -111,6 +111,8 @@ pub async fn apollo_scrape(
     let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
+      println!("{:#?}", args.max_leads_limit);
+      println!("1");
       let credits_left = old_credits.credit_limit - old_credits.credits_used;
       if credits_left <= 0 { return Ok(None) }
 
@@ -122,10 +124,12 @@ pub async fn apollo_scrape(
       let scrape_id = Id::uuid().to_string();
       let list_name = Username().fake::<String>();
 
+      println!("2");
       let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
-      
+      println!("3");
       let _ = go_to_search_url(page, &url).await?;
 
+      println!("4");
       let data = add_leads_to_list_and_scrape(
         &ctx, 
         &num_leads_to_scrape, 
@@ -137,11 +141,14 @@ pub async fn apollo_scrape(
 
       sleep(Duration::from_secs(5)).await;
 
+      println!("ABOUT TO GOTO");
+
       let _ = page.goto("https://app.apollo.io/#/settings/credits/current").timeout(Duration::from_secs(5)).await;
+      println!("IVE GONE TO");
       let new_credits = apollo_login_credits_info(&ctx).await?;
-
+      println!("5");
       let cookies = get_browser_cookies(&page).await?;
-
+      
       let mut scrape = args.metadata.scrapes.iter()
         .find(|v| v.scrape_id == scrape_id)
         .ok_or("Failed to find scrape data").unwrap()
@@ -150,9 +157,6 @@ pub async fn apollo_scrape(
     
       let total_page_scrape = data.len() as u16;
       scrape.length = total_page_scrape as u8;
-
-      println!("HISTORY");
-      println!("{account:#?}");
 
       let mut history = account.history.iter_mut()
         .find(|v| v.scrape_id == scrape_id)
@@ -174,11 +178,15 @@ pub async fn apollo_scrape(
         history
       ).await?;
 
+      println!("6");
+
       let mut next_page: u8 = get_page_in_url(&url).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
       url = set_page_in_url(&url, next_page);
       account = acc;
       args.metadata = metadata;
+
+      println!("7");
       
       args.max_leads_limit = args.max_leads_limit - total_page_scrape as u64;
       old_credits = new_credits;
@@ -192,12 +200,12 @@ async fn update_db_for_new_scrape<'a, 'b>(ctx: &TaskActionCTX, metadata: &'a mut
     scrape_id: scrape_id.to_string(), 
     list_name: list_name.to_string(), 
     length: 0, 
-    date: 0
+    date: "0".to_string()
   };
 
   let history = History {
     total_page_scrape: 0, 
-    scrape_time: time_ms(), 
+    scrape_time: time_ms().to_string(), 
     list_name: list_name.to_string(),
     scrape_id: scrape_id.to_string()
   };
@@ -233,15 +241,20 @@ async fn update_db_for_new_scrape<'a, 'b>(ctx: &TaskActionCTX, metadata: &'a mut
 
 
 async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
-  let _ = page.goto(
-    url
-    // NavigateParams::builder()
-    //   .transition_type(TransitionType::Reload)
-    //   .url(url)
-    //   .build().unwrap()
-  ).timeout(Duration::from_secs(5)).await;
+  // page.goto("http://www.google.com").await;
+  let current_url = page.url().await?.unwrap();
+  let _ = page.goto(url).timeout(Duration::from_secs(5)).await;
 
-  // page.goto(url).await?;
+  let _ = timeout(Duration::from_secs(30), async {
+    loop {
+      sleep(Duration::from_secs(5)).await;
+      let new_url = page.url().await.unwrap().unwrap();
+      if new_url != current_url { break }
+    };
+    Ok(())
+  }).await;
+  
+
   println!("WE IN go_to_search_url");
   wait_for_selector(page, r#"[class="zp_RFed0"]"#, 10, 2).await?;
   Ok(())
@@ -284,7 +297,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
 
   let max_leads = min(*num_leads_to_scrape, rows.len() as u64);
 
-  for row_idx in 0..3 {
+  for row_idx in 0..max_leads {
     if let Some(el) = rows.get(row_idx as usize) {
       el.find_element(checkbox_selector).await?.focus().await?.click().await?;
     }
@@ -329,27 +342,44 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   // ==================================================================================================
 
   let mut counter = 0;
-  let mut list_name_in_table = page.find_element(saved_list_table_row_selector).await?.find_element(r#"[class="zp_aBhrx"]"#).await?.inner_text().await?.unwrap();
-  while list_name_in_table != list_name && counter <= 10 {
-    println!("add_leads_to_list_and_scrape   list_name_in_table LOOPY");
-    if counter == 10 { return Err(anyhow!("failed to find save list item")) }
-    page.reload().await?;
-    sleep(Duration::from_secs(3)).await;
-    println!("{page:#?}");
-    list_name_in_table = match page.find_element(saved_list_table_row_selector).await {
-      Ok(el) => match el.find_element(r#"[class="zp_aBhrx"]"#).await {
-        Ok(el) => el.inner_text().await?.unwrap(),
-        Err(e) => {
-          println!("LOOP 2 {e:#?}");
-          list_name_in_table
-        } 
+  while counter <= 10 {
+    if counter == 10 { return Err(anyhow!("failed to find save list item")) };
+
+    match wait_for_selector(page, saved_list_table_row_selector, 3, 2).await {
+      Ok(el) => {
+          match el.find_element(r#"[class="zp_aBhrx"]"#).await {
+            Ok(el) => {
+              if list_name == el.inner_text().await?.unwrap() {
+                break;
+              };
+            },
+            Err(e) => {
+              println!("LOOP 2 {e:#?}");
+            }
+          }
       },
       Err(e) => {
         println!("LOOP 1 {e:#?}");
-        list_name_in_table
       }
-    };
+    }
+    
+    
 
+    // list_name_in_table = match page.find_element(saved_list_table_row_selector).await {
+    //   Ok(el) => match el.find_element(r#"[class="zp_aBhrx"]"#).await {
+    //     Ok(el) => el.inner_text().await?.unwrap(),
+    //     Err(e) => {
+    //       println!("LOOP 2 {e:#?}");
+    //       list_name_in_table
+    //     } 
+    //   },
+    //   Err(e) => {
+    //     println!("LOOP 1 {e:#?}");
+    //     list_name_in_table
+    //   }
+    // };
+
+    page.reload().await?;
     sleep(Duration::from_secs(5)).await;
     counter += 1;
   }
@@ -617,16 +647,6 @@ async fn get_first_table_row_name(page: &Page) -> Result<Option<String>> {
   Ok(row.inner_text().await?)
 }
 
-async fn add_account_to_metadata(ctx: &TaskActionCTX, meta_id: &str, data: Accounts) -> Result<()> {
-  let db_state = ctx.handle.state::<DB>();
-  let db_guard = db_state.0.lock().await;
-  let _ = db_guard
-    .query(format!("UPDATE metadata:{} SET accounts += {};", meta_id, to_value(&data).unwrap()))
-    .await;
-
-  Ok(())
-}
-
 async fn save_scrape_to_db(
   ctx: &TaskActionCTX, 
   account_id: &str, 
@@ -664,7 +684,7 @@ async fn save_scrape_to_db(
   let db_guard = db_state.0.lock().await;
   let _ = db_guard
     .query(query.join(" "))
-    .bind(("accountdata", to_value(json!({
+    .bind(("accountdata", json!({
         "cookies": cookies,
         "last_used": time_ms().to_string(),
         "credits_used": credits.credits_used,
@@ -673,9 +693,10 @@ async fn save_scrape_to_db(
         "renewal_start_date": credits.renewal_start_date,
         "renewal_end_date": credits.renewal_end_date,
         "trial_days_left": credits.trial_days_left.as_ref().or(None)
-        })
-      )?)
+        }))
     ).await?;
+
+    drop(db_guard);
 
     let metadata = match db_state.select_one::<Metadata>("metadata", &metadata._id).await? {
       Some(meta) => meta,
