@@ -1,11 +1,9 @@
 use std::cmp::{self, min};
-use std::iter;
 use std::time::Duration;
-use async_std::io::timeout;
+use async_std::future::timeout;
 use async_std::prelude::FutureExt;
 use async_std::task::sleep;
-use chromiumoxide::cdp::browser_protocol::page::{NavigateParams, TransitionType};
-use chromiumoxide::Page;
+use chromiumoxide::{Element, Page};
 use fake::faker::internet::en::Username;
 use fake::Fake;
 use anyhow::{anyhow, Context, Result};
@@ -13,7 +11,7 @@ use serde_json::{from_value, json, Value};
 use surrealdb::sql::{to_value, Id};
 use tauri::{AppHandle, Manager, State};
 use crate::actions::apollo::lib::index::{apollo_login_credits_info, log_into_apollo, log_into_apollo_then_visit};
-use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, goto_wait_for_selector, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
+use crate::actions::apollo::lib::util::{get_browser_cookies, get_page_in_url, goto_wait_for_selector, inject_cookies, set_page_in_url, set_range_in_url, time_ms, wait_for_selector, CreditsInfo};
 use crate::actions::controllers::TaskType;
 use crate::libs::cache::ApolloCache;
 use crate::libs::db::accounts::types::{Account, History};
@@ -102,17 +100,10 @@ pub async fn apollo_scrape(
       name: "".to_string(),
     };
 
-    log_into_apollo_then_visit(
-      &ctx,
-      &account,
-      "https://app.apollo.io/#/settings/credits/current",
-    )
-    .await?;
+    log_into_apollo_visit_credits(&ctx, &account).await?;
     let mut old_credits = apollo_login_credits_info(&ctx).await?;
 
     while args.max_leads_limit > 0 {
-      println!("{:#?}", args.max_leads_limit);
-      println!("1");
       let credits_left = old_credits.credit_limit - old_credits.credits_used;
       if credits_left <= 0 { return Ok(None) }
 
@@ -124,12 +115,9 @@ pub async fn apollo_scrape(
       let scrape_id = Id::uuid().to_string();
       let list_name = Username().fake::<String>();
 
-      println!("2");
       let _ = update_db_for_new_scrape(&ctx, &mut args.metadata, &mut account, &list_name, &scrape_id).await?;
-      println!("3");
-      let _ = go_to_search_url(page, &url).await?;
 
-      println!("4");
+      let _ = go_to_search_url(page, &url).await?;
       let data = add_leads_to_list_and_scrape(
         &ctx, 
         &num_leads_to_scrape, 
@@ -139,14 +127,11 @@ pub async fn apollo_scrape(
 
       if data.len() == 0 { return Ok(None) };
 
-      sleep(Duration::from_secs(5)).await;
-
-      println!("ABOUT TO GOTO");
+      // sleep(Duration::from_secs(5)).await;
 
       let _ = page.goto("https://app.apollo.io/#/settings/credits/current").timeout(Duration::from_secs(5)).await;
-      println!("IVE GONE TO");
       let new_credits = apollo_login_credits_info(&ctx).await?;
-      println!("5");
+
       let cookies = get_browser_cookies(&page).await?;
       
       let mut scrape = args.metadata.scrapes.iter()
@@ -178,15 +163,11 @@ pub async fn apollo_scrape(
         history
       ).await?;
 
-      println!("6");
-
       let mut next_page: u8 = get_page_in_url(&url).unwrap() + 1;
       next_page = if next_page > apollo_max_page { 1 } else { next_page };
       url = set_page_in_url(&url, next_page);
       account = acc;
       args.metadata = metadata;
-
-      println!("7");
       
       args.max_leads_limit = args.max_leads_limit - total_page_scrape as u64;
       old_credits = new_credits;
@@ -245,7 +226,7 @@ async fn go_to_search_url(page: &Page, url: &str) -> Result<()> {
   let current_url = page.url().await?.unwrap();
   let _ = page.goto(url).timeout(Duration::from_secs(5)).await;
 
-  let _ = timeout(Duration::from_secs(30), async {
+  let _ = timeout::<_, Result<()>>(Duration::from_secs(30), async {
     loop {
       sleep(Duration::from_secs(5)).await;
       let new_url = page.url().await.unwrap().unwrap();
@@ -270,26 +251,46 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   let pagination_info_selector = r#"[class="zp_VVYZh"]"#;
   let page = ctx.page.as_ref().unwrap();
 
-  wait_for_selector(&page, pagination_info_selector, 10, 2).await?;
+  wait_for_selector(&page, pagination_info_selector, 10, 4).await?;
 
-  let mut name = "".to_string();
-  let mut should_continue = false;
-  let mut counter: u8 = 0;
-  while !should_continue && counter <= 15 {
-    if counter == 15 { return Err(anyhow!("failed to find to get first table row element")) }
-    name = match get_first_table_row_name(&page).await {
-      Ok(el_txt) => {
-        match el_txt {
-          Some(txt) => txt,
-          None => name
-        }
-      },
-      Err(e) => name
-    };
-    if name != prev_lead.get() { should_continue = true; }
-    sleep(Duration::from_secs(2)).await;
-    counter += 1;
-  }
+  let name = timeout::<_, Result<String>>(Duration::from_secs(30), async {
+    let prev_name = prev_lead.get();
+    loop {
+      let name = match get_first_table_row_name(&page).await {
+        Ok(el_txt) => {
+          match el_txt {
+            Some(txt) => txt,
+            None => prev_name.to_string()
+          }
+        },
+        Err(_) => prev_name.to_string()
+      };
+      if name != prev_name { return Ok(name) }
+      sleep(Duration::from_secs(2)).await;
+    }
+  }).await??;
+
+  println!("CHECKIN PREVLEAD");
+  println!("{:#?}", prev_lead.get());
+
+  // let mut name = "".to_string();
+  // let mut should_continue = false;
+  // let mut counter: u8 = 0;
+  // while !should_continue && counter <= 15 {
+  //   if counter == 15 { return Err(anyhow!("failed to find to get first table row element")) }
+  //   name = match get_first_table_row_name(&page).await {
+  //     Ok(el_txt) => {
+  //       match el_txt {
+  //         Some(txt) => txt,
+  //         None => name
+  //       }
+  //     },
+  //     Err(e) => name
+  //   };
+  //   if name != prev_lead.get() { should_continue = true; }
+  //   sleep(Duration::from_secs(2)).await;
+  //   counter += 1;
+  // }
 
   prev_lead.set(name);
 
@@ -304,9 +305,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   }
 
   let list_button = page.find_elements(r#"[class="zp-button zp_zUY3r zp_hLUWg zp_n9QPr zp_B5hnZ zp_MCSwB zp_ML2Jn"]"#).await?;
-
   if list_button.len() == 0 { return Err(anyhow!("failed to find list button")) }
-
   list_button[1].focus().await?.click().await?;
 
   let _list_button_2 = wait_for_selector(&page, r#"[class="zp-menu-item zp_fZtsJ zp_pEvFx"]"#, 10, 2).await?.focus().await?.click().await?;
@@ -336,10 +335,6 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
     15, 
     3
   ).await?;
-  // ===================================================================================
-  // let _ = page.goto("https://app.apollo.io/#/people/tags?teamListsOnly[]=no").timeout(Duration::from_secs(5)).await;
-  // let _saved_list_table = wait_for_selector(&page, &saved_list_table_row_selector, 15, 2).await?;
-  // ==================================================================================================
 
   let mut counter = 0;
   while counter <= 10 {
@@ -732,4 +727,51 @@ async fn new_meta<'a>(db: &State<'a, DB>, args: &ScrapeTaskArgs) -> Result<Metad
   };
 
   Ok(meta)
+}
+
+pub async fn log_into_apollo_visit_credits(
+  ctx: &TaskActionCTX,
+  account: &Account,
+) -> Result<()> {
+  let login_input_field_selector = "input[class=\"p_bWS5y zp_J0MYa\"]".to_string();
+  let credits_component_selector = "[class=\"zp-card zp_T6GzV zp_kUStV zp_umSnZ zp_VicPq\"]".to_string();
+  let page = ctx.page.as_ref().unwrap();
+
+  inject_cookies(&page, &account.cookies).await?;
+
+  let _ = page.goto("https://app.apollo.io/#/settings/credits/current")
+      .await?
+      .wait_for_navigation()
+      .timeout(Duration::from_secs(60))
+      .await;
+
+  timeout::<_, Result<()>>(Duration::from_secs(60), async {
+    loop {
+      let login_component: Option<Element> = page.find_element(&login_input_field_selector).await.ok();
+      let credits_component: Option<Element> = page.find_element(&credits_component_selector).await.ok();
+      
+      if login_component.is_some() {
+        log_into_apollo(ctx, account).await;
+        return Ok(());
+      }
+
+      if credits_component.is_some() {
+        return Ok(());
+      }
+
+      sleep(Duration::from_secs(5)).await;
+    }
+  }).await?;
+
+  ctx.handle
+      .emit_all(
+          "apollo",
+          json!({
+              "task_id": ctx.task_id, 
+              "message": "Logged into apollo"
+          }),
+      )
+      .unwrap();
+
+  Ok(())
 }

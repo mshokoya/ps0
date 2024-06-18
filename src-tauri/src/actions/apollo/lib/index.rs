@@ -34,7 +34,7 @@ pub async fn log_into_apollo_then_visit(
     let _ = page.goto(url)
         .await?
         .wait_for_navigation()
-        .timeout(Duration::from_secs(30))
+        .timeout(Duration::from_secs(60))
         .await;
 
     sleep(Duration::from_secs(5)).await;

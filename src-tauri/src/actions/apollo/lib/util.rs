@@ -57,7 +57,6 @@ pub struct CreditsInfo {
 pub async fn inject_cookies(page: &Page, cookies: &Option<Cookies>) -> Result<()> {
     if cookies.is_some() {
         page.goto("http://www.google.com").await?;
-        page.wait_for_navigation_response().await?;
         page.set_cookies(cookies.clone().unwrap().into()).await?;
     }
     Ok(())
