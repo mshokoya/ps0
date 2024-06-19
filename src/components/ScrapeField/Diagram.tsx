@@ -8,6 +8,42 @@ import { taskQueue } from '../../core/state/taskQueue'
 import dagre from 'dagre'
 import { initialEdges, initialNodes } from '../../core/state'
 
+
+export const Diagram = observer(() => {
+  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges)
+
+  const onConnect = useCallback(
+    (params: any) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
+    []
+  )
+
+  useObserve(() => {
+    const [newTNodes, newTEdges] = addNodes(taskQueue.get())
+    setNodes([...layoutedNodes, ...newTNodes])
+    setEdges([...layoutedEdges, ...newTEdges])
+  })
+
+  return (
+    <Flex>
+      <Box className="w-[25rem] h-[15rem]">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          className="bg-white"
+          fitView
+        >
+          <Controls />
+          <Background />
+        </ReactFlow>
+      </Box>
+    </Flex>
+  )
+})
+
 const dagreGraph = new dagre.graphlib.Graph()
 dagreGraph.setDefaultEdgeLabel(() => ({}))
 
@@ -62,7 +98,11 @@ const addNodes = (tq: TaskQueue) => {
   for (const tqType in tq) {
     // @ts-ignore
     tq[tqType].forEach((task: TQTask) => {
-      const type = task.task_type === 'enqueue' ? 'q' : task.task_type === 'processing' ? 'p' : 't'
+      const type = task.metadata.queue === 'waiting' 
+        ? 'q' 
+        : task.metadata.queue === 'processing' 
+          ? 'p' 
+          : 't'
 
       nodes.push({
         id: task.task_id,
@@ -76,38 +116,3 @@ const addNodes = (tq: TaskQueue) => {
   }
   return [nodes, edges]
 }
-
-export const Diagram = observer(() => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges)
-
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge({ ...params, animated: true }, eds)),
-    []
-  )
-
-  useObserve(() => {
-    const [newTNodes, newTEdges] = addNodes(taskQueue.get())
-    setNodes([...nodes, ...newTNodes])
-    setEdges([...edges, ...newTEdges])
-  })
-
-  return (
-    <Flex>
-      <Box className="w-[25rem] h-[15rem]">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          className="bg-white"
-          fitView
-        >
-          <Controls />
-          <Background />
-        </ReactFlow>
-      </Box>
-    </Flex>
-  )
-})
