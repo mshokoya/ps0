@@ -14,9 +14,9 @@ export function handleTaskQueueEvent(res: TQTask) {
       break
   }
 
-  // switch (res.action_data.task_group) {
-  //   case 'apollo':
-  //     handleApolloTaskQueueEvents(res as TQTask<{ account_id: string, queue: keyof TaskQueue }>)
-  //     break
-  // }
+  switch (res.action_data.task_group) {
+    case 'Apollo':
+      handleApolloTaskQueueEvents(res as TQTask<{ account_id: string, queue: keyof TaskQueue }>)
+      break
+  }
 }

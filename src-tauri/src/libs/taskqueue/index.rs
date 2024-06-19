@@ -35,7 +35,7 @@ impl TaskQueue {
     }
 
     pub fn w_enqueue(&self, mut task: Task) {
-        update_metadata(&mut task, "waiting");
+        update_metadata_queue(&mut task, "waiting");
         let task_cln = task.clone();
         self.wait_queue.lock().unwrap().push_back(task_cln);
         self.app_handle
@@ -84,7 +84,7 @@ impl TaskQueue {
     }
 
     fn p_enqueue(&self, mut process: Process) {
-        update_metadata(&mut process.task, "processing");
+        update_metadata_queue(&mut process.task, "processing");
         let task = process.task.clone();
         self.process_queue.lock().unwrap().push_back(process);
         self.app_handle
@@ -141,7 +141,7 @@ impl TaskQueue {
     }
 
     fn t_enqueue(&self, mut task: Task) {
-        update_metadata(&mut task, "timeout");
+        update_metadata_queue(&mut task, "timeout");
         let task_cln = task.clone();
         if let Some(timeout) = task_cln.timeout {
             let app_handle = self.app_handle.clone();
@@ -242,7 +242,7 @@ impl TaskQueue {
                         task_id: tsk_cln.task_id.clone(),
                         page: None,
                     },
-                    tsk_cln.args,
+                    tsk_cln.args.clone(),
                 )
                 .await
             {
@@ -264,6 +264,7 @@ impl TaskQueue {
             println!("{ok:#?}");
             println!("{message:#?}");
             println!("{metadata:#?}");
+            println!("{tsk_cln:#?}");
 
             handle
                 .emit_all(
@@ -272,7 +273,7 @@ impl TaskQueue {
                         task_id: &tsk_cln.task_id,
                         message,
                         ok: Some(ok),
-                        task_type: TaskType::Enqueue,
+                        task_type: TaskType::Dequeue,
                         metadata: &tsk_cln.metadata,
                         action_data: ActionData {
                             task_group: &tsk_cln.task_group,
@@ -305,6 +306,6 @@ fn remove_process(queue: &Mutex<VecDeque<Process>>, task_id: &String) -> Option<
     pq.swap_remove_back(idx)
 }
 
-fn update_metadata(task: &mut Task, val: &str) {
+fn update_metadata_queue(task: &mut Task, val: &str) {
     task.metadata.as_mut().unwrap()["queue"] = json!(val);
 }

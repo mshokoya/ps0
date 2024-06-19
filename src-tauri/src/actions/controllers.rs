@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 // use uuid::Uuid;
@@ -109,5 +111,20 @@ impl TaskType {
             TaskType::ApolloScrape => apollo_scrape(ctx, args).await,
             _ => Ok(None),
         }
+    }
+}
+
+impl fmt::Display for TaskType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TaskType::ApolloCheck =>  write!(f, "check"),
+            TaskType::ApolloDemine => write!(f, "demine"),
+            TaskType::ApolloLogin => write!(f, "login"),
+            TaskType::ApolloCreate => write!(f, "create"),
+            TaskType::ApolloConfirm => write!(f, "confirm"),
+            TaskType::ApolloScrape => write!(f, "scrape"),
+            _ => write!(f, ""),
+        }
+       
     }
 }

@@ -5,12 +5,13 @@ import { appState$ } from '../state/index'
 export function handleApolloScrapeEndEvent(
   res: TQTask<{ account_id: string; task_type: string }>
 ) {
+  console.log(res)
   // 
   // if (res.ok === undefined) return
   const [account_id, idx, task] = accountTaskHelper.getTaskByTaskID(res.task_id)
   if (!account_id || idx === -1 || !task) return
 
-  accountTaskHelper.deleteTaskByTaskID(account_id, task.task_id!)
+  // accountTaskHelper.deleteTaskByTaskID(account_id, task.task_id!)
 
   const c = res.ok ? 'ok' : 'fail'
   stateResStatusHelper.add(account_id, [task.type, c])
@@ -46,8 +47,10 @@ function processApolloEventData(task: TQTask<{ account_id: string; task_type: st
 export function handleApolloTaskQueueEvents(
   res: TQTask<{ account_id: string; queue: keyof TaskQueue }>
 ) {
+  console.log("made it eya")
   switch (res.task_type) {
-    case 'enqueue': {
+    case 'Enqueue': {
+      console.log('we in enquq')
       const account_id = res.metadata!.account_id
       accountTaskHelper.add(account_id, {
         status: res.metadata.queue,
@@ -56,7 +59,8 @@ export function handleApolloTaskQueueEvents(
       })
       break
     }
-    case 'dequeue':
+    case 'Dequeue':
+      console.log('we in dequ')
       accountTaskHelper.deleteTaskByTaskID(res.metadata.account_id, res.task_id)
       break
   }

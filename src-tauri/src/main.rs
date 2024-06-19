@@ -24,64 +24,12 @@ use libs::{db::index::DB, scraper::Scraper};
 use libs::imap::IMAP;
 use once_cell::sync::Lazy;
 use std::env;
-use tauri::{api::process::{Command, CommandEvent}, window, Manager};
-use regex::Regex;
-
-pub struct PS(pub Option<String>);
-
-impl PS {
-    fn new () -> Self {
-        Self(None)
-    }
-    fn get(&self) -> Option<&String> {
-        self.0.as_ref()
-    }
-
-    fn set(&mut self, addr: String) {
-        self.0 = Some(addr)
-    }
-}
+use tauri::Manager;
 
 static mut SCRAPER: Lazy<Scraper> = Lazy::new(|| Scraper::new());
-static mut PS_ADDR: Lazy<PS> = Lazy::new(|| PS::new());
 
 #[async_std::main]
 async fn main() {
-
-    let (mut rx, mut child) = Command::new_sidecar("node")
-        .expect("failed to create `my-sidecar` binary command")
-        .args(vec!["resources/proxy-server.js", dotenv_codegen::dotenv!("FS_PXY_HTTP")])
-        .spawn()
-        .expect("Failed to spawn sidecar");
-
-        // should block
-        tauri::async_runtime::block_on(async move {
-            let address_regex = Regex::new(r"(?<address>http:\/\/127\.0\.0\.1:[0-9]*)").unwrap();
-            // #[cfg(debug_assertions)]
-            while let Some(event) = rx.recv().await {
-                match event {
-                    CommandEvent::Stdout(line) => {
-                        println!("[server] {:?}", line);
-                        match address_regex.captures(&line) {
-                            Some(cpt) => {
-                                unsafe { 
-                                    if PS_ADDR.0.is_none() {
-                                        PS_ADDR.set(cpt["address"].to_string()) 
-                                    }
-                                };
-                                return 
-                            },
-                            None => {}
-                        };
-                        // println!("[server] {:?}", line);
-                    }
-                    CommandEvent::Stderr(line) => {
-                        println!("[server] {:?}", line);
-                    }
-                    _ => {}
-                }
-            }
-        });
 
     tauri::Builder::default()
     .setup(|app| {
@@ -100,9 +48,9 @@ async fn main() {
         app.manage(IMAP::new());
 
         // scraper
-        async_std::task::block_on(async {
-            unsafe { SCRAPER.init().await };
-        });
+        // async_std::task::block_on(async {
+        //     unsafe { SCRAPER.init().await };
+        // });
         
         let app_handle = app.app_handle().clone();
         std::panic::set_hook(Box::new(move |info| {
