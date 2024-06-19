@@ -28,6 +28,7 @@ impl Scraper {
         let (browser, mut handler) = block_on(async {
             Browser::launch(BrowserConfig::builder()
                 .with_head()
+                .chrome_executable("resources/Thorium.app/Contents/MacOS/Thorium")
                 .args(vec![
                     format!("
                     --proxy-server={}", ps_addr).as_str(),
