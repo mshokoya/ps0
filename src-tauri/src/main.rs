@@ -46,16 +46,10 @@ async fn main() {
 
         // imap
         app.manage(IMAP::new());
-
-        // scraper
-        // async_std::task::block_on(async {
-        //     unsafe { SCRAPER.init().await };
-        // });
         
         let app_handle = app.app_handle().clone();
         std::panic::set_hook(Box::new(move |info| {
             println!("{}", info);
-            // let state = state;
             async_std::task::block_on(async {
                 unsafe { SCRAPER.browser.as_mut().unwrap().close().await.unwrap(); };
                 app_handle.state::<IMAP>().logout().await.unwrap();

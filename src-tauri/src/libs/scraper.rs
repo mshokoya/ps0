@@ -1,24 +1,28 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use anyhow::anyhow;
-use async_std::{future::timeout, task::{block_on, spawn}};
+use async_std::{future::timeout, sync::Mutex, task::{block_on, spawn}};
 use chromiumoxide::{error::CdpError, Browser, BrowserConfig, Page};
 use futures::StreamExt;
 use dotenv_codegen::dotenv;
+use once_cell::sync::Lazy;
 use tauri::api::process::{Command, CommandEvent};
 use regex::Regex;
 
 pub struct Scraper {
     pub browser: Option<Browser>,
+    pub wait_lock: Arc<Mutex<()>>
     // handler: Option<Handler>,
 }
 
 unsafe impl Send for Scraper {}
 unsafe impl Sync for Scraper {}
 
+static WAIT: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+
 impl Scraper {
     pub fn new() -> Self {
-        Self { browser: None }
+        Self { browser: None, wait_lock: Arc::new(Mutex::new(())) }
     }
 
     pub async fn init(&mut self) {
@@ -59,18 +63,18 @@ impl Scraper {
                 // .chrome_executable("resources/Thorium.app/Contents/MacOS/Thorium")
                 .args(vec![
                     format!("--proxy-server={}", addr).as_str(),
-                    "--no-sandbox",
-                    "--disable-setuid-sandbox",
-                    "--disable-dev-shm-usage",
-                    "--disable-accelerated-2d-canvas",
-                    "--no-first-run",
-                    "--no-zygote",
-                    // "--single-process", // not working in head browser... try headless
-                    "--disable-gpu",
-                    "--deterministic-fetch",
-                    "--disable-features=IsolateOrigins",
-                    "--disable-site-isolation-trials",
-                    "--disable-features=site-per-process"
+                    // "--no-sandbox",
+                    // "--disable-setuid-sandbox",
+                    // "--disable-dev-shm-usage",
+                    // "--disable-accelerated-2d-canvas",
+                    // "--no-first-run",
+                    // "--no-zygote",
+                    // // "--single-process", // not working in head browser... try headless
+                    // "--disable-gpu",
+                    // "--deterministic-fetch",
+                    // "--disable-features=IsolateOrigins",
+                    // "--disable-site-isolation-trials",
+                    // "--disable-features=site-per-process"
                 ])
                 // .disable_cache()
                 .viewport(None)
@@ -95,9 +99,11 @@ impl Scraper {
     pub async fn incog(&mut self) -> Result<Page, CdpError> {
         // page.disable_log().await?.disable_debugger().await?;
         //     page.enable_stealth_mode().await?;
+        let wait =  WAIT.lock().await;
         if self.browser.is_none() {
             self.init().await;
         }
+        drop(wait); 
 
         let ctx = self
             .browser

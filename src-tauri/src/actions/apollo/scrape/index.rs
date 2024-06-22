@@ -128,7 +128,6 @@ pub async fn apollo_scrape(
       if data.len() == 0 { return Ok(None) };
 
       // sleep(Duration::from_secs(5)).await;
-
       let _ = page.goto("https://app.apollo.io/#/settings/credits/current").timeout(Duration::from_secs(5)).await;
       let new_credits = apollo_login_credits_info(&ctx).await?;
 
@@ -340,7 +339,7 @@ async fn add_leads_to_list_and_scrape(ctx: &TaskActionCTX, num_leads_to_scrape: 
   while counter <= 10 {
     if counter == 10 { return Err(anyhow!("failed to find save list item")) };
 
-    match wait_for_selector(page, saved_list_table_row_selector, 3, 2).await {
+    match wait_for_selector(page, saved_list_table_row_selector, 7, 2).await {
       Ok(el) => {
           match el.find_element(r#"[class="zp_aBhrx"]"#).await {
             Ok(el) => {
@@ -745,7 +744,7 @@ pub async fn log_into_apollo_visit_credits(
       .timeout(Duration::from_secs(60))
       .await;
 
-  timeout::<_, Result<()>>(Duration::from_secs(60), async {
+  timeout::<_, Result<()>>(Duration::from_secs(120), async {
     loop {
       let login_component: Option<Element> = page.find_element(&login_input_field_selector).await.ok();
       let credits_component: Option<Element> = page.find_element(&credits_component_selector).await.ok();
