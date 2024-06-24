@@ -9,7 +9,7 @@ use actions::apollo::{
     confirm::index::confirm_task,
     update::index::{update_account, update_metadata, update_record},
     delete::index::{delete_account, delete_domain, delete_metadatas, delete_records},
-    get::index::{get_accounts, get_domains, get_metadatas, get_records},
+    get::index::{get_accounts, get_domains, get_metadatas, get_records, filter_records},
     domain::index::{register_domain, verify_domain, remove_domain},
     check::index::check_task,
     demine::index::demine_task,
@@ -35,7 +35,7 @@ async fn main() {
     .setup(|app| {
         // cache
         app.manage(ApolloCache::new());
-        
+
         // forwarder
         app.manage(Forwarder("".to_string()));
 
@@ -46,7 +46,7 @@ async fn main() {
 
         // imap
         app.manage(IMAP::new());
-        
+
         let app_handle = app.app_handle().clone();
         std::panic::set_hook(Box::new(move |info| {
             println!("{}", info);
@@ -85,6 +85,7 @@ async fn main() {
             accounts_in_use,
             add_account,
             add_domain,
+            filter_records,
             dummy_fn1,
             dummy_fn2,
             dummy_fn3

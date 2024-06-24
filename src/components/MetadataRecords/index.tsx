@@ -19,14 +19,6 @@ export const MetadataAndRecordField = observer(() => {
     del: false
   })
 
-  const filteredRecords = useComputed(() => {
-    const filter: string[] = []
-    metaChecked.get().forEach((m) => {
-      metas[m].scrapes.forEach((d) => filter.push(d.scrape_id))
-    })
-    return filter.length ? records.filter((r) => filter.includes(r.scrape_id)) : []
-  })
-
   const updateMeta = async (input: Partial<IMetaData>) => {
     reqInProcess.update.set(true)
     const metaID = metas[metadataState.selectedMeta.peek()]._id
@@ -83,12 +75,14 @@ export const MetadataAndRecordField = observer(() => {
       .then((res) => {
         if (res.ok) {
           let deletedMetas = args.map((a) => a.meta_id);
+          let deletedScrapeIds =  args.map((a) => a.scrape_ids).flat();
           batch(() => {
+            appState$.records.set((rl) => rl.filter((rl0) => !deletedScrapeIds.includes(rl0.scrape_id) ))
             appState$.metas.set((m1) => m1.filter((m2) => !deletedMetas.includes(m2._id) ))
             metaChecked.set([]);
           })
           // for (const metaArg of args) {
-           
+          
             // metadataResStatusHelper.add(id, ['delete', 'ok'])
           // }
           // for (const id of res.data.fail) {
@@ -120,9 +114,29 @@ export const MetadataAndRecordField = observer(() => {
       })
   }
 
+  const getRecords = async () => {
+    console.log('called')
+    let scrape_ids = metaChecked.peek().map((idx) => metas[idx].scrapes.map((s) => s.scrape_id)).flat()
+    await invoke<R<IRecords[]>>(CHANNELS.filter_records, { args: scrape_ids })
+      .then((data) => {
+        console.log(data)
+        if (data.ok) {
+          appState$.records.set(data.data)
+        }
+      })
+      .catch(() => {});
+  }
+
+  const removeRecord = (idx: number) => {
+    let scrape_ids = metas[idx].scrapes.map((s) => s.scrape_id)
+    appState$.records.set((rl) => rl.filter((rl0) => !scrape_ids.includes(rl0.scrape_id) ))
+  }
+
+  const removeAll = () => { appState$.records.set([]) }
+
   return (
     <Flex className="overflow-scroll grow" direction="column">
-      <Options deleteMeta={deleteMeta} filteredRecords={filteredRecords} />
+      <Options deleteMeta={deleteMeta} filteredRecords={records} />
       <Flex className="overflow-scroll grow" gap="2">
         <MetadataTable
           metaChecked={metaChecked}
@@ -130,8 +144,11 @@ export const MetadataAndRecordField = observer(() => {
           updateMeta={updateMeta}
           continueScraping={continueScraping}
           deleteMeta={deleteMeta}
+          getRecords={getRecords}
+          removeRecord={removeRecord}
+          removeAll={removeAll}
         />
-        <RecordTable filteredRecords={filteredRecords} />
+        <RecordTable filteredRecords={records} />
       </Flex>
     </Flex>
   )

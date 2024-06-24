@@ -1,4 +1,4 @@
-use serde_json::Value;
+use serde_json::{to_value, Value};
 use tauri::{AppHandle, Manager};
 use crate::{
     actions::controllers::Response as R,
@@ -74,3 +74,12 @@ pub async fn get_records(ctx: AppHandle) -> R<Vec<Value>> {
   }
 }
 
+// filter_records
+
+#[tauri::command]
+pub async fn filter_records(ctx: AppHandle, args: Vec<String>) -> R<Vec<Value>> {
+  let records: Vec<Value> = ctx.state::<DB>().0.lock().await.query(format!("SELECT * FROM record WHERE {} CONTAINS scrape_id", to_value(args).unwrap())).await.unwrap().take(0).unwrap();
+
+  println!("{records:#?}");
+  R::ok_data(records)
+}

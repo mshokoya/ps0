@@ -8,7 +8,7 @@ export const Options = observer(({
   filteredRecords,
   deleteMeta
 }: {
-  filteredRecords: ObservableComputed<IRecords[]>
+  filteredRecords: IRecords[]
   deleteMeta: (type: 'checklist' | 'single') => Promise<void>
 }) => {
   return (
@@ -26,14 +26,14 @@ export const Options = observer(({
             <DropdownMenu.SubContent>
               <DropdownMenu.Item
                 onClick={() => {
-                  downloadData(filteredRecords.get(), 'json')
+                  downloadData(filteredRecords, 'json')
                 }}
               >
                 JSON
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 onClick={() => {
-                  downloadData(filteredRecords.get(), 'csv')
+                  downloadData(filteredRecords, 'csv')
                 }}
               >
                 CSV

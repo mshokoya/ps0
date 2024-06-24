@@ -8,7 +8,7 @@ import { IRecords } from '../../..'
 import { observer } from '@legendapp/state/react'
 
 type RecordsSubCompArgs = {
-  filteredRecords: ObservableComputed<IRecords[]>
+  filteredRecords: IRecords[]
 }
 
 export const RecordTable = observer(({ filteredRecords }: RecordsSubCompArgs) => {
@@ -51,7 +51,7 @@ export const RecordTable = observer(({ filteredRecords }: RecordsSubCompArgs) =>
             </tr>
           </thead>
           <tbody className="relative" onClick={handleExtendRow}>
-            {filteredRecords.get().map((record, idx) => (
+            {filteredRecords.map((record, idx) => (
               <>
                 <tr
                   className="text-[0.8rem] border border-cyan-600 border-opacity-30"

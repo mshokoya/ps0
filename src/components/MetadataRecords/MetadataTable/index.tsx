@@ -1,4 +1,4 @@
-import { ObservableObject } from '@legendapp/state'
+import { batch, ObservableObject } from '@legendapp/state'
 import { observer } from '@legendapp/state/react'
 import { Button, Dialog, ScrollArea } from '@radix-ui/themes'
 import { MouseEvent } from 'react'
@@ -16,16 +16,19 @@ type MetaSubCompArgs = {
   updateMeta: (a: Partial<IMetaData>) => Promise<void>
   continueScraping: () => void
   deleteMeta: (type: 'checklist' | 'single') => Promise<void>
+  getRecords: () => Promise<void>
+  removeRecord: (idx: number) => void
+  removeAll: () => void
 }
 
 export const MetadataTable = observer(
-  ({ metas, metaChecked, updateMeta, continueScraping, deleteMeta }: MetaSubCompArgs) => {
+  ({ metas, metaChecked, updateMeta, continueScraping, deleteMeta, removeRecord, getRecords, removeAll }: MetaSubCompArgs) => {
     // const selectedMeta = useObservable<number>(-1)
       console.log("Metadata table")
 
-      console.log(metas)
+      // console.log(metas)
 
-    const handleExtendRow = (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {
+    const handleExtendRow = async (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => {
       e.stopPropagation()
       //@ts-ignore
       const type = e.target.closest('td')?.dataset.type as string
@@ -39,9 +42,20 @@ export const MetadataTable = observer(
         case 'check': {
           //@ts-ignore
           const idx = parseInt(e.target.closest('tr').dataset.idx)
-          metaCheckedState.includes(idx)
-            ? metaChecked.set((p) => p.filter((a) => a !== idx))
-            : metaChecked.set([...metaCheckedState, idx])
+          console.log('called 1')
+          if (metaCheckedState.includes(idx)) {
+            batch(() => {
+              metaChecked.set((p) => p.filter((a) => a !== idx))
+              removeRecord(idx)
+            })
+            
+          } else {
+            batch(() => {
+              metaChecked.set([...metaCheckedState, idx])
+              getRecords()
+            })
+            
+          }
           break
         }
         case 'extend':
@@ -52,9 +66,19 @@ export const MetadataTable = observer(
     }
 
     const handleMetaToggle = () => {
-      metaChecked.get().length === metas.length
-        ? metaChecked.set([])
-        : metaChecked.set(metas.map((_, idx) => idx))
+      if (metaChecked.get().length === metas.length) {
+        batch(() => {
+          metaChecked.set([])
+          removeAll()
+        })
+        
+      } else {
+        batch(async () => {
+          metaChecked.set(metas.map((_, idx) => idx))
+          await getRecords()
+        })
+        
+      }
     }
 
     return (

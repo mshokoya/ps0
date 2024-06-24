@@ -23,4 +23,5 @@ export const CHANNELS = {
   delete_domain: "delete_domain",
   register_domain: "register_domain",
   accounts_in_use: "accounts_in_use",
+  filter_records: "filter_records"
 }

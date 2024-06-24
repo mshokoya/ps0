@@ -26,7 +26,6 @@ type AppState = {
 export const appState$ = observable<AppState>({
   accounts: [],
   domains: [],
-  // proxies: [],
   metas: [],
   records: []
 })
@@ -41,16 +40,13 @@ Promise.all([
   await invoke<R<IMetaData[]>>(CHANNELS.get_metadatas)
     .then((data) => data.data)
     .catch(() => []),
-  await invoke<R<IRecords[]>>(CHANNELS.get_records)
-    .then((data) => data.data)
-    .catch(() => [])
 ]).then((r) => {
   //  ORDER MATTERS
   appState$.set({
     accounts: r[0],
     domains: r[1],
     metas: r[2],
-    records: r[3]
+    records: []
   })
 })
 
