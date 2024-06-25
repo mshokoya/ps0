@@ -11,11 +11,7 @@ use crate::{
 pub async fn get_accounts(ctx: AppHandle) -> R<Vec<Value>> {
   match ctx.state::<DB>().select_all::<Value>("account").await {
     Ok(docs) => R::ok_data(docs),
-    Err(e) => {
-      println!("GET_ACCOUNTS FAIL");
-      println!("{e:?}");
-      R::ok_none()
-    }
+    Err(e) => R::ok_none()
   }
 }
 
@@ -35,51 +31,30 @@ pub async fn get_accounts(ctx: AppHandle) -> R<Vec<Value>> {
 #[tauri::command]
 pub async fn get_metadatas(ctx: AppHandle) -> R<Vec<Value>> {
   match ctx.state::<DB>().select_all::<Value>("metadata").await {
-    Ok(docs) => {
-      R::ok_data(docs)
-    },
-    Err(e) => {
-      println!("GET_ACCOUNTS FAIL");
-      println!("{e:?}");
-      R::ok_none()
-    }
+    Ok(docs) => R::ok_data(docs),
+    Err(e) => R::ok_none()
   }
 }
 
 #[tauri::command]
 pub async fn get_domains(ctx: AppHandle) -> R<Vec<Domain>> {
   match ctx.state::<DB>().select_all::<Domain>("domain").await {
-    Ok(docs) => {
-      R::ok_data(docs)
-    },
-    Err(e) => {
-      println!("GET_ACCOUNTS FAIL");
-      println!("{e:?}");
-      R::ok_none()
-    }
+    Ok(docs) => R::ok_data(docs),
+    Err(e) => R::ok_none()
+    
   }
 }
 
 #[tauri::command]
 pub async fn get_records(ctx: AppHandle) -> R<Vec<Value>> {
   match ctx.state::<DB>().select_all::<Value>("record").await {
-    Ok(docs) => {
-        R::ok_data(docs)
-    },
-    Err(e) => {
-      println!("GET_ACCOUNTS FAIL");
-      println!("{e:?}");
-      R::ok_none()
-    }
+    Ok(docs) => R::ok_data(docs),
+    Err(e) => R::ok_none()
   }
 }
-
-// filter_records
 
 #[tauri::command]
 pub async fn filter_records(ctx: AppHandle, args: Vec<String>) -> R<Vec<Value>> {
   let records: Vec<Value> = ctx.state::<DB>().0.lock().await.query(format!("SELECT * FROM record WHERE {} CONTAINS scrape_id", to_value(args).unwrap())).await.unwrap().take(0).unwrap();
-
-  println!("{records:#?}");
   R::ok_data(records)
 }

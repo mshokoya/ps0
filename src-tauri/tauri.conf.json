@@ -12,6 +12,17 @@
   "tauri": {
     "allowlist": {
       "all": false,
+      "dialog": {
+        "all": false,
+        "save": true
+      },
+      "fs": {
+        "all": false,
+        "createDir": true,
+        "readDir": true,
+        "scope": ["**"],
+        "writeFile": true
+      },
       "shell": {
         "all": false,
         "open": true,

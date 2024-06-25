@@ -17,7 +17,8 @@ use actions::apollo::{
     create::index::create_task,
     scrape::index::scrape_task,
     cache::accounts_in_use,
-    add::index::{add_account, add_domain, dummy_fn1, dummy_fn2, dummy_fn3}
+    add::index::{add_account, add_domain, dummy_fn1, dummy_fn2, dummy_fn3},
+    save::save_file
 };
 use libs::{cache::ApolloCache, forwarder::index::Forwarder, taskqueue::index::TaskQueue};
 use libs::{db::index::DB, scraper::Scraper};
@@ -86,6 +87,7 @@ async fn main() {
             add_account,
             add_domain,
             filter_records,
+            save_file,
             dummy_fn1,
             dummy_fn2,
             dummy_fn3

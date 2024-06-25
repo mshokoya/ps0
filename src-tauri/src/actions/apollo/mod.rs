@@ -11,3 +11,4 @@ pub mod scrape;
 pub mod domain;
 pub mod cache;
 pub mod add;
+pub mod save;
