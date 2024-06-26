@@ -27,5 +27,6 @@ dist-ssr
 
 binaries
 resources
+todo.txt
 
 tauri.conf copy.json
